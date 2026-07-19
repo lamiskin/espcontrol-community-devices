@@ -1,0 +1,348 @@
+# =============================================================================
+# DEVICE - Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1 hardware definition
+# =============================================================================
+# Pin assignments, peripherals, and platform config for the 10.1" touch panel.
+# Includes the ESP32-P4 main SoC, ESP32-C6 hosted WiFi co-processor, MIPI
+# DSI display, GT911 capacitive touchscreen, and backlight PWM.
+#
+# Based on working config shared by @sbuchbauer in jtenniswood/espcontrol#838
+# =============================================================================
+
+substitutions:
+  espcontrol_component_url: "https://github.com/jtenniswood/espcontrol"
+  espcontrol_component_ref: "v2.6.3"
+  mdi_font_file: "https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf"
+
+# ---------------------------------------------------------------------------
+# ESP32-P4 platform (16MB flash, ESP-IDF framework)
+# ---------------------------------------------------------------------------
+esp32:
+  variant: esp32p4
+  flash_size: 16MB
+  cpu_frequency: 360MHZ
+  engineering_sample: true
+  framework:
+    type: esp-idf
+    advanced:
+      enable_idf_experimental_features: true
+      execute_from_psram: true
+      disable_vfs_support_termios: false
+      disable_vfs_support_select: false
+      disable_vfs_support_dir: false
+    sdkconfig_options:
+      CONFIG_SDMMC_HOST_DEFAULT: "y"
+      CONFIG_COMPILER_OPTIMIZATION_PERF: "y"
+      CONFIG_ESP_MAIN_TASK_STACK_SIZE: "8192"
+      CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC: "y"
+      CONFIG_ESP_TASK_WDT_TIMEOUT_S: "60"
+      CONFIG_SPI_FLASH_YIELD_DURING_ERASE: "n"
+      CONFIG_ESP_HOSTED_USE_MEMPOOL: "n"
+      CONFIG_ESP_HOSTED_DFLT_TASK_FROM_SPIRAM: "y"
+      CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS: "1"
+      CONFIG_LOG_DEFAULT_LEVEL: "2"
+
+# ---------------------------------------------------------------------------
+# External components
+# ---------------------------------------------------------------------------
+external_components:
+  - source:
+      type: git
+      url: ${espcontrol_component_url}
+      ref: ${espcontrol_component_ref}
+      path: components
+    components: [espcontrol, web_server_idf, artwork_image]
+    refresh: 1s
+
+espcontrol:
+
+# ---------------------------------------------------------------------------
+# ESPHome core (device name from substitutions)
+# ---------------------------------------------------------------------------
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  build_flags:
+    - "-Wno-deprecated-declarations"
+    - "-DESPCONTROL_DISABLE_TODO=1"
+    - "-DESPCONTROL_ESPHOME_2026_5_REBUILD=1"
+    - "-DESPCONTROL_WAVESHARE_P4_101_20260701=1"
+    - "-Wno-literal-suffix"
+    - "-Wno-complain-wrong-lang"
+  on_boot:
+    - priority: 260
+      then:
+        - if:
+            condition:
+              lambda: |-
+                #ifdef USE_ESP32_CRASH_HANDLER
+                return esphome::esp32::crash_handler_has_data();
+                #else
+                return false;
+                #endif
+            then:
+              - lambda: |-
+                  #ifdef USE_ESP32_CRASH_HANDLER
+                  esphome::esp32::crash_handler_clear();
+                  #endif
+                  id(waveshare_p4_101_safe_mode).mark_successful();
+                  global_preferences->sync();
+                  ESP_LOGW("waveshare_p4_101", "Cleared saved crash report before API logging; rebooting once");
+              - delay: 500ms
+              - lambda: |-
+                  App.safe_reboot();
+    - priority: 250
+      then:
+        - lambda: |-
+            ESP_LOGI("waveshare_p4_101", "Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1 boot");
+    # GT911 touch controller shares the LCD reset line. The display driver
+    # pulls the reset high during init; give it time to settle before the
+    # touchscreen driver tries to communicate with the GT911.
+    - priority: -150
+      then:
+        - delay: 300ms
+    - priority: -100
+      then:
+        - lambda: 'id(screen_rotation_ready) = true;'
+        - script.execute: apply_screen_rotation
+
+# ---------------------------------------------------------------------------
+# ESP32-C6 co-processor (provides WiFi/BLE via SDIO)
+# ---------------------------------------------------------------------------
+esp32_hosted:
+  variant: esp32c6
+  reset_pin: GPIO54
+  cmd_pin: GPIO19
+  clk_pin: GPIO18
+  d0_pin: GPIO14
+  d1_pin: GPIO15
+  d2_pin: GPIO16
+  d3_pin: GPIO17
+  active_high: true
+  sdio_frequency: 40MHz
+
+# ---------------------------------------------------------------------------
+# PSRAM (video frame buffer memory)
+# ---------------------------------------------------------------------------
+psram:
+  mode: hex
+  speed: 200MHz
+
+# ---------------------------------------------------------------------------
+# OTA updates (ESPHome native + HTTP-based)
+# ---------------------------------------------------------------------------
+ota:
+  - platform: esphome
+    on_begin:
+      then:
+        - script.execute: show_update_writing
+        - script.wait: show_update_writing
+    on_end:
+      then:
+        - globals.set:
+            id: firmware_update_complete_pending
+            value: 'true'
+        - lambda: 'global_preferences->sync();'
+    on_error:
+      then:
+        - script.execute: show_update_failed
+  - platform: http_request
+    on_begin:
+      then:
+        - script.execute: show_update_writing
+        - script.wait: show_update_writing
+    on_end:
+      then:
+        - globals.set:
+            id: firmware_update_complete_pending
+            value: 'true'
+        - lambda: 'global_preferences->sync();'
+    on_error:
+      then:
+        - script.execute: show_update_failed
+
+safe_mode:
+  id: waveshare_p4_101_safe_mode
+
+# ---------------------------------------------------------------------------
+# Shared infrastructure (API, logging, web server, restart button)
+# ---------------------------------------------------------------------------
+packages:
+  core_infra: !include ../../../common/device/core_infra.yaml
+
+# The 10.1" panel's USB-C serial output is exposed through a UART0 bridge.
+logger:
+  hardware_uart: UART0
+
+# ---------------------------------------------------------------------------
+# Power management (LDO channel for DSI PHY)
+# ---------------------------------------------------------------------------
+esp_ldo:
+  - channel: 3
+    id: dsi_phy_enable
+    voltage: 2.5V
+    adjustable: True
+
+# ---------------------------------------------------------------------------
+# Backlight (LEDC PWM output + monochromatic light entity)
+# ---------------------------------------------------------------------------
+output:
+  - platform: ledc
+    pin: GPIO26
+    id: gpio_backlight_pwm
+
+light:
+  - platform: monochromatic
+    output: gpio_backlight_pwm
+    name: Display Backlight
+    icon: mdi:lightbulb-on
+    id: display_backlight
+    restore_mode: RESTORE_DEFAULT_ON
+    default_transition_length: 0s
+    gamma_correct: 1.0
+    on_turn_on:
+      then:
+        - if:
+            condition:
+              lambda: |-
+                auto now = panel_time_or_fallback(id(panel_time).now(), id(homeassistant_time).now());
+                return (id(display_mode_controller).target_source_is(
+                            espcontrol::DisplayRequestSource::SCREEN_SCHEDULE) &&
+                        id(display_mode_controller).target_mode_is(
+                            espcontrol::DisplayMode::DISPLAY_OFF)) ||
+                       screen_schedule_waiting_for_time(
+                         id(screen_schedule_trigger).state,
+                         id(schedule_enabled).state,
+                         now.is_valid());
+            then:
+              - script.execute: backlight_force_display_off
+            else:
+              - if:
+                  condition:
+                    lambda: |-
+                      return id(display_mode_controller).current_mode_is(
+                          espcontrol::DisplayMode::DISPLAY_OFF);
+                  then:
+                    - script.execute: screensaver_wake
+    on_turn_off:
+      then:
+        - if:
+            condition:
+              lambda: |-
+                return id(display_mode_controller).takeover_active(
+                           espcontrol::DisplayTakeoverKind::INTERACTIVE) ||
+                       id(display_mode_controller).takeover_active(
+                           espcontrol::DisplayTakeoverKind::CRITICAL);
+            then:
+              - lambda: 'ESP_LOGD("backlight", "Restoring backlight after OFF event during display takeover");'
+              - delay: 10ms
+              - script.execute: backlight_apply_brightness
+            else:
+              - if:
+                  condition:
+                    lambda: |-
+                      return id(display_mode_controller).target_mode_is(
+                          espcontrol::DisplayMode::ACTIVE);
+                  then:
+                    - script.execute: screen_schedule_manual_sleep
+
+# ---------------------------------------------------------------------------
+# I2C bus and touchscreen (GT911 capacitive, wakes screensaver on touch)
+# ---------------------------------------------------------------------------
+i2c:
+  - id: bus_a
+    sda: GPIO07
+    scl: GPIO08
+    frequency: 400kHz
+    sda_pullup_enabled: False
+    scl_pullup_enabled: False
+
+touchscreen:
+  - platform: gt911
+    id: my_touchscreen
+    interrupt_pin: GPIO21
+    setup_priority: -200
+    transform:
+      swap_xy: false
+      mirror_x: false
+      mirror_y: false
+    on_touch:
+      - script.execute: cover_art_pause_after_touch
+      - script.wait: cover_art_pause_after_touch
+      - script.execute: screensaver_wake
+
+# ---------------------------------------------------------------------------
+# Display (10.1" 800x1280 native MIPI DSI panel)
+# ---------------------------------------------------------------------------
+display:
+  - platform: mipi_dsi
+    id: my_display
+    model: WAVESHARE-P4-NANO-10.1
+    color_order: RGB
+    reset_pin:
+      number: GPIO27
+    update_interval: never
+    auto_clear_enabled: false
+    dimensions:
+      width: 800
+      height: 1280
+
+# ---------------------------------------------------------------------------
+# LVGL base (display binding, must be before any page definitions)
+# ---------------------------------------------------------------------------
+lvgl:
+  id: main_lvgl
+  displays: my_display
+  rotation: 90
+  byte_order: little_endian
+  touchscreens:
+    - touchscreen_id: my_touchscreen
+      long_press_time: 3s
+
+script:
+  - id: apply_screen_rotation
+    then:
+      - if:
+          condition:
+            lambda: 'return id(screen_rotation_select).current_option() == "90";'
+          then:
+            - lvgl.display.set_rotation: 180
+          else:
+            - if:
+                condition:
+                  lambda: 'return id(screen_rotation_select).current_option() == "180";'
+                then:
+                  - lvgl.display.set_rotation: 270
+                else:
+                  - if:
+                      condition:
+                        lambda: 'return id(screen_rotation_select).current_option() == "270";'
+                      then:
+                        - lvgl.display.set_rotation: 0
+                      else:
+                        - lvgl.display.set_rotation: 90
+      - script.execute: cover_art_apply_responsive_layout
+
+select:
+  - platform: template
+    name: "${entity_screen_rotation}"
+    internal: true
+    disabled_by_default: true
+    id: screen_rotation_select
+    entity_category: config
+    icon: "mdi:screen-rotation"
+    optimistic: true
+    restore_value: true
+    initial_option: "180"
+    options:
+      - "0"
+      - "90"
+      - "180"
+      - "270"
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: 'return id(screen_rotation_ready);'
+            then:
+              - script.execute: apply_screen_rotation
+              - script.execute: refresh_button_grid
