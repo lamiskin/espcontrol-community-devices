@@ -28,6 +28,19 @@ _global:
     - LICENSE
     - NOTICE
 
+crowpanel-5inch:
+  allowed:
+    - devices/crowpanel-5inch/**
+    - builds/crowpanel-5inch*.yaml
+  required:
+    - devices/crowpanel-5inch/esphome.yaml
+    - devices/crowpanel-5inch/packages.yaml
+    - devices/crowpanel-5inch/device/device.yaml
+  forbidden:
+    - common/**
+    - components/**
+    - src/**
+
 guition-esp32-s3-jc3248w535:
   allowed:
     - devices/guition-esp32-s3-jc3248w535/**
