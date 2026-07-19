@@ -1,0 +1,163 @@
+name: Community Nightly
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to check out (for testing on branches)"
+        required: false
+        default: ""
+
+jobs:
+  determine-devices:
+    runs-on: ubuntu-latest
+    outputs:
+      devices: ${{ steps.list.outputs.devices }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - name: List all devices
+        id: list
+        run: |
+          DEVICES=$(python3 -c "import json; print(json.dumps(json.load(open('community/devices.json'))['devices']))")
+          echo "devices=$DEVICES" >> $GITHUB_OUTPUT
+
+  compile:
+    runs-on: ubuntu-latest
+    needs: determine-devices
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        device: ${{ fromJson(needs.determine-devices.outputs.devices) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+          df -h
+      - name: Assemble
+        run: python3 community/scripts/assemble.py --skip-web
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install ESPHome
+        run: pip install esphome==$(grep ESPHOME_VERSION .assembly/.github/esphome.env | cut -d= -f2)
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            .assembly/.esphome
+          key: pio-nightly-${{ matrix.device }}-${{ hashFiles('community/upstream-ref.txt') }}
+          restore-keys: pio-nightly-${{ matrix.device }}-
+      - name: Compile
+        id: compile
+        run: |
+          cd .assembly
+          esphome compile builds/${{ matrix.device }}.yaml
+
+  report:
+    runs-on: ubuntu-latest
+    needs: [determine-devices, compile]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Process results
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DEVICES=$(python3 -c "import json; print('\n'.join(json.load(open('community/devices.json'))['devices']))")
+
+          STATUS_CHANGED=false
+
+          while IFS= read -r slug; do
+            [ -z "$slug" ] && continue
+
+            # Check if this device's compile job succeeded
+            JOB_RESULT=$(gh run view ${{ github.run_id }} --json jobs --jq ".jobs[] | select(.name | contains(\"$slug\")) | .conclusion" 2>/dev/null || echo "unknown")
+
+            ISSUE_TITLE="[broken] $slug"
+
+            if [ "$JOB_RESULT" = "failure" ]; then
+              # Search for existing open issue with this title
+              EXISTING=$(gh issue list --state open --search "\"$ISSUE_TITLE\" in:title" --json number --jq '.[0].number' 2>/dev/null || true)
+
+              if [ -z "$EXISTING" ] || [ "$EXISTING" = "null" ]; then
+                # Create new issue
+                gh issue create \
+                  --title "$ISSUE_TITLE" \
+                  --body "Nightly compile failed for \`$slug\` on $(date -u +%Y-%m-%d).
+
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          Pin: $(cat community/upstream-ref.txt)" \
+                  --label "broken"
+                echo "Created issue: $ISSUE_TITLE"
+              else
+                # Comment on existing issue
+                gh issue comment "$EXISTING" \
+                  --body "Still broken as of $(date -u +%Y-%m-%d).
+
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                echo "Updated issue #$EXISTING: $ISSUE_TITLE"
+              fi
+
+              # Update STATUS.md to Broken
+              python3 -c "
+          import re
+          with open('community/STATUS.md', 'r') as f:
+              content = f.read()
+          pattern = r'(\| [^|]+ \| $slug \| )\w+( \|)'
+          new_content = re.sub(pattern, r'\g<1>Broken\g<2>', content)
+          if new_content != content:
+              with open('community/STATUS.md', 'w') as f:
+                  f.write(new_content)
+              print(f'STATUS.md: $slug -> Broken')
+          " && STATUS_CHANGED=true
+
+            elif [ "$JOB_RESULT" = "success" ]; then
+              # Device compiles — check if it was previously broken
+              EXISTING=$(gh issue list --state open --search "\"$ISSUE_TITLE\" in:title" --json number --jq '.[0].number' 2>/dev/null || true)
+
+              if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
+                # Close the broken issue
+                gh issue close "$EXISTING" \
+                  --comment "Device compiles again as of $(date -u +%Y-%m-%d). Restoring status.
+
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                echo "Closed issue #$EXISTING: $ISSUE_TITLE"
+              fi
+
+              # Restore STATUS.md — if it says Broken, set to Untested
+              # (Working is only set by hardware verification)
+              python3 -c "
+          import re
+          with open('community/STATUS.md', 'r') as f:
+              content = f.read()
+          pattern = r'(\| [^|]+ \| $slug \| )Broken( \|)'
+          new_content = re.sub(pattern, r'\g<1>Untested\g<2>', content)
+          if new_content != content:
+              with open('community/STATUS.md', 'w') as f:
+                  f.write(new_content)
+              print(f'STATUS.md: $slug -> Untested (recovered)')
+          " && STATUS_CHANGED=true
+            fi
+          done <<< "$DEVICES"
+
+          # Commit STATUS.md changes if any
+          if [ "$STATUS_CHANGED" = "true" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add community/STATUS.md
+            git diff --cached --quiet || git commit -m "chore: nightly status update"
+            git push
+          fi
