@@ -1,2 +1,7 @@
+.assembly/
+.venv/
+spike/
+community-pages/webserver/www.js
+
 # Override global ignore to track Kiro specs
 !.kiro/

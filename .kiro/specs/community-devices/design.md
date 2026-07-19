@@ -25,7 +25,7 @@ moves far.
 
 | Fact | Where verified |
 |---|---|
-| ESPHome version pin `2026.6.5` | `.github/esphome.env` |
+| ESPHome version pin (read from `.github/esphome.env` at the pinned ref) | `.github/esphome.env` |
 | Device dir shape: `esphome.yaml`, `dev.yaml`, `packages.yaml`, `device/{device,fonts,lvgl,sensors}.yaml` | `devices/guition-esp32-s3-4848s040/` |
 | `packages.yaml` includes `../../common/*.yaml` + local `device/*.yaml`; load order matters (loading screen must be LVGL's first page) | same |
 | Components fetched from git with substitutable `espcontrol_component_url`/`espcontrol_component_ref` | `devices/*/device/device.yaml` |
@@ -263,6 +263,43 @@ Additionally, if `community/catalog-fragment.json` changed, every modified/added
 slug must be in the PR's `devices.json`. Exit nonzero with a clear message listing
 violations.
 
+#### `community/DEVICES_POLICY.md` format (machine-parseable)
+
+The policy file uses a fenced YAML block per device slug plus a `_global` entry for
+repo-wide allowed paths. `check_policy.py` parses these blocks as the enforcement source:
+
+```yaml
+# --- begin policy ---
+_global:
+  allowed:
+    - community/**
+    - README.md
+    - .github/**
+    - LICENSE
+    - NOTICE
+
+# Example device block. The slug comes from the ported PR's actual device
+# directory name (e.g. PR #823's dir under devices/) — never invent one.
+<slug-from-ported-pr>:
+  allowed:
+    - devices/<slug-from-ported-pr>/**
+    - builds/<slug-from-ported-pr>*.yaml
+  required:
+    - devices/<slug-from-ported-pr>/esphome.yaml
+    - devices/<slug-from-ported-pr>/packages.yaml
+    - devices/<slug-from-ported-pr>/device/device.yaml
+  forbidden:
+    - common/**
+    - components/**
+    - src/**
+# --- end policy ---
+```
+
+Rules: a PR's changed files must each match at least one `allowed` glob from either `_global`
+or the device slug(s) touched. If a PR adds a new device, it must also add that slug's
+policy block in the same PR. `required` files must exist in the HEAD tree for any PR that
+touches that slug. `forbidden` paths cause an unconditional failure if touched.
+
 ### 5. `community/scripts/check_include_parity.py`
 
 For each device: extract the set of `common/...` paths from its packages.yaml remote
@@ -279,11 +316,28 @@ Every occurrence of an upstream `ref:` or `espcontrol_component_ref:` in
 `devices/**` must equal the content of `community/upstream-ref.txt`. Grep-based; exit
 nonzero listing mismatches.
 
+### 6b. `community/scripts/bump_refs.py`
+
+`python3 community/scripts/bump_refs.py <new-ref>`
+
+Rewrites every `ref:` value in remote-package blocks and every `espcontrol_component_ref:`
+value in `devices/**/*.yaml` to `<new-ref>`. Also updates `community/upstream-ref.txt`.
+Algorithm:
+
+1. Read `<new-ref>` from argv (validate: must be a tag like `vX.Y.Z` or a 40-char SHA).
+2. For each `.yaml` file under `devices/`: regex-replace lines matching
+   `^(\s+ref:\s+).*$` within a block that has `url:.*jtenniswood/espcontrol` → set value
+   to `<new-ref>`. Also replace `espcontrol_component_ref: "..."` → `espcontrol_component_ref: "<new-ref>"`.
+3. Write `<new-ref>` to `community/upstream-ref.txt`.
+4. Run `check_pin_consistency.py` as a post-condition (exit nonzero if any mismatch remains).
+5. Print summary: `Updated N files, pin is now <new-ref>`.
+
+Idempotent: running with the current pin is a no-op.
+
 ### 7. GitHub Actions workflows
 
 All jobs: `runs-on: ubuntu-latest`. Install ESPHome with
-`pip install esphome==2026.6.5` (read the version from `.assembly/.github/esphome.env`
-after assembly to stay in lockstep — parse `ESPHOME_VERSION=`). Cache: `actions/cache`
+`pip install esphome==$(grep ESPHOME_VERSION .assembly/.github/esphome.env | cut -d= -f2)` (always read from `.assembly/.github/esphome.env` after assembly — never hardcode a version). Cache: `actions/cache`
 on `~/.platformio`, `~/.cache/pip`, and `.assembly/.esphome` keyed on
 `(<PIN>, esphome-version)`. Expect 30–60+ min per device compile; set
 `timeout-minutes: 120` on compile jobs.
@@ -295,10 +349,15 @@ on `~/.platformio`, `~/.cache/pip`, and `.assembly/.esphome` keyed on
   then `cd .assembly && esphome compile builds/<slug>.yaml`).
 - **community-nightly.yml** — `on: schedule: "0 6 * * *"` + `workflow_dispatch`.
   Matrix over ALL slugs in devices.json: assemble + compile `builds/<slug>.yaml`.
-  Post-matrix job: for failures, `gh issue list --label broken --search "[broken] <slug>"`
-  → create or comment (never duplicate); update STATUS.md row via committed change;
-  successes flip Broken→Working. Commit STATUS changes with message
-  `chore: nightly status update`.
+  Post-matrix job: for failures,
+  `gh issue list --state open --search '"[broken] <slug>" in:title'` (keep the inner
+  quotes — the bracketed phrase must be one search term)
+  → if no match, create; if match, comment (deduplication by exact title match); set the
+  STATUS.md row to Broken (recording its previous status in the row's notes or the
+  issue body). On recovery, restore the device's PRE-broken status — Working only if it
+  was hardware-verified before breaking, otherwise Untested (compile success alone never
+  sets Working) — and close the matching `[broken] <slug>` issue (`gh issue close` by
+  exact title match). Commit STATUS changes with message `chore: nightly status update`.
 - **community-ref-bump.yml** — `on: schedule: "0 4 * * 1"` + dispatch. Query latest
   upstream release: `gh api repos/jtenniswood/espcontrol/releases/latest --jq .tag_name`.
   If newer than `<PIN>`: branch `ref-bump/<tag>`, write `upstream-ref.txt`, run
@@ -307,6 +366,13 @@ on `~/.platformio`, `~/.cache/pip`, and `.assembly/.esphome` keyed on
   check_pin_consistency's discovery), run assemble + parity for drift report, compile
   all devices, open a PR (label `ref-bump`) whose body contains per-device compile
   results and the parity report. Never auto-merge.
+  **Tag format note (Req 6 AC3):** The `community-vX.Y.Z+<upstream-ref>` format uses
+  semver build metadata (`+`). The trigger glob `"community-v*"` should match it (`*`
+  matches any suffix including `+`), but this is UNVERIFIED until the task-13 test tag —
+  confirm there, and record the outcome in `community/SPIKE.md`. If `+` causes trouble
+  anywhere (Actions trigger, artifact naming, registries), fall back to
+  `community-vX.Y.Z-upstream.<ref>`; the `"community-v*"` glob covers both formats.
+
 - **community-release.yml** — `on: push: tags: ["community-v*"]`. Assemble; for each
   device: `esphome compile builds/<slug>.factory.yaml`; collect
   `.assembly/.esphome/build/**/firmware.factory.bin` and `firmware.ota.bin` (verify
@@ -316,10 +382,78 @@ on `~/.platformio`, `~/.cache/pip`, and `.assembly/.esphome` keyed on
   `community-pages/firmware/<slug>/manifest.json`; `gh release create` with binaries.
 - **community-pages.yml** — `on: workflow_run` after release, + dispatch. Publish
   `community-pages/` via `actions/upload-pages-artifact` + `actions/deploy-pages`:
-  `index.html` (installer: one `<esp-web-tools-install-button>` per Working device,
-  esp-web-tools loaded from unpkg CDN), `webserver/www.js`, `firmware/<slug>/manifest.json`.
+  `index.html` (installer: one `<esp-web-tools-install-button>` per device, esp-web-tools
+  loaded from unpkg CDN), `webserver/www.js`, `firmware/<slug>/manifest.json`.
+  **Installer listing rule:** Working and Untested devices are BOTH listed — Untested
+  ones with a visible "not yet hardware-verified" badge. Only Broken devices are
+  omitted. (Untested must be flashable, otherwise the first hardware verification could
+  never happen from the installer page — see task 14.)
 
-### 8. Option B fallback (only if the spike fails — see requirements 7)
+#### Rollback procedure (Req 6 AC4)
+
+To revert a broken release: tag a new patch version (e.g. `community-v1.0.1+<prev-good-ref>`)
+pointing `community/upstream-ref.txt` at the previous known-good upstream ref. The existing
+`community-release.yml` triggers on the new tag, recompiles all devices at the reverted pin,
+and `community-pages.yml` overwrites the Pages-served manifests, installer, and `www.js` on
+deploy. No special rollback workflow is needed — the normal release pipeline handles it because
+it always publishes to the same Pages paths (not versioned subdirectories). OTA-connected
+devices will see the reverted manifest on their next update check.
+
+### 8. Seed device porting (Req 8)
+
+Seed devices are upstream PRs that were never merged. Porting process:
+
+1. **Extract**: For each seed PR, fetch the PR's branch files:
+   `gh pr diff <number> --repo jtenniswood/espcontrol > /tmp/pr-<number>.patch`
+   or clone the PR author's fork at the PR branch. Extract the device directory
+   (`devices/<slug>/`) and build files (`builds/<slug>*.yaml`).
+
+2. **Convert**: Run `python3 community/scripts/convert_packages.py devices/<slug>/packages.yaml`
+   to transform relative includes into remote-include form. Verify the output matches
+   the pattern in Section 1 (correct split points, vars, overrides).
+
+3. **Catalog**: Add the device entry to `community/catalog-fragment.json` by copying the
+   closest official device's entry from upstream's `devices/catalog.json` at `<PIN>` and
+   editing slug/name/screenSize/resolution/platform fields.
+
+4. **Register**: Add the slug to `community/devices.json` and a row to `community/STATUS.md`
+   (status: Untested).
+
+5. **Compile test**: Run `python3 community/scripts/assemble.py && cd .assembly && esphome compile builds/<slug>.yaml`.
+
+6. **Commit**: If compile passes, commit with:
+   - `Co-authored-by: Original Author <email>` (from the PR or git log)
+   - Commit message body: `Ported from jtenniswood/espcontrol#<number>`
+   - Set STATUS to **Untested**, merge to main. A compile pass never means Working:
+     Working is set only after hardware verification (task 14 / `hardware-tested`).
+
+7. **Park if broken**: If compile fails and the fix is non-trivial (not a typo or missing
+   var), create a draft PR from a branch `seed/<slug>`, label it `needs-rebase`, set STATUS
+   to Broken. The commit still carries `Co-authored-by`.
+
+8. **Credit**: The PR description (or commit for direct merges) links the source PR URL.
+   The `Co-authored-by` trailer ensures GitHub attributes the contribution.
+
+#### Seed device list
+
+Device names below are from the actual upstream PR titles (2026-07-19). Chip family
+marked "verify" must be confirmed from the PR's own `device/device.yaml` (`esp32:`
+platform block) before porting — do NOT trust this table over the PR's files. The PR
+number is authoritative; if a name disagrees, re-check with
+`gh pr view <N> --repo jtenniswood/espcontrol`.
+
+| PR | Device (from PR title) | Chip family | Reference device |
+|---|---|---|---|
+| #823 | Guition JC3248W535 3.5" ESP32-S3 | esp32-s3 | guition-esp32-s3-4848s040 |
+| #797 | Waveshare ESP32-S3-Touch-LCD-4 | esp32-s3 | guition-esp32-s3-4848s040 |
+| #348 | Lilygo JC3248W535 | verify (likely esp32-s3) | per chip family |
+| #293 | Waveshare ESP32-S3 Smart 86 Box | esp32-s3 | guition-esp32-s3-4848s040 |
+| #660 | Tuya T3E 4" | verify | per chip family |
+| #359 | Elecrow CrowPanel Advance 5" | verify (likely esp32-s3) | per chip family |
+| #351 | SenseCAP Indicator D1 | verify (likely esp32-s3) | per chip family |
+| #885 | Seeed reTerminal D1001 8" ESP32-P4 | esp32-p4 | guition-esp32-p4-jc1060p470 |
+
+### 9. Option B fallback (only if the spike fails — see requirements 7)
 
 Same repo layout, two changes: (1) device `packages.yaml` keeps upstream's
 relative-include form verbatim (no conversion, no remote packages — but KEEP the
@@ -362,7 +496,7 @@ Every workflow must be dispatchable (`workflow_dispatch`) for testing.
 ## Testing Strategy
 
 - **Spike (first, gating):** convert reference device → `esphome compile` a user-style
-  config on ESPHome 2026.6.5 → hardware flash by Lachlan (verify: boots to loading
+  config on the ESPHome version from `.assembly/.github/esphome.env` → hardware flash by Lachlan (verify: boots to loading
   screen, WiFi setup appears, web UI request goes to the community `js_url`, update
   entity points at community manifest URL — a 404 from Pages is acceptable pre-launch;
   only the URLs matter).
@@ -376,3 +510,11 @@ Every workflow must be dispatchable (`workflow_dispatch`) for testing.
 - **Policy:** a test PR from a branch touching `common-anything` outside the allowlist
   (e.g. add `foo.txt` at repo root… note root files ARE allowed only if listed; use a
   disallowed path like `devices/guition-esp32-s3-4848s040/x`) must fail `policy`.
+- **Rollback (Req 6 AC4):** after a successful release, tag a new patch release reverting
+  `upstream-ref.txt` to the prior pin. Verify: release workflow triggers, compiles succeed,
+  Pages deploy overwrites manifests with the older firmware, and the installer page serves
+  the reverted binaries.
+- **Seed devices (Req 8):** for at least one seed device, verify: `Co-authored-by` appears
+  in the commit, the source PR is linked, and the device compiles. For a deliberately broken
+  seed (wrong pin or missing upstream file), verify it lands as a draft PR with `needs-rebase`
+  label and Broken status.
