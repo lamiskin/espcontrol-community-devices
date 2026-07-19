@@ -126,11 +126,18 @@ def get_changed_files(base, head):
 def get_touched_slugs(paths):
     """
     Extract device slugs from changed paths.
-    A slug is touched if a path matches devices/<slug>/...
+    A slug is touched if a path matches devices/<slug>/... or
+    builds/<slug>[.factory].yaml — builds-only changes (e.g. a hostname
+    fix) must still resolve to their owning slug or every such path is
+    rejected as unowned.
     """
     slugs = set()
     for path in paths:
         match = re.match(r'^devices/([^/]+)/', path)
+        if match:
+            slugs.add(match.group(1))
+            continue
+        match = re.match(r'^builds/(.+?)(\.factory)?\.yaml$', path)
         if match:
             slugs.add(match.group(1))
     return slugs
@@ -146,6 +153,14 @@ def path_matches_glob(path, pattern):
         regex_pattern = regex_pattern.replace("DOUBLESTAR", ".*")
         return bool(re.match(regex_pattern, path))
     return fnmatch.fnmatch(path, pattern)
+
+
+def _slug_dir_exists(slug, existing_files=None):
+    """Does devices/<slug>/ still exist (in HEAD)?"""
+    if existing_files is not None:
+        prefix = f"devices/{slug}/"
+        return any(p.startswith(prefix) for p in existing_files)
+    return os.path.isdir(os.path.join(REPO_ROOT, "devices", slug))
 
 
 def _check_paths(paths, policy, devices_json_slugs=None,
@@ -168,6 +183,21 @@ def _check_paths(paths, policy, devices_json_slugs=None,
     violations = []
     touched_slugs = get_touched_slugs(paths)
 
+    # A slug whose devices/<slug>/ dir no longer exists is being REMOVED.
+    # Its policy block is (correctly) deleted in the same PR, so it gets
+    # implicit allowance for exactly its own paths, is exempt from the
+    # policy-block and required-files checks, and must be deregistered.
+    removed_slugs = {
+        slug for slug in touched_slugs
+        if not _slug_dir_exists(slug, existing_files)
+    }
+    for slug in sorted(removed_slugs):
+        if slug in devices_json_slugs:
+            violations.append(
+                f"Device '{slug}' is removed from devices/ but still "
+                f"registered in devices.json"
+            )
+
     # Check 1: Each path must match at least one allowed glob
     global_allowed = policy.get("_global", {}).get("allowed", [])
 
@@ -184,7 +214,11 @@ def _check_paths(paths, policy, devices_json_slugs=None,
         if not allowed:
             for slug in touched_slugs:
                 slug_policy = policy.get(slug, {})
-                for pattern in slug_policy.get("allowed", []):
+                patterns = list(slug_policy.get("allowed", []))
+                if slug in removed_slugs:
+                    patterns += [f"devices/{slug}/**",
+                                 f"builds/{slug}*.yaml"]
+                for pattern in patterns:
                     if path_matches_glob(path, pattern):
                         allowed = True
                         break
@@ -211,16 +245,17 @@ def _check_paths(paths, policy, devices_json_slugs=None,
                     )
 
     # Check 3: If a PR touches a device slug directory, that slug
-    # must have a policy block
+    # must have a policy block (removed slugs delete theirs)
     for slug in touched_slugs:
-        if slug not in policy:
+        if slug not in policy and slug not in removed_slugs:
             violations.append(
                 f"Device slug '{slug}' is touched but has no "
                 f"policy block in DEVICES_POLICY.md"
             )
 
     # Check 4: Check required files exist for touched slugs
-    for slug in touched_slugs:
+    # (skip removed slugs — their files are gone by design)
+    for slug in touched_slugs - removed_slugs:
         slug_policy = policy.get(slug, {})
         for required_path in slug_policy.get("required", []):
             if existing_files is not None:
@@ -382,10 +417,12 @@ def self_test():
     )
     print("  ✓ Forbidden path detected (components/x.cpp)")
 
-    # Test 5: Missing policy block for touched slug
+    # Test 5: Missing policy block for touched slug (the device dir must
+    # exist in HEAD, otherwise it counts as a removal — see Test 7)
     unknown_slug_paths = ["devices/unknown-device/file.yaml"]
     violations = _check_paths(
-        unknown_slug_paths, policy, existing_files=existing_files
+        unknown_slug_paths, policy,
+        existing_files=existing_files | {"devices/unknown-device/file.yaml"},
     )
     assert any("no policy block" in v.lower() for v in violations), (
         f"Expected missing policy block violation, got: {violations}"
@@ -403,6 +440,48 @@ def self_test():
         f"Build file should be allowed, got: {violations}"
     )
     print("  ✓ Build file for known slug passes")
+
+    # Test 7: Full device removal passes — device dir absent from HEAD,
+    # policy block deleted in the same PR, slug deregistered
+    removal_paths = [
+        "devices/old-device/device/device.yaml",
+        "devices/old-device/packages.yaml",
+        "builds/old-device.yaml",
+        "builds/old-device.factory.yaml",
+        "community/devices.json",
+        "community/DEVICES_POLICY.md",
+        "community/STATUS.md",
+    ]
+    violations = _check_paths(
+        removal_paths, policy,
+        devices_json_slugs=["my-device"],
+        existing_files=existing_files,
+    )
+    assert violations == [], (
+        f"Expected clean removal to pass, got: {violations}"
+    )
+    print("  ✓ Full device removal passes")
+
+    # Test 8: Removal while still registered in devices.json fails
+    violations = _check_paths(
+        removal_paths, policy,
+        devices_json_slugs=["my-device", "old-device"],
+        existing_files=existing_files,
+    )
+    assert any("still registered" in v for v in violations), (
+        f"Expected still-registered violation, got: {violations}"
+    )
+    print("  ✓ Removal while still registered is rejected")
+
+    # Test 9: Builds-only change resolves to its owning slug
+    builds_only = ["builds/my-device.factory.yaml"]
+    violations = _check_paths(
+        builds_only, policy, existing_files=existing_files
+    )
+    assert violations == [], (
+        f"Expected builds-only change to pass, got: {violations}"
+    )
+    print("  ✓ Builds-only change passes via owning slug")
 
     print("\nAll check_policy self-tests passed! ✓")
 
