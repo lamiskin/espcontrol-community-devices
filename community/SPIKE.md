@@ -147,3 +147,36 @@ The `ui=20260714-shared` query param suggests a shared UI version identifier.
 2. Build the community repo scaffolding with the remote-include pattern
 3. Set up CI to validate configs against the pinned upstream tag
 4. Create the www.js hosting and firmware manifest infrastructure
+
+---
+
+## Tag Format Spike — Release Workflow Triggers
+
+**Date:** 2026-07-19
+
+### Finding: `+` in git tags does NOT trigger GitHub Actions
+
+Pushed tag `community-v0.0.1+v2.6.3` — the workflow with `on: push: tags: ["community-v*"]`
+did **not** fire. The tag was created successfully on GitHub (visible in the tags list),
+but Actions did not recognize the push event.
+
+**Root cause:** The `+` character in a git tag is URL-encoded to `%2B` in GitHub's ref
+handling. The glob pattern `community-v*` apparently doesn't match when the ref contains
+an encoded `+`. This is a known limitation.
+
+### Decision: Use `-upstream.` separator instead
+
+Switching tag format from:
+- ❌ `community-v0.0.1+v2.6.3`
+
+To:
+- ✅ `community-v0.0.1-upstream.v2.6.3`
+
+This preserves the semver-ish structure (pre-release metadata after `-`) and avoids
+the `+` encoding issue entirely. The `community-v*` glob pattern matches both formats
+but only the `-upstream.` format actually triggers the workflow.
+
+### Verification
+
+- `community-v0.0.1+v2.6.3` → pushed OK, workflow NOT triggered ❌
+- `community-v0.0.1-upstream.v2.6.3` → testing next
