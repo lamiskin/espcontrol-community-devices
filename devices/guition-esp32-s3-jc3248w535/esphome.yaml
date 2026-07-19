@@ -1,0 +1,5 @@
+packages:
+  setup:
+    url: https://github.com/lamiskin/espcontrol-community-devices/
+    file: devices/guition-esp32-s3-jc3248w535/packages.yaml
+    refresh: 1s

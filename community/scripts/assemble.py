@@ -8,9 +8,11 @@ Builds a throwaway working tree at .assembly/ by:
 3. Merging the community catalog fragment into upstream's catalog.json
 4. Running upstream generators (manifest, slots, build devices)
 5. Running upstream validators (manifest, matrix, profiles)
+6. Building the web bundle (npm ci + build.py www)
+7. Copying the bundle to community-pages/webserver/www.js
 
 Usage:
-    python3 community/scripts/assemble.py [--skip-checks] [--sync-generated] [--self-test]
+    python3 community/scripts/assemble.py [--skip-checks] [--skip-web] [--sync-generated] [--self-test]
 """
 
 import argparse
@@ -353,6 +355,61 @@ def run_generators(slugs, sync_generated=False):
     status("Generators complete.")
 
 
+def build_web_bundle(skip=False):
+    """Build the web bundle (www.js) from the assembled tree.
+
+    Runs npm ci + build.py www inside .assembly/, then copies the
+    resulting bundle to community-pages/webserver/www.js.
+    """
+    if skip:
+        status("Skipping web bundle build (--skip-web).")
+        return
+
+    status("Building web bundle ...")
+
+    # npm ci to install node dependencies
+    run(["npm", "ci"], cwd=ASSEMBLY_DIR)
+
+    # build.py www produces docs/public/webserver/www.js
+    run(["python3", "scripts/build.py", "www"], cwd=ASSEMBLY_DIR)
+
+    # Locate the bundle — primary path is docs/public/webserver/www.js
+    bundle_path = os.path.join(
+        ASSEMBLY_DIR, "docs", "public", "webserver", "www.js"
+    )
+
+    if not os.path.isfile(bundle_path):
+        # Fallback: search for www.js under docs/
+        for root, _dirs, files in os.walk(
+            os.path.join(ASSEMBLY_DIR, "docs")
+        ):
+            if "www.js" in files:
+                bundle_path = os.path.join(root, "www.js")
+                break
+
+    if not os.path.isfile(bundle_path):
+        error("Web bundle not found after build.py www")
+
+    status(
+        f"Bundle found: "
+        f"{os.path.relpath(bundle_path, ASSEMBLY_DIR)}"
+    )
+
+    # Copy to community-pages/webserver/www.js
+    output_dir = os.path.join(
+        REPO_ROOT, "community-pages", "webserver"
+    )
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, "www.js")
+    shutil.copy2(bundle_path, output_path)
+
+    size = os.path.getsize(output_path)
+    status(
+        f"Bundle copied to community-pages/webserver/www.js "
+        f"({size} bytes)"
+    )
+
+
 def run_validators():
     """Run upstream validator scripts inside .assembly/."""
     status("Running validators ...")
@@ -506,6 +563,7 @@ def run_self_test():
 def main():
     parser = argparse.ArgumentParser(description="Assemble espcontrol tree with community overlays")
     parser.add_argument("--skip-checks", action="store_true", help="Skip running validators")
+    parser.add_argument("--skip-web", action="store_true", help="Skip web bundle build (requires node/npm)")
     parser.add_argument("--sync-generated", action="store_true", help="Copy generated blocks back to source")
     parser.add_argument("--self-test", action="store_true", help="Run self-test mode")
     args = parser.parse_args()
@@ -535,6 +593,9 @@ def main():
         run_validators()
     else:
         status("Skipping validators (--skip-checks).")
+
+    # Step 7: Build web bundle (unless --skip-web)
+    build_web_bundle(skip=args.skip_web)
 
     status("Assembly complete. Tree is at .assembly/")
 

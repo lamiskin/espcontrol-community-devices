@@ -6,8 +6,8 @@ Rules for the implementer, read first:
   verification command passes.
 - `<PIN>`: latest upstream release tag of jtenniswood/espcontrol at start time
   (`gh api repos/jtenniswood/espcontrol/releases/latest --jq .tag_name`); `<ORG>`:
-  ask Lachlan (github.com account is `lamiskin`; if `gh` targets the wrong host, add `--hostname github.com` or
-  `GH_HOST=github.com`).
+  ask Lachlan (github.com account is `lamiskin`; if `gh` targets the wrong host,
+  add `--hostname github.com` or `GH_HOST=github.com`).
 - A reference clone of upstream already exists at `/Users/lachlan/Kiro/espcontrol`.
   Read files there freely; NEVER modify or commit in that clone.
 - The design document's snippets are normative — copy them, don't reinvent. When the

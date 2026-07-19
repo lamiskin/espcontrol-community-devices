@@ -27,5 +27,18 @@ _global:
     - .github/**
     - LICENSE
     - NOTICE
+
+guition-esp32-s3-jc3248w535:
+  allowed:
+    - devices/guition-esp32-s3-jc3248w535/**
+    - builds/guition-esp32-s3-jc3248w535*.yaml
+  required:
+    - devices/guition-esp32-s3-jc3248w535/esphome.yaml
+    - devices/guition-esp32-s3-jc3248w535/packages.yaml
+    - devices/guition-esp32-s3-jc3248w535/device/device.yaml
+  forbidden:
+    - common/**
+    - components/**
+    - src/**
 # --- end policy ---
 ```
