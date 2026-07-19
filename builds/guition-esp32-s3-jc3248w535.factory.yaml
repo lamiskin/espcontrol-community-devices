@@ -17,7 +17,7 @@ packages:
 esphome:
   name_add_mac_suffix: true
   project:
-    name: jtenniswood.espcontrol
+    name: lamiskin.espcontrol-community
     version: "${firmware_version}"
 
 dashboard_import:
