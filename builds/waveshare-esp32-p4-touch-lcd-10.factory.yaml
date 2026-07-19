@@ -5,7 +5,7 @@
 # =============================================================================
 
 substitutions:
-  name: "espcontrol-waveshare-p4-101"
+  name: "espcontrol-ws-p4-101"
   friendly_name: "Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1"
   firmware_version: "0.0.0"
   espcontrol_component_url: "file:///config"
