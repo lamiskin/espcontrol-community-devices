@@ -53,5 +53,18 @@ waveshare-esp32-s3-touch-lcd-4:
     - common/**
     - components/**
     - src/**
+
+lilygo-jc3248w535:
+  allowed:
+    - devices/lilygo-jc3248w535/**
+    - builds/lilygo-jc3248w535*.yaml
+  required:
+    - devices/lilygo-jc3248w535/esphome.yaml
+    - devices/lilygo-jc3248w535/packages.yaml
+    - devices/lilygo-jc3248w535/device/device.yaml
+  forbidden:
+    - common/**
+    - components/**
+    - src/**
 # --- end policy ---
 ```
