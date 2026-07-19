@@ -88,25 +88,25 @@ jobs:
               fi
 
               python3 -c "
-import json
-manifest = {
-    'name': 'Espcontrol',
-    'version': '$VERSION',
-    'home_assistant_domain': 'esphome',
-    'builds': [{
-        'chipFamily': '$CHIP',
-        'parts': [{'path': '${slug}.factory.bin', 'offset': 0}],
-        'ota': {
-            'path': '${slug}.ota.bin',
-            'md5': '$OTA_MD5',
-            'release_url': 'https://github.com/lamiskin/espcontrol-community-devices/releases/tag/$TAG'
-        }
-    }]
-}
-with open('../release-artifacts/${slug}-manifest.json', 'w') as f:
-    json.dump(manifest, f, indent=2)
-    f.write('\n')
-"
+              import json, sys
+              manifest = {
+                  'name': 'Espcontrol',
+                  'version': sys.argv[1],
+                  'home_assistant_domain': 'esphome',
+                  'builds': [{
+                      'chipFamily': sys.argv[2],
+                      'parts': [{'path': sys.argv[3] + '.factory.bin', 'offset': 0}],
+                      'ota': {
+                          'path': sys.argv[3] + '.ota.bin',
+                          'md5': sys.argv[4],
+                          'release_url': 'https://github.com/lamiskin/espcontrol-community-devices/releases/tag/' + sys.argv[5]
+                      }
+                  }]
+              }
+              with open('../release-artifacts/' + sys.argv[3] + '-manifest.json', 'w') as f:
+                  json.dump(manifest, f, indent=2)
+                  f.write('\n')
+              " "$VERSION" "$CHIP" "$slug" "$OTA_MD5" "$TAG"
             fi
 
             # Clean build dir for next device
