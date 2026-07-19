@@ -23,6 +23,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
 
       - name: Determine version
         id: version
@@ -127,14 +128,34 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
           UPSTREAM_REF=$(cat community/upstream-ref.txt)
+
+          # Find previous release tag for changelog
+          PREV_TAG=$(git tag --list 'community-v*' --sort=-version:refname | grep -v "^${TAG}$" | head -1)
+
+          # Build release notes
+          NOTES="Based on [espcontrol ${UPSTREAM_REF}](https://github.com/jtenniswood/espcontrol/releases/tag/${UPSTREAM_REF})."
+          NOTES="${NOTES}
+
+## What's Changed
+"
+          if [ -n "$PREV_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:"- %s" "${PREV_TAG}..${TAG}" -- | grep -v "^$" || true)
+            if [ -n "$CHANGELOG" ]; then
+              NOTES="${NOTES}${CHANGELOG}"
+            else
+              NOTES="${NOTES}- No notable changes since ${PREV_TAG}"
+            fi
+          else
+            NOTES="${NOTES}- Initial release"
+          fi
+
           # Collect all binary files
           FILES=$(find release-artifacts -name "*.bin" -o -name "*-manifest.json" | sort)
           gh release create "$TAG" $FILES \
-            --title "Community Release $TAG" \
-            --notes "Firmware release for community devices at upstream pin ${UPSTREAM_REF}.
-
-Based on [espcontrol ${UPSTREAM_REF}](https://github.com/jtenniswood/espcontrol/releases/tag/${UPSTREAM_REF})."
+            --title "${VERSION}" \
+            --notes "$NOTES"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
