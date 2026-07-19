@@ -1,0 +1,62 @@
+# strings coming from Home Assistant render on the panel.
+# Listed as one codepoint per entry to avoid YAML combining-mark
+
+# Letters (U+05D0..U+05EA: alef..tav, with the 5 final forms in place)
+- "א"  # alef
+- "ב"  # bet
+- "ג"  # gimel
+- "ד"  # dalet
+- "ה"  # he
+- "ו"  # vav
+- "ז"  # zayin
+- "ח"  # het
+- "ט"  # tet
+- "י"  # yod
+- "ך"  # final kaf
+- "כ"  # kaf
+- "ל"  # lamed
+- "ם"  # final mem
+- "מ"  # mem
+- "ן"  # final nun
+- "נ"  # nun
+- "ס"  # samekh
+- "ע"  # ayin
+- "ף"  # final pe
+- "פ"  # pe
+- "ץ"  # final tsadi
+- "צ"  # tsadi
+- "ק"  # qof
+- "ר"  # resh
+- "ש"  # shin
+- "ת"  # tav
+
+# Yiddish digraphs (U+05F0..U+05F2)
+- "װ"  # double vav
+- "ױ"  # vav-yod
+- "ײ"  # double yod
+
+# Niqud / vowel marks covered by Heebo (U+05B0..U+05BC, U+05BF, U+05C1,
+# U+05C2, U+05C7). Cantillation marks like meteg (U+05BD) are not
+# present in Heebo, so they are intentionally omitted.
+- "ְ"  # sheva
+- "ֱ"  # hataf segol
+- "ֲ"  # hataf patah
+- "ֳ"  # hataf qamats
+- "ִ"  # hiriq
+- "ֵ"  # tsere
+- "ֶ"  # segol
+- "ַ"  # patah
+- "ָ"  # qamats
+- "ֹ"  # holam
+- "ֺ"  # holam haser for vav
+- "ֻ"  # qubuts
+- "ּ"  # dagesh / shuruq dot
+- "ֿ"  # rafe
+- "ׁ"  # shin dot
+- "ׂ"  # sin dot
+- "ׇ"  # qamats qatan
+
+# Punctuation present in Heebo (maqaf, geresh, gershayim).
+- "־"  # maqaf
+- "׳"  # geresh
+- "״"  # gershayim

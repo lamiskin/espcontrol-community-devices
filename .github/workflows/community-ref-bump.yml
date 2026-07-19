@@ -64,6 +64,14 @@ jobs:
           python-version: '3.12'
       - name: Install ESPHome
         run: pip install esphome==$(grep ESPHOME_VERSION .assembly/.github/esphome.env | cut -d= -f2)
+      - name: Refresh vendored common
+        run: |
+          python3 community/scripts/vendor_common.py --source .assembly
+          if ! git diff --quiet -- common/; then
+            git add common/
+            git commit -m "chore: refresh vendored common/ for ${{ needs.check-upstream.outputs.new_ref }}"
+            git push
+          fi
       - name: Include parity report
         id: parity
         continue-on-error: true
