@@ -127,11 +127,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ steps.version.outputs.tag }}"
+          UPSTREAM_REF=$(cat community/upstream-ref.txt)
           # Collect all binary files
           FILES=$(find release-artifacts -name "*.bin" -o -name "*-manifest.json" | sort)
           gh release create "$TAG" $FILES \
             --title "Community Release $TAG" \
-            --notes "Firmware release for community devices at upstream pin $(cat community/upstream-ref.txt)."
+            --notes "Firmware release for community devices at upstream pin ${UPSTREAM_REF}.
+
+Based on [espcontrol ${UPSTREAM_REF}](https://github.com/jtenniswood/espcontrol/releases/tag/${UPSTREAM_REF})."
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
