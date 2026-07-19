@@ -201,3 +201,80 @@ the assembled tree's local components path or the GitHub URL.
 
 **This is a device configuration issue, not a workflow issue.** The workflow structure is
 correct and will work once the device YAML properly handles CI compilation.
+
+
+---
+
+## ESP32-P4 Community Port — First Device Findings
+
+**Date:** 2026-07-20
+**Device:** Seeed reTerminal D1001 (8" 1280×800 ESP32-P4)
+**Upstream PR:** #885
+**PR author:** @zacs
+
+---
+
+### Verdict: DRAFT (blocked on upstream merge) ⚠️
+
+The port is structurally complete but cannot pass `esphome config` validation because:
+1. The device requires the `gsl3670` touch component which does NOT exist at v2.6.3
+2. The PR (#885) introduces this component alongside the device
+3. Using the PR branch SHA for both common files and components causes ID mismatches
+   (`display_mode_controller`, `display_takeover_begin`, `entity_display_restart`)
+
+---
+
+### P4-Specific Structural Differences
+
+Compared to S3 community devices:
+
+| Aspect | S3 Devices | P4 Devices (D1001) |
+|--------|-----------|-------------------|
+| Button template | `button_template_4chunk.yaml` | `button_template.yaml` |
+| Extra device files | None | `audio.yaml`, `microphone.yaml`, `power.yaml` |
+| Network coprocessor | N/A | ESP32-C6 via SDIO (`esp32_c6_firmware_update.yaml`) |
+| API navigation | N/A | `api_navigate.yaml` |
+| Display interface | SPI/RGB parallel | MIPI DSI |
+| Slots | 6-9 | 20 (5×4 grid) |
+| Remote-include blocks | 3 (upstream_a/b/c) | 4 (upstream_a/b/c/d) — extra split at audio/mic/power |
+
+### convert_packages.py Results
+
+The general-purpose converter handled the P4 packages correctly:
+- ✅ Created 4 upstream blocks (extra split for P4-specific local device files)
+- ✅ Preserved button template vars entries
+- ✅ Added community hosting overrides
+
+### generate_device_slots.py Issue
+
+The upstream generator:
+- Requires `BEGIN/END GENERATED BUTTON PACKAGES` markers in packages.yaml
+- Attempts to rewrite the ENTIRE packages.yaml in upstream relative-include format
+- Does NOT understand the remote-include format
+- This causes the assemble script to report "generators modified community device files
+  outside generated blocks" — this is expected and non-fatal
+
+**Resolution:** Added the marker comments around the button template entries in the
+remote-include format. The generator still rewrites the file in the assembly tree
+(which is discarded), but the community source retains the correct format.
+
+### Blocking Issues
+
+1. **Component not at pinned tag:** `gsl3670` only exists in PR #885, not at v2.6.3.
+   Until the PR is merged and a new tag is cut, this device cannot reference v2.6.3
+   for its components.
+
+2. **ID mismatches at PR SHA:** Using the PR commit SHA (78e8ba5d) for common files
+   reveals references to `display_mode_controller` and `display_takeover_begin` that
+   don't exist in the device's local files. This suggests the common code has evolved
+   past what the PR's device files expect.
+
+3. **Hostname length:** The device slug exceeds the 24-char ESPHome hostname limit.
+   Resolved by using shortened build name `espcontrol-d1001`.
+
+### Next Steps
+
+1. Wait for upstream PR #885 to merge and a new release tag (v2.7.x) to be cut
+2. Repin the community port to the new tag
+3. Verify `esphome config` passes with the consistent tag reference
+4. Run full compile to confirm firmware builds

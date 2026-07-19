@@ -28,6 +28,19 @@ _global:
     - LICENSE
     - NOTICE
 
+crowpanel-5inch:
+  allowed:
+    - devices/crowpanel-5inch/**
+    - builds/crowpanel-5inch*.yaml
+  required:
+    - devices/crowpanel-5inch/esphome.yaml
+    - devices/crowpanel-5inch/packages.yaml
+    - devices/crowpanel-5inch/device/device.yaml
+  forbidden:
+    - common/**
+    - components/**
+    - src/**
+
 guition-esp32-s3-jc3248w535:
   allowed:
     - devices/guition-esp32-s3-jc3248w535/**
@@ -41,14 +54,40 @@ guition-esp32-s3-jc3248w535:
     - components/**
     - src/**
 
-waveshare-esp32-s3-touch-lcd-4:
+lilygo-jc3248w535:
   allowed:
-    - devices/waveshare-esp32-s3-touch-lcd-4/**
-    - builds/waveshare-esp32-s3-touch-lcd-4*.yaml
+    - devices/lilygo-jc3248w535/**
+    - builds/lilygo-jc3248w535*.yaml
   required:
-    - devices/waveshare-esp32-s3-touch-lcd-4/esphome.yaml
-    - devices/waveshare-esp32-s3-touch-lcd-4/packages.yaml
-    - devices/waveshare-esp32-s3-touch-lcd-4/device/device.yaml
+    - devices/lilygo-jc3248w535/esphome.yaml
+    - devices/lilygo-jc3248w535/packages.yaml
+    - devices/lilygo-jc3248w535/device/device.yaml
+  forbidden:
+    - common/**
+    - components/**
+    - src/**
+
+seeed-esp32-p4-reterminal-d1001:
+  allowed:
+    - devices/seeed-esp32-p4-reterminal-d1001/**
+    - builds/seeed-esp32-p4-reterminal-d1001*.yaml
+  required:
+    - devices/seeed-esp32-p4-reterminal-d1001/esphome.yaml
+    - devices/seeed-esp32-p4-reterminal-d1001/packages.yaml
+    - devices/seeed-esp32-p4-reterminal-d1001/device/device.yaml
+  forbidden:
+    - common/**
+    - components/**
+    - src/**
+
+seeed-sensecap-indicator-d1:
+  allowed:
+    - devices/seeed-sensecap-indicator-d1/**
+    - builds/seeed-sensecap-indicator-d1*.yaml
+  required:
+    - devices/seeed-sensecap-indicator-d1/esphome.yaml
+    - devices/seeed-sensecap-indicator-d1/packages.yaml
+    - devices/seeed-sensecap-indicator-d1/device/device.yaml
   forbidden:
     - common/**
     - components/**
@@ -62,6 +101,19 @@ tuya-t3e:
     - devices/tuya-t3e/esphome.yaml
     - devices/tuya-t3e/packages.yaml
     - devices/tuya-t3e/device/device.yaml
+  forbidden:
+    - common/**
+    - components/**
+    - src/**
+
+waveshare-esp32-s3-touch-lcd-4:
+  allowed:
+    - devices/waveshare-esp32-s3-touch-lcd-4/**
+    - builds/waveshare-esp32-s3-touch-lcd-4*.yaml
+  required:
+    - devices/waveshare-esp32-s3-touch-lcd-4/esphome.yaml
+    - devices/waveshare-esp32-s3-touch-lcd-4/packages.yaml
+    - devices/waveshare-esp32-s3-touch-lcd-4/device/device.yaml
   forbidden:
     - common/**
     - components/**

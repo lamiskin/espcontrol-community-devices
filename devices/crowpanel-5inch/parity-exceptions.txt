@@ -1,0 +1,2 @@
+# 4MB flash — no dual-partition OTA available, USB flash only
+common/addon/firmware_update.yaml

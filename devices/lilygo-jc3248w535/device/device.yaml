@@ -1,0 +1,345 @@
+# =============================================================================
+# DEVICE - Lilygo JC3248W535 hardware definition
+# =============================================================================
+# Pin assignments, peripherals, and platform config for the 3.2" portrait
+# panel. Includes the ESP32-S3 SoC (native WiFi), MIPI SPI display (320x480),
+# AXS15231 capacitive touchscreen, and backlight PWM.
+# =============================================================================
+
+substitutions:
+  espcontrol_component_url: "https://github.com/jtenniswood/espcontrol"
+  espcontrol_component_ref: "v2.6.3"
+
+# ---------------------------------------------------------------------------
+# ESP32-S3 platform (16MB flash, ESP-IDF framework)
+# ---------------------------------------------------------------------------
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC: "y"
+      CONFIG_ESP_TASK_WDT_TIMEOUT_S: "30"
+      CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM: "8"
+      CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: "y"
+      COMPILER_OPTIMIZATION_SIZE: "y"
+      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
+
+# ---------------------------------------------------------------------------
+# External component
+# ---------------------------------------------------------------------------
+external_components:
+  - source:
+      type: git
+      url: ${espcontrol_component_url}
+      ref: ${espcontrol_component_ref}
+      path: components
+    components: [espcontrol, web_server_idf, artwork_image]
+    refresh: 1s
+
+espcontrol:
+
+# ---------------------------------------------------------------------------
+# ESPHome core (device name from substitutions)
+# ---------------------------------------------------------------------------
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  platformio_options:
+    build_flags:
+      - "-DESPCONTROL_DISABLE_TODO=1"
+      - "-DESPCONTROL_MAX_GRID_SLOTS=6"
+    build_src_flags:
+      - "-mtext-section-literals"
+  on_boot:
+    - priority: 800
+      then:
+        - lambda: |-
+            auto reason = esp_reset_reason();
+            if (reason == ESP_RST_SW) {
+              esp_ota_img_states_t ota_state;
+              const esp_partition_t *running = esp_ota_get_running_partition();
+              if (running != nullptr &&
+                  esp_ota_get_state_partition(running, &ota_state) == ESP_OK &&
+                  ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
+                ESP_LOGI("s3_reset", "Marking OTA image valid before hardware-reset workaround");
+                id(s3_lilygo_jc3248w535_safe_mode).mark_successful();
+                global_preferences->sync();
+                esp_sleep_enable_timer_wakeup(100000);
+                esp_deep_sleep_start();
+                return;
+              }
+            }
+            if (reason == ESP_RST_USB || reason == ESP_RST_SW) {
+              esp_sleep_enable_timer_wakeup(100000);
+              esp_deep_sleep_start();
+            }
+    - priority: -100
+      then:
+        - lambda: 'id(screen_rotation_ready) = true;'
+        - script.execute: apply_screen_rotation
+        - script.execute: clock_bar_apply
+
+# ---------------------------------------------------------------------------
+# PSRAM (video frame buffer memory)
+# ---------------------------------------------------------------------------
+psram:
+  mode: octal
+  speed: 80MHz
+
+# ---------------------------------------------------------------------------
+# OTA updates (ESPHome native + HTTP-based)
+# ---------------------------------------------------------------------------
+ota:
+  - platform: esphome
+    on_begin:
+      then:
+        - script.execute: show_update_writing
+        - script.wait: show_update_writing
+    on_end:
+      then:
+        - globals.set:
+            id: firmware_update_complete_pending
+            value: 'true'
+        - lambda: 'global_preferences->sync();'
+        - lambda: |-
+            esp_sleep_enable_timer_wakeup(100000);
+            esp_deep_sleep_start();
+    on_error:
+      then:
+        - script.execute: show_update_failed
+  - platform: http_request
+    on_begin:
+      then:
+        - script.execute: show_update_writing
+        - script.wait: show_update_writing
+    on_end:
+      then:
+        - globals.set:
+            id: firmware_update_complete_pending
+            value: 'true'
+        - lambda: 'global_preferences->sync();'
+        - lambda: |-
+            esp_sleep_enable_timer_wakeup(100000);
+            esp_deep_sleep_start();
+    on_error:
+      then:
+        - script.execute: show_update_failed
+
+safe_mode:
+  id: s3_lilygo_jc3248w535_safe_mode
+  boot_is_good_after: 10s
+
+# ---------------------------------------------------------------------------
+# Shared infrastructure (API, logging, web server, restart button)
+# ---------------------------------------------------------------------------
+packages:
+  core_infra: !include ../../../common/device/core_infra.yaml
+
+api:
+  listen_backlog: 4
+  max_connections: 3
+  max_send_queue: 12
+
+logger:
+  hardware_uart: USB_CDC
+
+wifi:
+  use_psram: true
+
+# ---------------------------------------------------------------------------
+# Backlight (LEDC PWM output + monochromatic light entity)
+# ---------------------------------------------------------------------------
+output:
+  - platform: ledc
+    pin: GPIO1
+    id: gpio_backlight_pwm
+    frequency: 150Hz
+    min_power: 0.01
+    zero_means_zero: true
+
+light:
+  - platform: monochromatic
+    output: gpio_backlight_pwm
+    name: Display Backlight
+    icon: mdi:lightbulb-on
+    id: display_backlight
+    restore_mode: RESTORE_DEFAULT_ON
+    default_transition_length: 0s
+    gamma_correct: 1.0
+    on_turn_on:
+      then:
+        - if:
+            condition:
+              lambda: |-
+                auto now = panel_time_or_fallback(id(panel_time).now(), id(homeassistant_time).now());
+                return (id(display_mode_controller).target_source_is(
+                            espcontrol::DisplayRequestSource::SCREEN_SCHEDULE) &&
+                        id(display_mode_controller).target_mode_is(
+                            espcontrol::DisplayMode::DISPLAY_OFF)) ||
+                       screen_schedule_waiting_for_time(
+                         id(screen_schedule_trigger).state,
+                         id(schedule_enabled).state,
+                         now.is_valid());
+            then:
+              - script.execute: backlight_force_display_off
+            else:
+              - if:
+                  condition:
+                    lambda: |-
+                      return id(display_mode_controller).current_mode_is(
+                          espcontrol::DisplayMode::DISPLAY_OFF);
+                  then:
+                    - script.execute: screensaver_wake
+    on_turn_off:
+      then:
+        - if:
+            condition:
+              lambda: |-
+                return id(display_mode_controller).target_mode_is(
+                    espcontrol::DisplayMode::ACTIVE);
+            then:
+              - script.execute: screen_schedule_manual_sleep
+
+# ---------------------------------------------------------------------------
+# SPI bus (quad SPI for MIPI SPI display)
+# ---------------------------------------------------------------------------
+spi:
+  - id: quad_spi
+    type: quad
+    clk_pin: 47
+    data_pins: [21, 48, 40, 39]
+
+# ---------------------------------------------------------------------------
+# I2C bus and touchscreen (AXS15231, wakes screensaver on touch)
+# ---------------------------------------------------------------------------
+i2c:
+  sda: 4
+  scl: 8
+  frequency: 400kHz
+
+touchscreen:
+  - platform: axs15231
+    id: my_touchscreen
+    display: my_display
+    update_interval: 30ms
+    transform:
+      swap_xy: false
+      mirror_x: false
+      mirror_y: false
+    on_touch:
+      - script.execute: screensaver_wake
+
+# ---------------------------------------------------------------------------
+# Display (3.2" 320x480 MIPI SPI panel, portrait orientation)
+# ---------------------------------------------------------------------------
+display:
+  - platform: mipi_spi
+    model: JC3248W535
+    id: my_display
+    data_rate: 40MHz
+    update_interval: never
+    auto_clear_enabled: false
+
+# ---------------------------------------------------------------------------
+# LVGL base (display binding, must be before any page definitions)
+# ---------------------------------------------------------------------------
+lvgl:
+  id: main_lvgl
+  buffer_size: 12%
+  displays: my_display
+  touchscreens:
+    - touchscreen_id: my_touchscreen
+      long_press_time: 3s
+
+script:
+  - id: s3_backlight_sweep_test
+    mode: restart
+    then:
+      - script.execute: screensaver_wake
+      - script.wait: screensaver_wake
+      - light.turn_on:
+          id: display_backlight
+          brightness: 100%
+          transition_length: 0s
+      - delay: 3s
+      - light.turn_on:
+          id: display_backlight
+          brightness: 60%
+          transition_length: 0s
+      - delay: 3s
+      - light.turn_on:
+          id: display_backlight
+          brightness: 30%
+          transition_length: 0s
+      - delay: 3s
+      - light.turn_on:
+          id: display_backlight
+          brightness: 10%
+          transition_length: 0s
+      - delay: 3s
+      - light.turn_on:
+          id: display_backlight
+          brightness: 100%
+          transition_length: 0s
+
+  - id: apply_screen_rotation
+    then:
+      - if:
+          condition:
+            lambda: 'return id(screen_rotation_select).current_option() == "0";'
+          then:
+            - lvgl.display.set_rotation: 0
+          else:
+            - if:
+                condition:
+                  lambda: 'return id(screen_rotation_select).current_option() == "90";'
+                then:
+                  - lvgl.display.set_rotation: 90
+                else:
+                  - if:
+                      condition:
+                        lambda: 'return id(screen_rotation_select).current_option() == "180";'
+                      then:
+                        - lvgl.display.set_rotation: 180
+                      else:
+                        - lvgl.display.set_rotation: 270
+
+select:
+  - platform: template
+    name: "${entity_screen_rotation}"
+    internal: true
+    disabled_by_default: true
+    id: screen_rotation_select
+    entity_category: config
+    icon: "mdi:screen-rotation"
+    optimistic: true
+    restore_value: true
+    initial_option: "0"
+    options:
+      - "0"
+      - "90"
+      - "180"
+      - "270"
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: 'return id(screen_rotation_ready);'
+            then:
+              - script.execute: apply_screen_rotation
+              - script.execute: refresh_button_grid
+
+button:
+  - platform: template
+    name: Backlight Sweep Test
+    internal: true
+    disabled_by_default: true
+    entity_category: diagnostic
+    icon: mdi:brightness-percent
+    web_server:
+      sorting_group_id: sg_brightness
+    on_press:
+      then:
+        - script.execute: s3_backlight_sweep_test
