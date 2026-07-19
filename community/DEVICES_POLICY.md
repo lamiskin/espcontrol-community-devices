@@ -67,19 +67,6 @@ lilygo-jc3248w535:
     - components/**
     - src/**
 
-seeed-esp32-p4-reterminal-d1001:
-  allowed:
-    - devices/seeed-esp32-p4-reterminal-d1001/**
-    - builds/seeed-esp32-p4-reterminal-d1001*.yaml
-  required:
-    - devices/seeed-esp32-p4-reterminal-d1001/esphome.yaml
-    - devices/seeed-esp32-p4-reterminal-d1001/packages.yaml
-    - devices/seeed-esp32-p4-reterminal-d1001/device/device.yaml
-  forbidden:
-    - common/**
-    - components/**
-    - src/**
-
 seeed-sensecap-indicator-d1:
   allowed:
     - devices/seeed-sensecap-indicator-d1/**
