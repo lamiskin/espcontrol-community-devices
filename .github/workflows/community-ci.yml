@@ -1,0 +1,120 @@
+name: Community CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run policy check
+        if: github.event_name == 'pull_request'
+        run: |
+          python3 community/scripts/check_policy.py \
+            --base ${{ github.event.pull_request.base.sha }} \
+            --head ${{ github.event.pull_request.head.sha }}
+      - name: Run script self-tests
+        run: |
+          python3 community/scripts/convert_packages.py --self-test
+          python3 community/scripts/check_policy.py --self-test
+          python3 community/scripts/check_include_parity.py --self-test
+          python3 community/scripts/check_pin_consistency.py --self-test
+
+  determine-devices:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      devices: ${{ steps.find.outputs.devices }}
+      has_devices: ${{ steps.find.outputs.has_devices }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Find touched devices
+        id: find
+        run: |
+          # Get changed files
+          CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }})
+
+          # Extract device slugs from changed paths
+          SLUGS=$(echo "$CHANGED" | grep -oP '^devices/\K[^/]+' | sort -u || true)
+
+          # Also check builds/ changes
+          BUILD_SLUGS=$(echo "$CHANGED" | grep -oP '^builds/\K[^.]+' | sed 's/\.factory$//' | sort -u || true)
+
+          # Combine and deduplicate
+          ALL_SLUGS=$(echo -e "$SLUGS\n$BUILD_SLUGS" | sort -u | grep -v '^$' || true)
+
+          # Filter to only slugs registered in devices.json
+          REGISTERED=$(python3 -c "import json; print('\n'.join(json.load(open('community/devices.json'))['devices']))")
+
+          DEVICES=()
+          while IFS= read -r slug; do
+            [ -z "$slug" ] && continue
+            if echo "$REGISTERED" | grep -qx "$slug"; then
+              DEVICES+=("$slug")
+            fi
+          done <<< "$ALL_SLUGS"
+
+          if [ ${#DEVICES[@]} -eq 0 ]; then
+            echo "devices=[]" >> $GITHUB_OUTPUT
+            echo "has_devices=false" >> $GITHUB_OUTPUT
+          else
+            DEVICES_JSON=$(printf '%s\n' "${DEVICES[@]}" | jq -R . | jq -sc .)
+            echo "devices=$DEVICES_JSON" >> $GITHUB_OUTPUT
+            echo "has_devices=true" >> $GITHUB_OUTPUT
+          fi
+
+  assemble:
+    runs-on: ubuntu-latest
+    needs: [policy]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble
+        run: python3 community/scripts/assemble.py --skip-checks --skip-web
+      - name: Pin consistency
+        run: python3 community/scripts/check_pin_consistency.py
+      - name: Include parity
+        env:
+          UPSTREAM_CLONE: .assembly
+        run: python3 community/scripts/check_include_parity.py
+
+  compile:
+    runs-on: ubuntu-latest
+    needs: [determine-devices, assemble]
+    if: needs.determine-devices.outputs.has_devices == 'true'
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        device: ${{ fromJson(needs.determine-devices.outputs.devices) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+          df -h
+      - name: Assemble
+        run: python3 community/scripts/assemble.py --skip-web
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install ESPHome
+        run: pip install esphome==$(grep ESPHOME_VERSION .assembly/.github/esphome.env | cut -d= -f2)
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            .assembly/.esphome
+          key: pio-${{ matrix.device }}-${{ hashFiles('community/upstream-ref.txt') }}
+          restore-keys: pio-${{ matrix.device }}-
+      - name: Compile
+        run: |
+          cd .assembly
+          esphome compile builds/${{ matrix.device }}.yaml
