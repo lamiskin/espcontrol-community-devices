@@ -1,43 +1,80 @@
 name: Community Pages
 
+# Single owner of the GitHub Pages deployment. Rebuilds the ENTIRE site on
+# every run:
+#   - firmware manifests + binaries: downloaded from the latest GitHub Release
+#   - webserver/www.js: built from the assembled tree at the current pin
+#   - index.html: generated from community/STATUS.md + devices.json
+# Triggered after releases, on status/registry changes to main, or manually.
+# No other workflow may deploy Pages — a second deployer caused a race
+# between whole-site deploys.
+
 on:
   workflow_run:
     workflows: ["Community Release"]
     types: [completed]
+  push:
+    branches: [main]
+    paths:
+      - community/STATUS.md
+      - community/devices.json
+      - community/catalog-fragment.json
+      - community/scripts/generate_installer.py
   workflow_dispatch:
 
 permissions:
+  contents: read
   pages: write
   id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Assemble (for www.js)
-        run: python3 community/scripts/assemble.py --skip-checks
-      - name: Prepare pages content
+
+      - name: Download firmware from latest release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Copy www.js
-          mkdir -p community-pages/webserver
-          cp community-pages/webserver/www.js community-pages/webserver/www.js 2>/dev/null || true
-
-          # Generate installer page
-          python3 community/scripts/generate_installer.py
-
-          # Firmware manifests come from the release - for dispatch, generate stubs
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Manual dispatch - firmware content from latest release"
+          mkdir -p release-assets
+          if gh release download --repo "$GITHUB_REPOSITORY" \
+              --pattern "*.bin" --pattern "*-manifest.json" \
+              --dir release-assets 2>/dev/null; then
+            for manifest in release-assets/*-manifest.json; do
+              [ -e "$manifest" ] || continue
+              base=$(basename "$manifest")
+              slug="${base%-manifest.json}"
+              mkdir -p "community-pages/firmware/$slug"
+              cp "$manifest" "community-pages/firmware/$slug/manifest.json"
+              cp "release-assets/${slug}.factory.bin" "community-pages/firmware/$slug/" 2>/dev/null || echo "WARNING: no factory.bin for $slug"
+              cp "release-assets/${slug}.ota.bin" "community-pages/firmware/$slug/" 2>/dev/null || echo "WARNING: no ota.bin for $slug"
+            done
+            echo "Firmware content staged from latest release:"
+            find community-pages/firmware -type f | sort
+          else
+            echo "No release found — deploying installer without firmware content."
           fi
+
+      - name: Assemble (builds www.js)
+        run: python3 community/scripts/assemble.py --skip-checks
+
+      - name: Generate installer page
+        run: python3 community/scripts/generate_installer.py
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: community-pages
+
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

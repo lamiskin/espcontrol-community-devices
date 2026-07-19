@@ -12,8 +12,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 jobs:
   build-release:
@@ -104,25 +102,6 @@ jobs:
             cd ..
           done <<< "$DEVICES"
 
-      - name: Prepare Pages content
-        run: |
-          DEVICES=$(python3 -c "import json; print('\n'.join(json.load(open('community/devices.json'))['devices']))")
-
-          # Copy manifests and binaries to community-pages structure
-          while IFS= read -r slug; do
-            [ -z "$slug" ] && continue
-            mkdir -p "community-pages/firmware/$slug"
-            cp "release-artifacts/${slug}-manifest.json" "community-pages/firmware/$slug/manifest.json"
-            cp "release-artifacts/${slug}.factory.bin" "community-pages/firmware/$slug/${slug}.factory.bin"
-            cp "release-artifacts/${slug}.ota.bin" "community-pages/firmware/$slug/${slug}.ota.bin"
-          done <<< "$DEVICES"
-
-          # www.js is already in community-pages/webserver/ from assembly
-
-      - name: Generate installer page
-        run: |
-          python3 community/scripts/generate_installer.py
-
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -159,21 +138,8 @@ jobs:
             --title "${VERSION}" \
             --notes-file "$NOTES_FILE"
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: community-pages
-
-  deploy-pages:
-    runs-on: ubuntu-latest
-    needs: build-release
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      # Pages deployment is owned entirely by community-pages.yml, which
+      # triggers on this workflow's completion and rebuilds the site from
+      # this release's attached assets. Deploying from here as well caused
+      # a race between two whole-site deploys (one of which had no firmware
+      # content in its checkout).
