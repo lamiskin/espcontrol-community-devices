@@ -53,5 +53,18 @@ waveshare-esp32-s3-touch-lcd-4:
     - common/**
     - components/**
     - src/**
+
+tuya-t3e:
+  allowed:
+    - devices/tuya-t3e/**
+    - builds/tuya-t3e*.yaml
+  required:
+    - devices/tuya-t3e/esphome.yaml
+    - devices/tuya-t3e/packages.yaml
+    - devices/tuya-t3e/device/device.yaml
+  forbidden:
+    - common/**
+    - components/**
+    - src/**
 # --- end policy ---
 ```
