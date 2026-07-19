@@ -179,4 +179,25 @@ but only the `-upstream.` format actually triggers the workflow.
 ### Verification
 
 - `community-v0.0.1+v2.6.3` → pushed OK, workflow NOT triggered ❌
-- `community-v0.0.1-upstream.v2.6.3` → testing next
+- `community-v0.0.1-upstream.v2.6.3` → pushed OK, workflow TRIGGERED ✅ (run 29675861033)
+
+
+### Release Workflow First Run (community-v0.0.1-upstream.v2.6.3)
+
+The workflow triggered and completed these steps successfully:
+- ✅ Checkout at tag ref
+- ✅ Determine version
+- ✅ Free disk space
+- ✅ Assemble (full upstream clone + overlay + catalog merge)
+- ✅ Setup Python 3.12
+- ✅ Install ESPHome 2026.7.0
+
+**Failed at:** Compile and collect firmware
+
+**Root cause:** The device config `devices/guition-esp32-s3-jc3248w535/device/device.yaml`
+references `external_components` with `url: file:///config` (a Home Assistant add-on path).
+In CI, `/config` doesn't exist. This needs to be overridden in the community overlay to use
+the assembled tree's local components path or the GitHub URL.
+
+**This is a device configuration issue, not a workflow issue.** The workflow structure is
+correct and will work once the device YAML properly handles CI compilation.
