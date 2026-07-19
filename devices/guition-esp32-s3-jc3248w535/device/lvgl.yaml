@@ -134,3 +134,4 @@ lvgl:
         - !include { file: ../../../common/device/button_widget.yaml, vars: { num: "4" } }
         - !include { file: ../../../common/device/button_widget.yaml, vars: { num: "5" } }
         - !include { file: ../../../common/device/button_widget.yaml, vars: { num: "6" } }
+# test
