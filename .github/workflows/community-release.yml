@@ -79,8 +79,8 @@ jobs:
             esphome compile "builds/${slug}.factory.yaml"
 
             # Find binaries
-            FACTORY=$(find .esphome/build -name "firmware.factory.bin" | head -1)
-            OTA=$(find .esphome/build -name "firmware.ota.bin" | head -1)
+            FACTORY=$(find builds/.esphome/build -name "firmware.factory.bin" | head -1)
+            OTA=$(find builds/.esphome/build -name "firmware.ota.bin" | head -1)
 
             if [ -n "$FACTORY" ] && [ -n "$OTA" ]; then
               cp "$FACTORY" "../release-artifacts/${slug}.factory.bin"
@@ -118,7 +118,7 @@ jobs:
             fi
 
             # Clean build dir for next device
-            rm -rf .esphome/build
+            rm -rf builds/.esphome/build
             cd ..
           done <<< "$DEVICES"
 
