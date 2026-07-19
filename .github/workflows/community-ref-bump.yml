@@ -1,0 +1,122 @@
+name: Community Ref Bump
+
+on:
+  schedule:
+    - cron: "0 4 * * 1"  # Weekly Monday 4am UTC
+  workflow_dispatch:
+
+jobs:
+  check-upstream:
+    runs-on: ubuntu-latest
+    outputs:
+      new_ref: ${{ steps.check.outputs.new_ref }}
+      current_ref: ${{ steps.check.outputs.current_ref }}
+      needs_bump: ${{ steps.check.outputs.needs_bump }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for newer upstream release
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CURRENT=$(cat community/upstream-ref.txt)
+          echo "current_ref=$CURRENT" >> $GITHUB_OUTPUT
+
+          LATEST=$(gh api repos/jtenniswood/espcontrol/releases/latest --jq .tag_name)
+          echo "Latest upstream: $LATEST, current pin: $CURRENT"
+
+          if [ "$LATEST" != "$CURRENT" ]; then
+            echo "new_ref=$LATEST" >> $GITHUB_OUTPUT
+            echo "needs_bump=true" >> $GITHUB_OUTPUT
+          else
+            echo "needs_bump=false" >> $GITHUB_OUTPUT
+          fi
+
+  bump:
+    runs-on: ubuntu-latest
+    needs: check-upstream
+    if: needs.check-upstream.outputs.needs_bump == 'true'
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Bump refs
+        run: |
+          python3 community/scripts/bump_refs.py ${{ needs.check-upstream.outputs.new_ref }}
+      - name: Create branch
+        run: |
+          BRANCH="ref-bump/${{ needs.check-upstream.outputs.new_ref }}"
+          git checkout -b "$BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: bump upstream ref to ${{ needs.check-upstream.outputs.new_ref }}"
+          git push -u origin "$BRANCH"
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+      - name: Assemble
+        run: python3 community/scripts/assemble.py --skip-web
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install ESPHome
+        run: pip install esphome==$(grep ESPHOME_VERSION .assembly/.github/esphome.env | cut -d= -f2)
+      - name: Include parity report
+        id: parity
+        continue-on-error: true
+        env:
+          UPSTREAM_CLONE: .assembly
+        run: |
+          python3 community/scripts/check_include_parity.py 2>&1 | tee /tmp/parity-report.txt
+      - name: Compile all devices
+        id: compile
+        continue-on-error: true
+        run: |
+          DEVICES=$(python3 -c "import json; print('\n'.join(json.load(open('community/devices.json'))['devices']))")
+          RESULTS=""
+          OVERALL="success"
+          while IFS= read -r slug; do
+            [ -z "$slug" ] && continue
+            echo "=== Compiling $slug ==="
+            cd .assembly
+            if esphome compile "builds/$slug.yaml" 2>&1 | tail -5; then
+              RESULTS="$RESULTS\n- ✅ $slug"
+            else
+              RESULTS="$RESULTS\n- ❌ $slug"
+              OVERALL="failure"
+            fi
+            cd ..
+          done <<< "$DEVICES"
+          echo "COMPILE_RESULTS<<EOF" >> $GITHUB_ENV
+          echo -e "$RESULTS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          echo "overall=$OVERALL" >> $GITHUB_OUTPUT
+      - name: Open PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PARITY=$(cat /tmp/parity-report.txt 2>/dev/null || echo "N/A")
+          BRANCH="ref-bump/${{ needs.check-upstream.outputs.new_ref }}"
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "chore: bump upstream ref to ${{ needs.check-upstream.outputs.new_ref }}" \
+            --label "ref-bump" \
+            --body "## Upstream Ref Bump
+
+          Bumps from \`${{ needs.check-upstream.outputs.current_ref }}\` to \`${{ needs.check-upstream.outputs.new_ref }}\`.
+
+          ### Compile Results
+          ${{ env.COMPILE_RESULTS }}
+
+          ### Include Parity Report
+          \`\`\`
+          $PARITY
+          \`\`\`
+
+          ---
+          **Do not auto-merge.** Review compile results and parity changes before merging."
