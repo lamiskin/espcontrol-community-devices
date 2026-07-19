@@ -55,6 +55,10 @@ jobs:
           TAG="${{ steps.version.outputs.tag }}"
           VERSION="${{ steps.version.outputs.version }}"
 
+          # Make www.js accessible where factory builds expect it
+          mkdir -p .assembly/community-pages/webserver
+          cp community-pages/webserver/www.js .assembly/community-pages/webserver/www.js
+
           mkdir -p release-artifacts
 
           while IFS= read -r slug; do
