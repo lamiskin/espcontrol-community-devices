@@ -134,28 +134,30 @@ jobs:
           # Find previous release tag for changelog
           PREV_TAG=$(git tag --list 'community-v*' --sort=-version:refname | grep -v "^${TAG}$" | head -1)
 
-          # Build release notes
-          NOTES="Based on [espcontrol ${UPSTREAM_REF}](https://github.com/jtenniswood/espcontrol/releases/tag/${UPSTREAM_REF})."
-          NOTES="${NOTES}
-
-## What's Changed
-"
-          if [ -n "$PREV_TAG" ]; then
-            CHANGELOG=$(git log --pretty=format:"- %s" "${PREV_TAG}..${TAG}" -- | grep -v "^$" || true)
-            if [ -n "$CHANGELOG" ]; then
-              NOTES="${NOTES}${CHANGELOG}"
+          # Build release notes in a file (raw newlines inside a quoted shell
+          # string would sit at column 0 and break the YAML block scalar)
+          NOTES_FILE=$(mktemp)
+          {
+            echo "Based on [espcontrol ${UPSTREAM_REF}](https://github.com/jtenniswood/espcontrol/releases/tag/${UPSTREAM_REF})."
+            echo ""
+            echo "## What's Changed"
+            if [ -n "$PREV_TAG" ]; then
+              CHANGELOG=$(git log --pretty=format:"- %s" "${PREV_TAG}..${TAG}" -- | grep -v "^$" || true)
+              if [ -n "$CHANGELOG" ]; then
+                echo "$CHANGELOG"
+              else
+                echo "- No notable changes since ${PREV_TAG}"
+              fi
             else
-              NOTES="${NOTES}- No notable changes since ${PREV_TAG}"
+              echo "- Initial release"
             fi
-          else
-            NOTES="${NOTES}- Initial release"
-          fi
+          } > "$NOTES_FILE"
 
           # Collect all binary files
           FILES=$(find release-artifacts -name "*.bin" -o -name "*-manifest.json" | sort)
           gh release create "$TAG" $FILES \
             --title "${VERSION}" \
-            --notes "$NOTES"
+            --notes-file "$NOTES_FILE"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
