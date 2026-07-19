@@ -1,0 +1,2 @@
+# Override global ignore to track Kiro specs
+!.kiro/
