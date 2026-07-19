@@ -61,6 +61,9 @@ jobs:
         id: compile
         run: |
           cd .assembly
+          # Fix external_components path for non-Docker CI (no /config mount)
+          ASSEMBLY_ABS="$(pwd)"
+          sed -i "s|file:///config|file://${ASSEMBLY_ABS}|g" "builds/${{ matrix.device }}.yaml"
           esphome compile builds/${{ matrix.device }}.yaml
 
   report:
