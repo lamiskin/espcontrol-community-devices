@@ -81,21 +81,23 @@ jobs:
             FACTORY=$(find builds/.esphome/build -name "firmware.factory.bin" | head -1)
             OTA=$(find builds/.esphome/build -name "firmware.ota.bin" | head -1)
 
-            if [ -n "$FACTORY" ] && [ -n "$OTA" ]; then
-              cp "$FACTORY" "../release-artifacts/${slug}.factory.bin"
-              cp "$OTA" "../release-artifacts/${slug}.ota.bin"
-
-              # Generate manifest
-              OTA_MD5=$(md5sum "../release-artifacts/${slug}.ota.bin" | cut -d' ' -f1)
-
-              # Determine chip family
-              CHIP="ESP32-S3"
-              if grep -q "variant: esp32p4" "devices/${slug}/device/device.yaml" 2>/dev/null; then
-                CHIP="ESP32-P4"
-              fi
-
-              V="$VERSION" C="$CHIP" S="$slug" M="$OTA_MD5" T="$TAG" python3 -c "import json,os;m={'name':'Espcontrol','version':os.environ['V'],'home_assistant_domain':'esphome','builds':[{'chipFamily':os.environ['C'],'parts':[{'path':os.environ['S']+'.factory.bin','offset':0}],'ota':{'path':os.environ['S']+'.ota.bin','md5':os.environ['M'],'release_url':'https://github.com/lamiskin/espcontrol-community-devices/releases/tag/'+os.environ['T']}}]};f=open('../release-artifacts/'+os.environ['S']+'-manifest.json','w');json.dump(m,f,indent=2);f.write('\n')"
+            if [ -z "$FACTORY" ] || [ -z "$OTA" ]; then
+              echo "ERROR: compiled binaries not found for ${slug}" \
+                "(factory='$FACTORY' ota='$OTA') — release aborted" >&2
+              exit 1
             fi
+
+            cp "$FACTORY" "../release-artifacts/${slug}.factory.bin"
+            cp "$OTA" "../release-artifacts/${slug}.ota.bin"
+
+            # Generate manifest (device name + chip family resolved from
+            # the repo; hard-fails on ambiguity instead of defaulting)
+            OTA_MD5=$(md5sum "../release-artifacts/${slug}.ota.bin" | cut -d' ' -f1)
+            python3 ../community/scripts/generate_manifest.py "$slug" \
+              --version "$VERSION" \
+              --tag "$TAG" \
+              --ota-md5 "$OTA_MD5" \
+              --output "../release-artifacts/${slug}-manifest.json"
 
             # Clean build dir for next device
             rm -rf builds/.esphome/build

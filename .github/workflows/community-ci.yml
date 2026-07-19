@@ -24,6 +24,7 @@ jobs:
           python3 community/scripts/check_include_parity.py --self-test
           python3 community/scripts/check_pin_consistency.py --self-test
           python3 community/scripts/vendor_common.py --self-test
+          python3 community/scripts/generate_manifest.py --self-test
 
   determine-devices:
     runs-on: ubuntu-latest
