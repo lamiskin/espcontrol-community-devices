@@ -10,6 +10,15 @@ supported — see upstream issues
 proof of hardware-tested operation. Compile-only submissions are accepted as Untested
 but will not be marked Working until hardware evidence is provided.
 
+## Vendored `common/` Directory
+
+The repo-root `common/` directory contains byte-identical copies of the few upstream
+files that device YAML references with filesystem-relative includes (font glyph lists,
+`core_infra.yaml`, `button_widget.yaml`). They exist so end-user ESPHome clones of this
+repo can resolve those includes. They are managed exclusively by
+`community/scripts/vendor_common.py`; CI verifies they exactly match upstream at the
+pinned ref, so hand edits will fail CI. Do not modify them in device PRs.
+
 ## Policy Rules
 
 The YAML block below is machine-parsed by `community/scripts/check_policy.py`.
@@ -23,6 +32,7 @@ that touches that slug. `forbidden` paths cause an unconditional failure if touc
 _global:
   allowed:
     - community/**
+    - common/**
     - README.md
     - .github/**
     - LICENSE
@@ -37,7 +47,6 @@ crowpanel-5inch:
     - devices/crowpanel-5inch/packages.yaml
     - devices/crowpanel-5inch/device/device.yaml
   forbidden:
-    - common/**
     - components/**
     - src/**
 
@@ -50,7 +59,6 @@ guition-esp32-s3-jc3248w535:
     - devices/guition-esp32-s3-jc3248w535/packages.yaml
     - devices/guition-esp32-s3-jc3248w535/device/device.yaml
   forbidden:
-    - common/**
     - components/**
     - src/**
 
@@ -63,7 +71,6 @@ lilygo-jc3248w535:
     - devices/lilygo-jc3248w535/packages.yaml
     - devices/lilygo-jc3248w535/device/device.yaml
   forbidden:
-    - common/**
     - components/**
     - src/**
 
@@ -76,7 +83,6 @@ seeed-sensecap-indicator-d1:
     - devices/seeed-sensecap-indicator-d1/packages.yaml
     - devices/seeed-sensecap-indicator-d1/device/device.yaml
   forbidden:
-    - common/**
     - components/**
     - src/**
 
@@ -89,7 +95,6 @@ tuya-t3e:
     - devices/tuya-t3e/packages.yaml
     - devices/tuya-t3e/device/device.yaml
   forbidden:
-    - common/**
     - components/**
     - src/**
 
@@ -102,7 +107,6 @@ waveshare-esp32-s3-touch-lcd-4:
     - devices/waveshare-esp32-s3-touch-lcd-4/packages.yaml
     - devices/waveshare-esp32-s3-touch-lcd-4/device/device.yaml
   forbidden:
-    - common/**
     - components/**
     - src/**
 
@@ -115,7 +119,6 @@ waveshare-esp32-p4-touch-lcd-10:
     - devices/waveshare-esp32-p4-touch-lcd-10/packages.yaml
     - devices/waveshare-esp32-p4-touch-lcd-10/device/device.yaml
   forbidden:
-    - common/**
     - components/**
     - src/**
 # --- end policy ---

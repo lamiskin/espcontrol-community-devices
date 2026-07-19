@@ -71,6 +71,15 @@ hosting overrides.
 If your `packages.yaml` is already in remote-include form (copied from this
 repo), the script detects that and makes no changes.
 
+Note: the nested includes inside `device/*.yaml` files (font glyph lists,
+`core_infra.yaml`, `button_widget.yaml`) stay as relative `../../../common/...`
+paths — those resolve against the repo-root `common/` directory, which contains
+vendored copies of exactly those upstream files (see `common/VENDOR_MANIFEST.json`).
+If your device references a `common/` file that isn't vendored yet, CI's
+"Vendored common check" will tell you; fix it by running
+`python3 community/scripts/vendor_common.py --source .assembly` and committing
+the result.
+
 ## 5. Parity exceptions
 
 Some upstream includes may not apply to your hardware. Common exceptions:

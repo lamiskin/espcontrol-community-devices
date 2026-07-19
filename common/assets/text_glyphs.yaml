@@ -1,0 +1,12 @@
+# Extended text character set for UI labels and media titles.
+# Includes printable ASCII + Latin-1 Supplement + Central European extensions
+# (Slovak, Czech, Hungarian, Polish) + Cyrillic letters used by common Slavic
+# languages + common title/typographic symbols.
+# Keep this as a list of strings so wrapped YAML lines do not inject duplicate
+# space glyphs during parsing.
+- " "
+- "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+- "¡¿ÀÁÂÃÄÅÆĄĂÇĆČĎĐÈÉÊËĘĚĞÌÍÎÏİĹĽŁŃŇÑÒÓÔÕÖŐØŔŘŚŞȘŠȚŤÙÚÛÜŮŰÝŹŻŽÞßàáâãäåæąăçćčďđèéêëęěğìíîïıĺľłńňñòóôõöőøŕřśşșšťțùúûüůűýźżžþÿ"
+- "ЁЂЃЄЅІЇЈЉЊЋЌЎЏҐАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяёђѓєѕіїјљњћќўџґ"
+- "ΑΆΒΓΔΕΈΖΗΉΘΙΊΪΚΛΜΝΞΟΌΠΡΣΤΥΎΫΦΧΨΩΏαάβγδεέζηήθιίϊΐκλμνξοόπρσςτυύϋΰφχψωώ"
+- "—–…·°•€£¥¢µ¹²³¼½¾ªº«»‘’‚‛“”„′″‹›©®™¬¯±×÷"

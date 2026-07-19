@@ -1,0 +1,119 @@
+# =============================================================================
+# BUTTON WIDGET - Parameterized LVGL button (included per slot via ${num})
+# =============================================================================
+# Single button tile for the main page grid. Each button shows an icon (which
+# can swap to a different icon or sensor value when the entity is on), a text
+# label, and toggles its bound
+# Home Assistant entity on press. Hidden by default; sensors.yaml unhides
+# and positions active buttons at boot based on button_order.
+# =============================================================================
+
+button:
+  id: button_${num}
+  hidden: true
+  styles: control
+  widgets:
+    # Icon (swaps to icon_on or hides for sensor overlay when entity is on)
+    - label:
+        text_font: $icon_font
+        align: top_left
+        id: button_${num}_icon_label
+        text: $icon_cog
+    # Sensor overlay (replaces icon when entity is on and sensor is configured)
+    - obj:
+        align: top_left
+        id: button_${num}_sensor_container
+        height: SIZE_CONTENT
+        width: SIZE_CONTENT
+        clickable: false
+        layout:
+          type: flex
+          flex_flow: row
+          flex_align_cross: end
+        bg_opa: TRANSP
+        border_width: 0
+        pad_all: 0
+        hidden: true
+        widgets:
+          - label:
+              text_font: $sensor_value_font
+              text_color: $button_text_color
+              id: button_${num}_sensor_label
+              text: "--"
+          - label:
+              text_font: $unit_font
+              text_color: $button_text_color
+              id: button_${num}_unit_label
+              text: ""
+              pad_bottom: 6
+    # Entity name label (bottom of button, wraps to fit available space)
+    - label:
+        align: bottom_left
+        id: button_${num}_text_label
+        text: !lambda 'return std::string(espcontrol_i18n("Configure"));'
+        long_mode: wrap
+        width: 100%
+    # Subpage marker (shown only for subpage cards by the shared grid code)
+    - label:
+        text_font: $subpage_chevron_font
+        align: bottom_right
+        id: button_${num}_subpage_label
+        text: $icon_chevron_right
+        hidden: true
+  # Fire push event, navigate to subpage, or toggle the bound HA entity
+  on_press:
+    - if:
+        condition:
+          lambda: 'return id(screensaver_wake_touch_guard_active);'
+        then:
+          - lambda: 'lv_obj_clear_state(id(button_${num}), LV_STATE_PRESSED);'
+        else:
+          - if:
+              condition:
+                lambda: |-
+                  return id(display_mode_controller).target_mode_is(
+                      espcontrol::DisplayMode::ACTIVE);
+              then:
+                - lambda: 'handle_button_press(id(button_${num}_config).state, ${num}, id(button_${num}));'
+  on_short_click:
+    - if:
+        condition:
+          lambda: 'return id(screensaver_wake_touch_guard_active);'
+        then:
+          - script.stop: screensaver_wake_touch_guard_clear
+          - globals.set:
+              id: screensaver_wake_touch_guard_active
+              value: 'false'
+          - lambda: 'ESP_LOGD("screensaver", "Ignored button click after screensaver wake");'
+        else:
+          - if:
+              condition:
+                lambda: |-
+                  return !id(display_mode_controller).target_mode_is(
+                      espcontrol::DisplayMode::ACTIVE);
+              then:
+                - script.execute: screensaver_wake
+              else:
+                - lambda: 'handle_button_click(id(button_${num}_config).state, ${num}, id(button_${num}));'
+  on_long_press:
+    - if:
+        condition:
+          lambda: 'return id(screensaver_wake_touch_guard_active);'
+        then:
+          - script.stop: screensaver_wake_touch_guard_clear
+          - globals.set:
+              id: screensaver_wake_touch_guard_active
+              value: 'false'
+          - lambda: 'ESP_LOGD("screensaver", "Ignored button long press after screensaver wake");'
+        else:
+          - if:
+              condition:
+                lambda: |-
+                  return !id(display_mode_controller).target_mode_is(
+                      espcontrol::DisplayMode::ACTIVE);
+              then:
+                - script.execute: screensaver_wake
+              else:
+                - lambda: |-
+                    ESP_LOGD("button", "Treating grid card long press as normal tap for slot ${num}");
+                    handle_button_click(id(button_${num}_config).state, ${num}, id(button_${num}));
