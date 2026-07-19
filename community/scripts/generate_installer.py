@@ -56,11 +56,22 @@ def main():
         if status == "Untested":
             badge = ' <span class="badge untested">not yet hardware-verified</span>'
 
+        # A device merged after the latest release has no firmware on Pages
+        # yet — render a note instead of an install button that would 404.
+        manifest_path = os.path.join(
+            REPO_ROOT, "community-pages", "firmware", slug, "manifest.json"
+        )
+        if os.path.isfile(manifest_path):
+            action = f"""      <esp-web-install-button manifest="firmware/{slug}/manifest.json">
+        <button slot="activate">Install</button>
+      </esp-web-install-button>"""
+        else:
+            action = ('      <span class="badge untested">'
+                      'awaiting first release</span>')
+
         device_buttons.append(f"""    <div class="device">
       <h3>{name}{badge}</h3>
-      <esp-web-install-button manifest="firmware/{slug}/manifest.json">
-        <button slot="activate">Install</button>
-      </esp-web-install-button>
+{action}
     </div>""")
 
     buttons_html = "\n".join(device_buttons)
