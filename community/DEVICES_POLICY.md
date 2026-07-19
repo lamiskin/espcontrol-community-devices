@@ -40,5 +40,18 @@ guition-esp32-s3-jc3248w535:
     - common/**
     - components/**
     - src/**
+
+waveshare-esp32-s3-touch-lcd-4:
+  allowed:
+    - devices/waveshare-esp32-s3-touch-lcd-4/**
+    - builds/waveshare-esp32-s3-touch-lcd-4*.yaml
+  required:
+    - devices/waveshare-esp32-s3-touch-lcd-4/esphome.yaml
+    - devices/waveshare-esp32-s3-touch-lcd-4/packages.yaml
+    - devices/waveshare-esp32-s3-touch-lcd-4/device/device.yaml
+  forbidden:
+    - common/**
+    - components/**
+    - src/**
 # --- end policy ---
 ```
