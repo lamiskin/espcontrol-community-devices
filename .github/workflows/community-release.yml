@@ -16,7 +16,7 @@ permissions:
 jobs:
   build-release:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,6 +47,17 @@ jobs:
 
       - name: Install ESPHome
         run: pip install esphome==$(grep ESPHOME_VERSION .assembly/.github/esphome.env | cut -d= -f2)
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            .assembly/.esphome
+          key: pio-release-${{ hashFiles('community/upstream-ref.txt') }}
+          restore-keys: |
+            pio-release-
+            pio-
 
       - name: Compile and collect firmware
         run: |
