@@ -9,3 +9,4 @@
 | Elecrow CrowPanel Advance 5" | crowpanel-5inch | Untested | - | @edasque |
 | SenseCAP Indicator D1 4" | seeed-sensecap-indicator-d1 | Untested | - | @davidmerrique |
 | Seeed reTerminal D1001 8" | seeed-esp32-p4-reterminal-d1001 | Broken | - | @zacs |
+| Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1 10.1" | waveshare-esp32-p4-touch-lcd-10 | Untested | - | @sbuchbauer |

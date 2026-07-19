@@ -118,5 +118,18 @@ waveshare-esp32-s3-touch-lcd-4:
     - common/**
     - components/**
     - src/**
+
+waveshare-esp32-p4-touch-lcd-10:
+  allowed:
+    - devices/waveshare-esp32-p4-touch-lcd-10/**
+    - builds/waveshare-esp32-p4-touch-lcd-10*.yaml
+  required:
+    - devices/waveshare-esp32-p4-touch-lcd-10/esphome.yaml
+    - devices/waveshare-esp32-p4-touch-lcd-10/packages.yaml
+    - devices/waveshare-esp32-p4-touch-lcd-10/device/device.yaml
+  forbidden:
+    - common/**
+    - components/**
+    - src/**
 # --- end policy ---
 ```
