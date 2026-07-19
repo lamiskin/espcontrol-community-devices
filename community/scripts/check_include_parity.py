@@ -72,6 +72,11 @@ def extract_common_paths_from_remote(content):
             continue
 
         if in_files_block:
+            # Comment lines (e.g. BEGIN/END GENERATED markers) do not end
+            # the files: block
+            if stripped.startswith("#"):
+                continue
+
             # Mapping item first: - path: common/path/to/file.yaml
             match = re.match(r'^-\s+path:\s*(\S+)', stripped)
             if match:
@@ -139,6 +144,66 @@ def extract_common_paths_from_local(content):
     return paths
 
 
+TERNARY_RE = re.compile(
+    r'\$\{\s*"([^"]*)"\s*if\s*(\w+)\s*==\s*"([^"]*)"\s*else\s*"([^"]*)"\s*\}'
+)
+UNRESOLVED_TOKEN_RE = re.compile(r'\$\{[^}]*\}')
+
+
+def parse_substitutions(content):
+    """
+    Parse the top-level substitutions: block into a dict.
+
+    Handles simple string values and ESPHome ternary expressions of the form
+    ${ "X" if var == "value" else "Y" } (resolved against the simple values,
+    e.g. the P4 reference's network_package_suffix).
+    """
+    subs = {}
+    in_block = False
+    for line in content.splitlines():
+        if line.rstrip() == "substitutions:":
+            in_block = True
+            continue
+        if in_block:
+            if line.strip() and not line.startswith("  "):
+                break
+            match = re.match(r'^  ([A-Za-z0-9_]+):\s*(.*?)\s*$', line)
+            if match:
+                key, value = match.group(1), match.group(2)
+                if (len(value) >= 2 and value.startswith('"')
+                        and value.endswith('"')):
+                    value = value[1:-1]
+                subs[key] = value
+    # Resolve ternary-expression values using the simple values
+    for key, value in list(subs.items()):
+        match = TERNARY_RE.fullmatch(value.strip())
+        if match:
+            then_v, var, cmp_v, else_v = match.groups()
+            subs[key] = then_v if subs.get(var) == cmp_v else else_v
+    return subs
+
+
+def expand_substitutions(paths, subs):
+    """
+    Expand ${key} tokens in include paths using resolved substitutions.
+
+    Reference devices use templated include names like
+    connectivity${network_package_suffix}.yaml; with default substitutions
+    these resolve to the plain names community devices use. Any token that
+    still cannot be resolved is stripped (equivalent to an empty default),
+    so genuinely different include sets still surface as parity errors.
+    """
+    expanded = set()
+    for path in paths:
+        for key, value in subs.items():
+            if "${" in value:
+                continue  # unresolved expression — skip
+            path = path.replace("${" + key + "}", value)
+        path = UNRESOLVED_TOKEN_RE.sub("", path)
+        expanded.add(path)
+    return expanded
+
+
 def get_reference_common_paths(chip_family, pin):
     """
     Get common/ paths from the reference device at the pinned version.
@@ -165,6 +230,7 @@ def get_reference_common_paths(chip_family, pin):
 
     content = result.stdout
     paths = extract_common_paths_from_local(content)
+    paths = expand_substitutions(paths, parse_substitutions(content))
     return paths, None
 
 
@@ -211,6 +277,7 @@ def get_device_common_paths(slug):
     else:
         paths = extract_common_paths_from_local(content)
 
+    paths = expand_substitutions(paths, parse_substitutions(content))
     return paths, None
 
 
@@ -306,8 +373,10 @@ packages:
     refresh: 1d
     files:
       - common/config/colors.yaml
+      # BEGIN GENERATED BUTTON PACKAGES
       - path: common/config/button_template_4chunk.yaml
         vars: { num: "1" }
+      # END GENERATED BUTTON PACKAGES
       - common/addon/connectivity.yaml
 """
     paths = extract_common_paths_from_remote(remote_fixture)
@@ -387,6 +456,41 @@ packages:
         f"Expected no extra after exceptions, got: {extra}"
     )
     print("  ✓ Parity exceptions correctly filter results")
+
+    # Test 5: Substitution-templated include names (P4 reference style)
+    templated_fixture = """\
+substitutions:
+  network_transport: "wifi"
+  disable_updates: "false"
+  network_package_suffix: ${ "_ethernet" if network_transport == "ethernet" else "" }
+  firmware_update_package_suffix: ${ "_disabled" if disable_updates == "true" else "" }
+
+packages:
+  connectivity:    !include ../../common/addon/connectivity${network_package_suffix}.yaml
+  fw_update:       !include ../../common/addon/firmware_update${firmware_update_package_suffix}.yaml
+  screen_net:      !include ../../common/device/screen_${network_transport}_setup.yaml
+  mystery:         !include ../../common/addon/thing${undefined_var}.yaml
+"""
+    subs = parse_substitutions(templated_fixture)
+    assert subs["network_package_suffix"] == "", (
+        f"Ternary should resolve to '', got: "
+        f"{subs['network_package_suffix']!r}"
+    )
+    paths = expand_substitutions(
+        extract_common_paths_from_local(templated_fixture), subs
+    )
+    expected = {
+        "common/addon/connectivity.yaml",
+        "common/addon/firmware_update.yaml",
+        "common/device/screen_wifi_setup.yaml",
+        "common/addon/thing.yaml",  # unresolved token stripped
+    }
+    assert paths == expected, (
+        f"Templated expansion failed.\n"
+        f"  Expected: {sorted(expected)}\n"
+        f"  Got: {sorted(paths)}"
+    )
+    print("  ✓ Substitution-templated includes expand correctly")
 
     print("\nAll check_include_parity self-tests passed! ✓")
 
