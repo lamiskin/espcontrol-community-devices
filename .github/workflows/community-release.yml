@@ -1,0 +1,164 @@
+name: Community Release
+
+on:
+  push:
+    tags:
+      - "community-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (community-v*)"
+        required: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Determine version
+        id: version
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          # Extract version from tag: community-vX.Y.Z+<pin> or community-vX.Y.Z-upstream.<pin>
+          VERSION=$(echo "$TAG" | sed 's/^community-//')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+          df -h
+
+      - name: Assemble
+        run: python3 community/scripts/assemble.py
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ESPHome
+        run: pip install esphome==$(grep ESPHOME_VERSION .assembly/.github/esphome.env | cut -d= -f2)
+
+      - name: Compile and collect firmware
+        run: |
+          DEVICES=$(python3 -c "import json; print('\n'.join(json.load(open('community/devices.json'))['devices']))")
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+
+          mkdir -p release-artifacts
+
+          while IFS= read -r slug; do
+            [ -z "$slug" ] && continue
+            echo "=== Compiling $slug ==="
+
+            # Patch firmware_version in the factory build
+            cd .assembly
+            sed -i "s/firmware_version: \"0.0.0\"/firmware_version: \"$VERSION\"/" \
+              "builds/${slug}.factory.yaml" 2>/dev/null || true
+            sed -i "s/firmware_version: \"dev\"/firmware_version: \"$VERSION\"/" \
+              "builds/${slug}.factory.yaml" 2>/dev/null || true
+
+            esphome compile "builds/${slug}.factory.yaml"
+
+            # Find binaries
+            FACTORY=$(find .esphome/build -name "firmware.factory.bin" | head -1)
+            OTA=$(find .esphome/build -name "firmware.ota.bin" | head -1)
+
+            if [ -n "$FACTORY" ] && [ -n "$OTA" ]; then
+              cp "$FACTORY" "../release-artifacts/${slug}.factory.bin"
+              cp "$OTA" "../release-artifacts/${slug}.ota.bin"
+
+              # Generate manifest
+              OTA_MD5=$(md5sum "../release-artifacts/${slug}.ota.bin" | cut -d' ' -f1)
+
+              # Determine chip family
+              CHIP="ESP32-S3"
+              if grep -q "variant: esp32p4" "devices/${slug}/device/device.yaml" 2>/dev/null; then
+                CHIP="ESP32-P4"
+              fi
+
+              python3 -c "
+import json
+manifest = {
+    'name': 'Espcontrol',
+    'version': '$VERSION',
+    'home_assistant_domain': 'esphome',
+    'builds': [{
+        'chipFamily': '$CHIP',
+        'parts': [{'path': '${slug}.factory.bin', 'offset': 0}],
+        'ota': {
+            'path': '${slug}.ota.bin',
+            'md5': '$OTA_MD5',
+            'release_url': 'https://github.com/lamiskin/espcontrol-community-devices/releases/tag/$TAG'
+        }
+    }]
+}
+with open('../release-artifacts/${slug}-manifest.json', 'w') as f:
+    json.dump(manifest, f, indent=2)
+    f.write('\n')
+"
+            fi
+
+            # Clean build dir for next device
+            rm -rf .esphome/build
+            cd ..
+          done <<< "$DEVICES"
+
+      - name: Prepare Pages content
+        run: |
+          DEVICES=$(python3 -c "import json; print('\n'.join(json.load(open('community/devices.json'))['devices']))")
+
+          # Copy manifests and binaries to community-pages structure
+          while IFS= read -r slug; do
+            [ -z "$slug" ] && continue
+            mkdir -p "community-pages/firmware/$slug"
+            cp "release-artifacts/${slug}-manifest.json" "community-pages/firmware/$slug/manifest.json"
+            cp "release-artifacts/${slug}.factory.bin" "community-pages/firmware/$slug/${slug}.factory.bin"
+            cp "release-artifacts/${slug}.ota.bin" "community-pages/firmware/$slug/${slug}.ota.bin"
+          done <<< "$DEVICES"
+
+          # www.js is already in community-pages/webserver/ from assembly
+
+      - name: Generate installer page
+        run: |
+          python3 community/scripts/generate_installer.py
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          # Collect all binary files
+          FILES=$(find release-artifacts -name "*.bin" -o -name "*-manifest.json" | sort)
+          gh release create "$TAG" $FILES \
+            --title "Community Release $TAG" \
+            --notes "Firmware release for community devices at upstream pin $(cat community/upstream-ref.txt)."
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: community-pages
+
+  deploy-pages:
+    runs-on: ubuntu-latest
+    needs: build-release
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

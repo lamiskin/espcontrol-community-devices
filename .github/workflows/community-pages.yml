@@ -1,0 +1,43 @@
+name: Community Pages
+
+on:
+  workflow_run:
+    workflows: ["Community Release"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble (for www.js)
+        run: python3 community/scripts/assemble.py --skip-checks
+      - name: Prepare pages content
+        run: |
+          # Copy www.js
+          mkdir -p community-pages/webserver
+          cp community-pages/webserver/www.js community-pages/webserver/www.js 2>/dev/null || true
+
+          # Generate installer page
+          python3 community/scripts/generate_installer.py
+
+          # Firmware manifests come from the release - for dispatch, generate stubs
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch - firmware content from latest release"
+          fi
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: community-pages
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
