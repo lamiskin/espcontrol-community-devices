@@ -2,8 +2,7 @@
 # BUILD PROFILE - Guition ESP32-S3-JC3248W535 (3.5" landscape)
 # =============================================================================
 # CI/local build entry point for the 480x320 landscape ESP32-S3 panel.
-# Bundles the matching web UI so branch/release builds do not load the shared
-# GitHub Pages copy from main.
+# Loads the web UI from GitHub Pages so CI can skip building www.js.
 # =============================================================================
 
 substitutions:
@@ -29,5 +28,4 @@ wifi:
 captive_portal:
 
 web_server:
-  js_url: ""
-  js_include: "../community-pages/webserver/www.js"
+  js_url: "https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js"
