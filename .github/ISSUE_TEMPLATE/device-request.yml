@@ -1,0 +1,57 @@
+name: Device Request
+description: Request support for a new device in the community repo
+title: "[Device] "
+labels: ["device-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a device! This repo supports **ESP32-S3** and **ESP32-P4** based
+        touchscreen panels only. Other chip families are not supported — see
+        [#283](https://github.com/jtenniswood/espcontrol/issues/283) and
+        [#90](https://github.com/jtenniswood/espcontrol/issues/90) for context.
+
+  - type: input
+    id: device-name
+    attributes:
+      label: Device Name
+      description: Full product name (e.g. "Guition ESP32-S3-JC3248W535")
+      placeholder: Brand Model
+    validations:
+      required: true
+
+  - type: dropdown
+    id: chip-family
+    attributes:
+      label: Chip Family
+      description: Only ESP32-S3 and ESP32-P4 are supported
+      options:
+        - ESP32-S3
+        - ESP32-P4
+    validations:
+      required: true
+
+  - type: input
+    id: resolution
+    attributes:
+      label: Display Resolution
+      description: "Width x Height in pixels (e.g. 480 x 320)"
+      placeholder: "480 x 320"
+    validations:
+      required: true
+
+  - type: input
+    id: product-link
+    attributes:
+      label: Product Link
+      description: URL to the product page or listing
+      placeholder: https://
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: hardware-available
+    attributes:
+      label: Hardware Availability
+      options:
+        - label: I own this device and can test firmware on it
