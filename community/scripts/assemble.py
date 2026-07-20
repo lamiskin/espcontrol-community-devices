@@ -315,6 +315,22 @@ def run_generators(slugs, sync_generated=False):
                 print(result.stderr, end="", file=sys.stderr)
             status("  (Continuing — generator failure may require extra dependencies)")
 
+    # generate_device_slots.py rewrites the whole packages section of any
+    # file carrying the generated-block markers into upstream relative-
+    # include form — with the default button template, which is wrong for
+    # community devices. That rewrite is unwanted here: assembly compiles
+    # must use the true remote-include form users get. Sync generated
+    # blocks back first if requested, then restore the community sources.
+    if slugs:
+        if sync_generated:
+            sync_generated_back(slugs)
+        for slug in slugs:
+            src = os.path.join(REPO_ROOT, "devices", slug, "packages.yaml")
+            dst = os.path.join(ASSEMBLY_DIR, "devices", slug,
+                               "packages.yaml")
+            if os.path.isfile(src) and os.path.isfile(dst):
+                shutil.copyfile(src, dst)
+
     # Check if community device files were modified outside generated blocks
     if slugs:
         non_generated_changes = []
@@ -347,10 +363,6 @@ def run_generators(slugs, sync_generated=False):
                 )
                 print("".join(diff))
             sys.exit(1)
-
-        # If --sync-generated, copy generated blocks back to source
-        if sync_generated:
-            sync_generated_back(slugs)
 
     status("Generators complete.")
 
