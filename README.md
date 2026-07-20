@@ -8,6 +8,8 @@ It provides additional device support for hardware that upstream has declined to
 officially include (upstream only supports panels the maintainer can personally
 test — a policy this repo works with, not around).
 
+**📖 Documentation & installer: [lamiskin.github.io/espcontrol-community-devices](https://lamiskin.github.io/espcontrol-community-devices/)**
+
 ## Supported devices
 
 See [community/STATUS.md](community/STATUS.md) for the full list and per-device
@@ -17,8 +19,8 @@ if that's you, a photo/video of the panel running is all it takes to promote one
 
 ## Install
 
-**Browser (recommended):** open the
-[installer page](https://lamiskin.github.io/espcontrol-community-devices),
+**Browser (recommended):** open your device's page on the
+[docs site](https://lamiskin.github.io/espcontrol-community-devices/),
 connect the panel via USB, and click Install. Firmware updates after that are
 over-the-air.
 

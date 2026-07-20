@@ -35,7 +35,8 @@ REPO_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..")
 )
 
-VALID_STATUSES = {"Working", "Untested", "Broken", "Parked"}
+VALID_STATUSES = {"Working", "Untested", "Broken", "Parked",
+                  "Graduated"}
 IN_REPO_STATUSES = {"Working", "Untested", "Broken"}
 REQUIRED_DEVICE_FILES = ("esphome.yaml", "packages.yaml",
                          os.path.join("device", "device.yaml"))
@@ -106,9 +107,9 @@ def check(repo_root=None):
     for slug in registered:
         if slug not in status_by_slug:
             p(f"devices.json: '{slug}' has no STATUS.md row")
-        elif status_by_slug[slug] == "Parked":
+        elif status_by_slug[slug] in ("Parked", "Graduated"):
             p(f"'{slug}' is registered in devices.json but STATUS says "
-              f"Parked (Parked means not in the repo)")
+              f"{status_by_slug[slug]} (that status means not in the repo)")
         device_dir = os.path.join(root, "devices", slug)
         if not os.path.isdir(device_dir):
             p(f"devices.json: '{slug}' has no devices/{slug}/ directory")
@@ -129,9 +130,9 @@ def check(repo_root=None):
         if status in IN_REPO_STATUSES and slug not in registered:
             p(f"STATUS.md: '{slug}' is {status} but not registered in "
               f"devices.json (use Parked for devices not in the repo)")
-        if status == "Parked":
+        if status in ("Parked", "Graduated"):
             if os.path.isdir(os.path.join(root, "devices", slug)):
-                p(f"STATUS.md: '{slug}' is Parked but devices/{slug}/ "
+                p(f"STATUS.md: '{slug}' is {status} but devices/{slug}/ "
                   f"exists")
 
     # Orphans

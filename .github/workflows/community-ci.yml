@@ -29,6 +29,8 @@ jobs:
           python3 community/scripts/check_generated_blocks.py --self-test
       - name: Status consistency
         run: python3 community/scripts/check_status_consistency.py
+      - name: Docs pages current
+        run: python3 community/scripts/generate_docs.py --check
 
   determine-devices:
     runs-on: ubuntu-latest

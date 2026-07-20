@@ -2,9 +2,9 @@ name: Community Pages
 
 # Single owner of the GitHub Pages deployment. Rebuilds the ENTIRE site on
 # every run:
+#   - the VitePress docs site (device pages generated from STATUS + catalog)
 #   - firmware manifests + binaries: downloaded from the latest GitHub Release
 #   - webserver/www.js: built from the assembled tree at the current pin
-#   - index.html: generated from community/STATUS.md + devices.json
 # Triggered after releases, on status/registry changes to main, or manually.
 # No other workflow may deploy Pages — a second deployer caused a race
 # between whole-site deploys.
@@ -19,7 +19,9 @@ on:
       - community/STATUS.md
       - community/devices.json
       - community/catalog-fragment.json
-      - community/scripts/generate_installer.py
+      - community/scripts/generate_docs.py
+      - docs/**
+      - package.json
   workflow_dispatch:
 
 permissions:
@@ -41,6 +43,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install docs dependencies
+        run: npm ci
+
+      - name: Generate device docs pages
+        run: python3 community/scripts/generate_docs.py
+
+      # VitePress empties community-pages/, so it must run before firmware
+      # and www.js are staged into it.
+      - name: Build docs site
+        run: npx vitepress build docs
+
+      - name: Assemble (builds www.js)
+        run: python3 community/scripts/assemble.py --skip-checks
+
       - name: Download firmware from latest release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -51,7 +73,7 @@ jobs:
           # site over a good one is how an outage broke the installer once).
           if ! TAG=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName 2>/tmp/relerr); then
             if grep -qiE "release not found|HTTP 404" /tmp/relerr; then
-              echo "No releases exist yet — deploying installer without firmware content."
+              echo "No releases exist yet — deploying docs without firmware content."
               exit 0
             fi
             echo "ERROR: could not query latest release:" >&2
@@ -83,12 +105,6 @@ jobs:
           done
           echo "Firmware content staged from $TAG:"
           find community-pages/firmware -type f | sort
-
-      - name: Assemble (builds www.js)
-        run: python3 community/scripts/assemble.py --skip-checks
-
-      - name: Generate installer page
-        run: python3 community/scripts/generate_installer.py
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
