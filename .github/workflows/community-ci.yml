@@ -25,6 +25,9 @@ jobs:
           python3 community/scripts/check_pin_consistency.py --self-test
           python3 community/scripts/vendor_common.py --self-test
           python3 community/scripts/generate_manifest.py --self-test
+          python3 community/scripts/check_status_consistency.py --self-test
+      - name: Status consistency
+        run: python3 community/scripts/check_status_consistency.py
 
   determine-devices:
     runs-on: ubuntu-latest
