@@ -7,7 +7,7 @@
 | Tuya T3E 4" | tuya-t3e | Untested | - | @txptr | [PR #660](https://github.com/jtenniswood/espcontrol/pull/660) |
 | Lilygo JC3248W535 3.5" | lilygo-jc3248w535 | Untested | - | @fbeauchamp | [PR #348](https://github.com/jtenniswood/espcontrol/pull/348) |
 | SenseCAP Indicator D1 4" | seeed-sensecap-indicator-d1 | Untested | - | @davidmerrique | [PR #351](https://github.com/jtenniswood/espcontrol/pull/351) |
-| Seeed reTerminal D1001 8" | seeed-esp32-p4-reterminal-d1001 | Parked | - | @zacs | [PR #885](https://github.com/jtenniswood/espcontrol/pull/885) |
+| Seeed reTerminal D1001 8" | seeed-esp32-p4-reterminal-d1001 | Untested | - | @zacs | [PR #885](https://github.com/jtenniswood/espcontrol/pull/885) |
 | Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1 10.1" | waveshare-esp32-p4-touch-lcd-10 | Untested | - | @sbuchbauer | [Issue #838](https://github.com/jtenniswood/espcontrol/issues/838) |
 | WaveShare ESP32-S3 Smart 86 Box | waveshare-esp32-s3-smart-86-box | Parked | - | @salnajjar | [PR #293](https://github.com/jtenniswood/espcontrol/pull/293) |
 
@@ -20,5 +20,4 @@
 
 ### Parked device notes
 
-- **Seeed reTerminal D1001** — requires the `gsl3670` touch component, which only exists in unmerged upstream [PR #885](https://github.com/jtenniswood/espcontrol/pull/885); portable once that merges and a new upstream release is tagged. The in-progress port is parked as draft [PR #23](https://github.com/lamiskin/espcontrol-community-devices/pull/23).
 - **WaveShare ESP32-S3 Smart 86 Box** — the original config from upstream [PR #293](https://github.com/jtenniswood/espcontrol/pull/293) is unrecoverable: the author's fork was deleted and the PR head rewritten before deletion, leaving no diff, and no config was pasted in the thread. The upstream maintainer explicitly welcomed a community version in that thread. Re-submission by a hardware owner is invited — tracked in [issue #15](https://github.com/lamiskin/espcontrol-community-devices/issues/15).
