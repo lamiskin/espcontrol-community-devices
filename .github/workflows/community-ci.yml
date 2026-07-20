@@ -128,3 +128,21 @@ jobs:
           ASSEMBLY_ABS="$(pwd)"
           sed -i "s|file:///config|file://${ASSEMBLY_ABS}|g" "builds/${{ matrix.device }}.yaml"
           esphome compile builds/${{ matrix.device }}.yaml
+
+  # Single stable-named summary over the compile matrix so branch
+  # protection can require it (matrix job names vary per device).
+  # Passes when no devices were touched (compile skipped entirely).
+  compile-result:
+    runs-on: ubuntu-latest
+    needs: [determine-devices, compile]
+    if: always()
+    steps:
+      - name: Summarize compile matrix
+        run: |
+          HAS="${{ needs.determine-devices.outputs.has_devices }}"
+          RESULT="${{ needs.compile.result }}"
+          echo "has_devices=$HAS compile=$RESULT"
+          if [ "$HAS" = "true" ] && [ "$RESULT" != "success" ]; then
+            echo "Compile matrix did not succeed"; exit 1
+          fi
+          echo "OK"
