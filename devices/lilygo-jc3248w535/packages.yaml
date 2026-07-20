@@ -104,6 +104,7 @@ packages:
       - common/config/colors.yaml
       - common/config/button_order.yaml
       - common/config/display.yaml
+      # BEGIN GENERATED BUTTON PACKAGES
       - path: common/config/button_template_4chunk.yaml
         vars: { num: "1" }
       - path: common/config/button_template_4chunk.yaml
@@ -116,6 +117,7 @@ packages:
         vars: { num: "5" }
       - path: common/config/button_template_4chunk.yaml
         vars: { num: "6" }
+      # END GENERATED BUTTON PACKAGES
       - common/addon/connectivity.yaml
       - common/addon/time.yaml
       - common/addon/backlight.yaml
