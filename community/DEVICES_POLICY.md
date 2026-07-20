@@ -36,6 +36,8 @@ _global:
     - docs/**
     - package.json
     - package-lock.json
+    - .gitignore
+    - community-pages/**
     - README.md
     - .github/**
     - LICENSE
