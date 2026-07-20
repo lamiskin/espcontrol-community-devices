@@ -16,6 +16,7 @@
 - **Working** — compiles at the current pin AND hardware-verified (photo/video evidence).
 - **Untested** — compiles at the current pin; awaiting hardware verification. Listed on the installer with a warning badge.
 - **Broken** — in the repo but fails to compile at the current pin (nightly build flags this). Omitted from the installer.
+- **Graduated** — adopted by upstream; updates handed over to upstream's channel ([graduation plan](https://lamiskin.github.io/espcontrol-community-devices/reference/graduation)). Not in this repo.
 - **Parked** — device config is not in the repo (yet): waiting on an upstream dependency, or the original config needs re-submission. Not built, not listed on the installer. Details live in the device's tracking issue or the linked source PR.
 
 ### Parked device notes

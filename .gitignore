@@ -1,9 +1,8 @@
 .assembly/
 .venv/
 spike/
-community-pages/webserver/www.js
-community-pages/index.html
-community-pages/firmware/
+community-pages/
 
 # Override global ignore to track Kiro specs
 !.kiro/
+node_modules/

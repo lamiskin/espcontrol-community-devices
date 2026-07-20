@@ -33,6 +33,9 @@ _global:
   allowed:
     - community/**
     - common/**
+    - docs/**
+    - package.json
+    - package-lock.json
     - README.md
     - .github/**
     - LICENSE
