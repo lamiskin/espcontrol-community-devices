@@ -415,6 +415,14 @@ def build_web_bundle(skip=False):
     output_path = os.path.join(output_dir, "www.js")
     shutil.copy2(bundle_path, output_path)
 
+    # Community post-processing: rewrite user-facing upstream links to the
+    # community docs/firmware and inject the unofficial-build banner.
+    # Fails loudly if upstream's web GUI links changed at this pin.
+    run(["python3",
+         os.path.join(REPO_ROOT, "community", "scripts",
+                      "postprocess_www.py"),
+         output_path])
+
     size = os.path.getsize(output_path)
     status(
         f"Bundle copied to community-pages/webserver/www.js "
