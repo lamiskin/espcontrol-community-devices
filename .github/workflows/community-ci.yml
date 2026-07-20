@@ -26,6 +26,7 @@ jobs:
           python3 community/scripts/vendor_common.py --self-test
           python3 community/scripts/generate_manifest.py --self-test
           python3 community/scripts/check_status_consistency.py --self-test
+          python3 community/scripts/check_generated_blocks.py --self-test
       - name: Status consistency
         run: python3 community/scripts/check_status_consistency.py
 
@@ -89,6 +90,8 @@ jobs:
         run: python3 community/scripts/check_include_parity.py
       - name: Vendored common check
         run: python3 community/scripts/vendor_common.py --source .assembly --check
+      - name: Generated-block drift check
+        run: python3 community/scripts/check_generated_blocks.py
 
   compile:
     runs-on: ubuntu-latest
