@@ -156,11 +156,22 @@ jobs:
             fi
           done <<< "$DEVICES"
 
-          # Commit STATUS.md changes if any
-          if [ "$STATUS_CHANGED" = "true" ]; then
+          # Open an auto-merged PR for STATUS.md changes (main is branch-
+          # protected; direct pushes are rejected). PRs created with
+          # GITHUB_TOKEN do not trigger pull_request workflows, so we
+          # dispatch Community CI on the branch explicitly — its check runs
+          # land on the same head SHA and satisfy the required checks.
+          if [ "$STATUS_CHANGED" = "true" ] && ! git diff --quiet -- community/STATUS.md; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
+            BRANCH="nightly-status/$(date -u +%Y%m%d-%H%M%S)"
+            git checkout -b "$BRANCH"
             git add community/STATUS.md
-            git diff --cached --quiet || git commit -m "chore: nightly status update"
-            git push
+            git commit -m "chore: nightly status update"
+            git push -u origin "$BRANCH"
+            gh pr create --base main --head "$BRANCH" \
+              --title "chore: nightly status update $(date -u +%Y-%m-%d)" \
+              --body "Automated STATUS.md flips from the nightly compile run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            gh workflow run community-ci.yml --ref "$BRANCH"
+            gh pr merge "$BRANCH" --auto --merge --delete-branch
           fi
