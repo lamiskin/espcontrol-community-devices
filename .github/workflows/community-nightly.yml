@@ -16,7 +16,7 @@ jobs:
     outputs:
       devices: ${{ steps.list.outputs.devices }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref || github.ref }}
       - name: List all devices
@@ -34,7 +34,7 @@ jobs:
       matrix:
         device: ${{ fromJson(needs.determine-devices.outputs.devices) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref || github.ref }}
       - name: Free disk space
@@ -44,13 +44,13 @@ jobs:
       - name: Assemble
         run: python3 community/scripts/assemble.py --skip-web
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: '3.12'
       - name: Install ESPHome
         run: pip install esphome==$(grep ESPHOME_VERSION .assembly/.github/esphome.env | cut -d= -f2)
       - name: Cache PlatformIO
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.platformio
@@ -71,7 +71,7 @@ jobs:
     needs: [determine-devices, compile]
     if: always()
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref || github.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}

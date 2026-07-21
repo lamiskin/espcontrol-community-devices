@@ -13,7 +13,7 @@ jobs:
       current_ref: ${{ steps.check.outputs.current_ref }}
       needs_bump: ${{ steps.check.outputs.needs_bump }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check for newer upstream release
         id: check
         env:
@@ -38,7 +38,7 @@ jobs:
     if: needs.check-upstream.outputs.needs_bump == 'true'
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Bump refs
@@ -59,7 +59,7 @@ jobs:
       - name: Assemble
         run: python3 community/scripts/assemble.py --skip-web
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: '3.12'
       - name: Install ESPHome
