@@ -28,10 +28,14 @@ jobs:
           python3 community/scripts/check_status_consistency.py --self-test
           python3 community/scripts/check_generated_blocks.py --self-test
           python3 community/scripts/postprocess_www.py --self-test
+          python3 community/scripts/generate_issue_labels.py --self-test
+          python3 community/scripts/label_issue.py --self-test
       - name: Status consistency
         run: python3 community/scripts/check_status_consistency.py
       - name: Docs pages current
         run: python3 community/scripts/generate_docs.py --check
+      - name: Issue labels & bug form current
+        run: python3 community/scripts/generate_issue_labels.py --check
 
   determine-devices:
     runs-on: ubuntu-latest
