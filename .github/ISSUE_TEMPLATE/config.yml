@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: How EspControl works (upstream docs)
+    url: https://jtenniswood.github.io/espcontrol/
+    about: Cards, configuration, and Home Assistant setup are documented upstream. Only file here for problems specific to community devices.
+  - name: Community docs & installer
+    url: https://lamiskin.github.io/espcontrol-community-devices/
+    about: Device list, install and update guides, and the support policy.

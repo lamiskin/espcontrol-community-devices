@@ -1,0 +1,40 @@
+{
+  "color": "0052cc",
+  "devices": [
+    {
+      "slug": "guition-esp32-s3-jc3248w535",
+      "name": "Guition ESP32-S3-JC3248W535",
+      "label": "device:guition-esp32-s3-jc3248w535"
+    },
+    {
+      "slug": "lilygo-jc3248w535",
+      "name": "Lilygo JC3248W535",
+      "label": "device:lilygo-jc3248w535"
+    },
+    {
+      "slug": "seeed-esp32-p4-reterminal-d1001",
+      "name": "Seeed reTerminal D1001",
+      "label": "device:seeed-esp32-p4-reterminal-d1001"
+    },
+    {
+      "slug": "seeed-sensecap-indicator-d1",
+      "name": "Seeed SenseCAP Indicator D1",
+      "label": "device:seeed-sensecap-indicator-d1"
+    },
+    {
+      "slug": "tuya-t3e",
+      "name": "Tuya T3E Smart Panel",
+      "label": "device:tuya-t3e"
+    },
+    {
+      "slug": "waveshare-esp32-p4-touch-lcd-10",
+      "name": "Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1",
+      "label": "device:waveshare-esp32-p4-touch-lcd-10"
+    },
+    {
+      "slug": "waveshare-esp32-s3-touch-lcd-4",
+      "name": "Waveshare ESP32-S3-Touch-LCD-4",
+      "label": "device:waveshare-esp32-s3-touch-lcd-4"
+    }
+  ]
+}

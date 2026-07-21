@@ -1,0 +1,35 @@
+name: Community Issue Labeler
+
+# Applies the matching device:<slug> label to issues filed via the
+# bug-report form, based on the "Which device?" dropdown answer.
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve device label
+        id: resolve
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: |
+          LABEL=$(python3 community/scripts/label_issue.py)
+          echo "label=$LABEL" >> "$GITHUB_OUTPUT"
+      - name: Apply label
+        if: steps.resolve.outputs.label != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LABEL="${{ steps.resolve.outputs.label }}"
+          # Self-heal: ensure the label exists (a brand-new device's label
+          # sync may not have run yet) before applying it.
+          COLOR=$(jq -r .color community/device-labels.json)
+          gh label create "$LABEL" --color "$COLOR" --force
+          gh issue edit "${{ github.event.issue.number }}" --add-label "$LABEL"

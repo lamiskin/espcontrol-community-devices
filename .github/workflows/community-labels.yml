@@ -1,0 +1,33 @@
+name: Community Labels
+
+# Keeps a device:<slug> label in GitHub for every registered device.
+# Create/update only — never deletes, so labels on historical issues for
+# removed or graduated devices survive.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - community/device-labels.json
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync device labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COLOR=$(jq -r .color community/device-labels.json)
+          jq -c '.devices[]' community/device-labels.json | while read -r d; do
+            LABEL=$(jq -r .label <<<"$d")
+            NAME=$(jq -r .name <<<"$d")
+            gh label create "$LABEL" \
+              --description "Issues for the $NAME" \
+              --color "$COLOR" --force
+          done
