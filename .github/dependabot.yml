@@ -1,0 +1,18 @@
+version: 2
+updates:
+  # Keep pinned GitHub Actions current (security + version bumps).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    labels: ["ci"]
+
+  # Keep the docs toolchain (VitePress) current.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    labels: ["docs"]

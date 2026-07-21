@@ -1,0 +1,16 @@
+# actions/labeler@v5 config — auto-labels PRs by the files they touch.
+docs:
+  - changed-files:
+      - any-glob-to-any-file: ['docs/**']
+
+firmware:
+  - changed-files:
+      - any-glob-to-any-file: ['devices/**', 'builds/**', 'common/**']
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: ['.github/workflows/**']
+
+tooling:
+  - changed-files:
+      - any-glob-to-any-file: ['community/scripts/**']
