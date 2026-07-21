@@ -6,7 +6,7 @@
 
 substitutions:
   name: "espcontrol-jc3248w535"
-  friendly_name: "Guition ESP32-S3-JC3248W535"
+  friendly_name: "Guition ESP32-S3-JC3248W535 (Community)"
   firmware_version: "0.0.0"
   espcontrol_component_url: "file:///config"
   espcontrol_component_ref: "HEAD"
@@ -31,6 +31,6 @@ web_server:
 
 wifi:
   ap:
-    ssid: "${friendly_name}"
+    ssid: "${name}"
 
 captive_portal:

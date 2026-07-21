@@ -7,7 +7,7 @@
 
 substitutions:
   name: "espcontrol-lilygo-jc32"
-  friendly_name: "Lilygo JC3248W535"
+  friendly_name: "Lilygo JC3248W535 (Community)"
   espcontrol_component_url: "file:///config"
   espcontrol_component_ref: "HEAD"
 
@@ -23,7 +23,7 @@ wifi:
   ssid: "ESPControl"
   password: "espcontrol"
   ap:
-    ssid: "${friendly_name}"
+    ssid: "${name}"
 
 captive_portal:
 
