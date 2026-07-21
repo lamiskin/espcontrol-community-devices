@@ -9,6 +9,10 @@ updates:
       actions:
         patterns: ["*"]
     labels: ["ci"]
+    # Let a new release bake for 7 days before opening the PR, so a freshly
+    # published (possibly buggy) version isn't taken immediately.
+    cooldown:
+      default-days: 7
 
   # Keep the docs toolchain (VitePress) current.
   - package-ecosystem: npm
@@ -16,3 +20,5 @@ updates:
     schedule:
       interval: weekly
     labels: ["docs"]
+    cooldown:
+      default-days: 7
