@@ -56,6 +56,7 @@ export default defineConfig({
         items: [
           { text: 'Support Policy', link: '/reference/support-policy' },
           { text: 'Device Graduation', link: '/reference/graduation' },
+          { text: 'Download Stats', link: '/reference/download-stats' },
           {
             text: 'Device Status Table',
             link: 'https://github.com/lamiskin/espcontrol-community-devices/blob/main/community/STATUS.md',

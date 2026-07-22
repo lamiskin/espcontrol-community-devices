@@ -4,6 +4,8 @@
 [![Nightly](https://github.com/lamiskin/espcontrol-community-devices/actions/workflows/community-nightly.yml/badge.svg)](https://github.com/lamiskin/espcontrol-community-devices/actions/workflows/community-nightly.yml)
 [![Latest release](https://img.shields.io/github/v/release/lamiskin/espcontrol-community-devices?label=release)](https://github.com/lamiskin/espcontrol-community-devices/releases/latest)
 [![Docs & installer](https://img.shields.io/badge/docs-installer-0052cc)](https://lamiskin.github.io/espcontrol-community-devices/)
+[![Downloads (all releases)](https://img.shields.io/github/downloads/lamiskin/espcontrol-community-devices/total?label=downloads)](https://lamiskin.github.io/espcontrol-community-devices/reference/download-stats)
+[![Downloads (latest)](https://img.shields.io/github/downloads/lamiskin/espcontrol-community-devices/latest/total?label=downloads%40latest)](https://lamiskin.github.io/espcontrol-community-devices/reference/download-stats)
 
 **Unofficial** community-maintained device configurations for
 [EspControl](https://github.com/jtenniswood/espcontrol).

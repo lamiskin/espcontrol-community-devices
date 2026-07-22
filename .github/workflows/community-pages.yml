@@ -23,6 +23,10 @@ on:
       - community/scripts/generate_docs.py
       - docs/**
       - package.json
+  # Daily rebuild so the download-stats page stays semi-live (GitHub's
+  # download_count updates roughly hourly; a daily refresh is plenty).
+  schedule:
+    - cron: "17 6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -55,6 +59,15 @@ jobs:
 
       - name: Generate device docs pages
         run: python3 community/scripts/generate_docs.py
+
+      # Live per-device download counts from the Release-asset API. Runs each
+      # build (incl. the daily schedule) so the stats page stays semi-live.
+      # Non-fatal by design: a fetch failure writes a fallback page and exits
+      # 0 so it can never block the docs/installer deploy.
+      - name: Generate download-stats page
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 community/scripts/download_stats.py
 
       # VitePress empties community-pages/, so it must run before firmware
       # and www.js are staged into it.

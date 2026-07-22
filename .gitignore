@@ -6,3 +6,6 @@ community-pages/
 # Override global ignore to track Kiro specs
 !.kiro/
 node_modules/
+
+# Live download-stats page: regenerated on every Pages build, not committed
+docs/reference/download-stats.md
