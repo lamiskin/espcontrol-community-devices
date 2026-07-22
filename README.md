@@ -1,4 +1,4 @@
-# espcontrol-community-devices
+# Espcontrol Community Supported Devices
 
 [![CI](https://github.com/lamiskin/espcontrol-community-devices/actions/workflows/community-ci.yml/badge.svg)](https://github.com/lamiskin/espcontrol-community-devices/actions/workflows/community-ci.yml)
 [![Nightly](https://github.com/lamiskin/espcontrol-community-devices/actions/workflows/community-nightly.yml/badge.svg)](https://github.com/lamiskin/espcontrol-community-devices/actions/workflows/community-nightly.yml)
