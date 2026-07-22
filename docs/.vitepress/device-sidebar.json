@@ -1,7 +1,11 @@
 [
   {
-    "text": "Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1",
-    "link": "/screens/waveshare-esp32-p4-touch-lcd-10"
+    "text": "Guition ESP32-S3-JC3248W535",
+    "link": "/screens/guition-esp32-s3-jc3248w535"
+  },
+  {
+    "text": "Lilygo JC3248W535",
+    "link": "/screens/lilygo-jc3248w535"
   },
   {
     "text": "Seeed reTerminal D1001",
@@ -16,15 +20,11 @@
     "link": "/screens/tuya-t3e"
   },
   {
+    "text": "Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1",
+    "link": "/screens/waveshare-esp32-p4-touch-lcd-10"
+  },
+  {
     "text": "Waveshare ESP32-S3-Touch-LCD-4",
     "link": "/screens/waveshare-esp32-s3-touch-lcd-4"
-  },
-  {
-    "text": "Guition ESP32-S3-JC3248W535",
-    "link": "/screens/guition-esp32-s3-jc3248w535"
-  },
-  {
-    "text": "Lilygo JC3248W535",
-    "link": "/screens/lilygo-jc3248w535"
   }
 ]
