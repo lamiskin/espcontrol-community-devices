@@ -218,7 +218,8 @@ def device_table(devices):
     lines = [HEADER,
              "| Device | Size | Resolution | Cards | Processor | Status |",
              "|---|---|---|---|---|---|"]
-    for d in devices:
+    # Ordered by device name (the sidebar keeps the by-size ordering).
+    for d in sorted(devices, key=lambda d: d["name"].lower()):
         lines.append(
             f"| [{d['name']}](/screens/{d['slug']}) | {d['size']} | "
             f"{d['resolution']} | {d['slots']} | {d['chip']} | "
