@@ -143,3 +143,13 @@ web_server:
 update:
   - id: !extend firmware_update
     source: https://lamiskin.github.io/espcontrol-community-devices/firmware/${firmware_manifest_slug}/manifest.json
+
+# Community firmware is served from GitHub Release assets, whose download URL
+# 302-redirects to a ~950-char signed CDN URL. esp_http_client's default
+# 512-byte header buffers overflow ("HTTP_CLIENT: Out of buffer",
+# esp_http_client_open ESP_FAIL) reading that Location / re-sending the long
+# request line, stopping the OTA before it starts. Enlarge both directions.
+# Merges with the base http_request in common/device/core_infra.yaml.
+http_request:
+  buffer_size_rx: 4096
+  buffer_size_tx: 4096
