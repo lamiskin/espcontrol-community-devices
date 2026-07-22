@@ -19,6 +19,19 @@ repo can resolve those includes. They are managed exclusively by
 `community/scripts/vendor_common.py`; CI verifies they exactly match upstream at the
 pinned ref, so hand edits will fail CI. Do not modify them in device PRs.
 
+## Release-asset OTA buffers
+
+Community firmware is served from GitHub Release assets, whose download URLs
+302-redirect to a ~950-char signed CDN URL. `esp_http_client`'s default
+512-byte header buffers overflow following that redirect
+(`HTTP_CLIENT: Out of buffer`), which aborts the OTA before it starts. Every
+device's `packages.yaml` must therefore set, in its `# --- community hosting
+overrides ---` block, an `http_request:` with `buffer_size_rx` and
+`buffer_size_tx` (devices ship `4096`). That block merges with the base
+`http_request` in the vendored `common/device/core_infra.yaml` — which cannot
+be edited here, hence the per-device override. `community/scripts/check_ota_buffer.py`
+enforces this in CI.
+
 ## Policy Rules
 
 The YAML block below is machine-parsed by `community/scripts/check_policy.py`.

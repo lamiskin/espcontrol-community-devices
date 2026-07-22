@@ -33,6 +33,11 @@ VARIANT_MAP = {
     "esp32p4": "ESP32-P4",
 }
 
+# Firmware binaries are served directly from the GitHub Release assets (not
+# re-hosted on Pages) so GitHub's per-asset download_count becomes a real
+# per-device, per-version, install-vs-OTA metric.
+REPO_URL = "https://github.com/lamiskin/espcontrol-community-devices"
+
 
 def error(msg):
     print(f"[generate_manifest] ERROR: {msg}", file=sys.stderr)
@@ -102,6 +107,12 @@ def chip_family(slug, repo_root=None):
 def build_manifest(slug, version, tag, ota_md5, repo_root=None):
     name = device_name(slug, repo_root)
     family = chip_family(slug, repo_root)
+    # Absolute download URLs for this tag's release assets. Must be the stable
+    # github.com/.../releases/download/... form — it 302-redirects to a
+    # short-lived signed CDN URL that is minted per request, so it cannot be
+    # pre-resolved into the manifest. Clients (ESP Web Tools, the device's
+    # http_request OTA) follow the redirect live.
+    dl = f"{REPO_URL}/releases/download/{tag}"
     return {
         "name": name,
         "version": version,
@@ -110,15 +121,12 @@ def build_manifest(slug, version, tag, ota_md5, repo_root=None):
             {
                 "chipFamily": family,
                 "parts": [
-                    {"path": f"{slug}.factory.bin", "offset": 0},
+                    {"path": f"{dl}/{slug}.factory.bin", "offset": 0},
                 ],
                 "ota": {
-                    "path": f"{slug}.ota.bin",
+                    "path": f"{dl}/{slug}.ota.bin",
                     "md5": ota_md5,
-                    "release_url": (
-                        "https://github.com/lamiskin/"
-                        f"espcontrol-community-devices/releases/tag/{tag}"
-                    ),
+                    "release_url": f"{REPO_URL}/releases/tag/{tag}",
                 },
             }
         ],
@@ -160,6 +168,18 @@ def self_test():
         m = build_manifest("s3-via-board", "1.0", "t", "md5x", tmp)
         if m["name"] != "Board S3" or m["builds"][0]["chipFamily"] != "ESP32-S3":
             failures.append(f"board-based S3 detection failed: {m}")
+
+        # Binary paths must be absolute release-asset download URLs (not the
+        # old relative "<slug>.factory.bin"/"<slug>.ota.bin"), else every real
+        # install/OTA keeps hitting Pages and download_count stays meaningless.
+        build = m["builds"][0]
+        dl = f"{REPO_URL}/releases/download/t"
+        if build["parts"][0]["path"] != f"{dl}/s3-via-board.factory.bin":
+            failures.append(f"factory path not absolute: {build['parts'][0]['path']}")
+        if build["ota"]["path"] != f"{dl}/s3-via-board.ota.bin":
+            failures.append(f"ota path not absolute: {build['ota']['path']}")
+        if build["ota"]["release_url"] != f"{REPO_URL}/releases/tag/t":
+            failures.append(f"release_url wrong: {build['ota']['release_url']}")
 
         m = build_manifest("p4-via-variant", "1.0", "t", "md5x", tmp)
         if m["builds"][0]["chipFamily"] != "ESP32-P4":

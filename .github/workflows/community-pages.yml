@@ -3,7 +3,8 @@ name: Community Pages
 # Single owner of the GitHub Pages deployment. Rebuilds the ENTIRE site on
 # every run:
 #   - the VitePress docs site (device pages generated from STATUS + catalog)
-#   - firmware manifests + binaries: downloaded from the latest GitHub Release
+#   - firmware manifests: downloaded from the latest GitHub Release (the .bin
+#     binaries are served directly from the release assets, not re-hosted here)
 #   - webserver/www.js: built from the assembled tree at the current pin
 # Triggered after releases, on status/registry changes to main, or manually.
 # No other workflow may deploy Pages — a second deployer caused a race
@@ -82,8 +83,12 @@ jobs:
           fi
           echo "Latest release: $TAG"
           for attempt in 1 2 3; do
+            # Only the manifests are staged onto Pages now; the .bin files are
+            # served directly from the release assets (their download_count is
+            # the per-device metric). Skipping the large binaries also removes
+            # the download-and-re-host step that broke Pages during an outage.
             if gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
-                --pattern "*.bin" --pattern "*-manifest.json" \
+                --pattern "*-manifest.json" \
                 --dir release-assets; then
               break
             fi
@@ -100,8 +105,6 @@ jobs:
             slug="${base%-manifest.json}"
             mkdir -p "community-pages/firmware/$slug"
             cp "$manifest" "community-pages/firmware/$slug/manifest.json"
-            cp "release-assets/${slug}.factory.bin" "community-pages/firmware/$slug/" 2>/dev/null || echo "WARNING: no factory.bin for $slug"
-            cp "release-assets/${slug}.ota.bin" "community-pages/firmware/$slug/" 2>/dev/null || echo "WARNING: no ota.bin for $slug"
           done
           echo "Firmware content staged from $TAG:"
           find community-pages/firmware -type f | sort
