@@ -22,6 +22,10 @@ Community port contributed via [PR #823](https://github.com/jtenniswood/espcontr
 This device has been verified on real hardware — it compiles, flashes, and runs EspControl correctly.
 :::
 
+|  |  |
+|:--:|:--:|
+| ![Guition ESP32-S3-JC3248W535 running EspControl](/images/guition-esp32-s3-jc3248w535-verified-1.jpg) | ![Guition ESP32-S3-JC3248W535 running EspControl](/images/guition-esp32-s3-jc3248w535-verified-2.jpg) |
+
 ## Specifications
 
 | | |

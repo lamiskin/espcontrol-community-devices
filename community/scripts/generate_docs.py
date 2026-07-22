@@ -18,6 +18,7 @@ Usage:
 
 import argparse
 import difflib
+import glob
 import json
 import os
 import re
@@ -129,6 +130,32 @@ def short_size(size):
     return f"{match.group(1)}-inch" if match else size
 
 
+def verification_images(slug):
+    """Hardware-verification photos, by convention: drop files named
+    docs/public/images/<slug>-verified-*.{jpg,jpeg,png} and they render
+    (side by side) under the device's status callout."""
+    base = os.path.join(REPO_ROOT, "docs", "public", "images")
+    files = []
+    for ext in ("jpg", "jpeg", "png"):
+        files += glob.glob(os.path.join(base, f"{slug}-verified-*.{ext}"))
+    return sorted(os.path.basename(f) for f in files)
+
+
+def photo_block(d):
+    """Markdown table of verification photos (base-correct /images paths),
+    or '' if none. A table keeps them side by side and constrained."""
+    imgs = verification_images(d["slug"])
+    if not imgs:
+        return ""
+    n = len(imgs)
+    header = "| " + " | ".join([""] * n) + " |"
+    sep = "|" + "|".join([":--:"] * n) + "|"
+    cells = " | ".join(
+        f"![{d['name']} running EspControl]"
+        f"(/images/{f})" for f in imgs)
+    return f"\n{header}\n{sep}\n| {cells} |\n"
+
+
 def device_page(d):
     section_kind, section_title, section_body = STATUS_SECTIONS.get(
         d["status"], STATUS_SECTIONS["Untested"])
@@ -190,7 +217,7 @@ on the home screen.
 ::: {section_kind} {section_title}
 {section_body}
 :::
-
+{photo_block(d)}
 ## Specifications
 
 | | |

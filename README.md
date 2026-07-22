@@ -17,6 +17,12 @@ test — a policy this repo works with, not around).
 
 **📖 Documentation & installer: [lamiskin.github.io/espcontrol-community-devices](https://lamiskin.github.io/espcontrol-community-devices/)**
 
+The community build running on a hardware-verified Guition JC3248W535:
+
+| | |
+|:--:|:--:|
+| ![Guition JC3248W535 home screen running EspControl](docs/public/images/guition-esp32-s3-jc3248w535-verified-1.jpg) | ![Guition JC3248W535 info panel showing the Community build and version](docs/public/images/guition-esp32-s3-jc3248w535-verified-2.jpg) |
+
 ## Supported devices
 
 See [community/STATUS.md](community/STATUS.md) for the full list and per-device
