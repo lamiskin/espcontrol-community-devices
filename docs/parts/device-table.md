@@ -7,7 +7,6 @@ community/catalog-fragment.json and community/STATUS.md.
 | Device | Size | Resolution | Cards | Processor | Status |
 |---|---|---|---|---|---|
 | [Guition ESP32-S3-JC3248W535](/screens/guition-esp32-s3-jc3248w535) | 3.5 inches | 480 x 320 | 6 | ESP32-S3 | Working |
-| [Lilygo JC3248W535](/screens/lilygo-jc3248w535) | 3.2 inches | 320 x 480 | 6 | ESP32-S3 | Untested |
 | [Seeed reTerminal D1001](/screens/seeed-esp32-p4-reterminal-d1001) | 8 inches | 1280 x 800 | 20 | ESP32-P4 | Untested |
 | [Seeed SenseCAP Indicator D1](/screens/seeed-sensecap-indicator-d1) | 4 inches | 480 x 480 | 9 | ESP32-S3 | Untested |
 | [Tuya T3E Smart Panel](/screens/tuya-t3e) | 4 inches | 480 x 480 | 9 | ESP32-S3 | Untested |
