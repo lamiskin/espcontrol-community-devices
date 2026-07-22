@@ -247,9 +247,9 @@ def device_table(devices):
 
 
 def sidebar(devices):
+    # Use the same device name as the Supported Devices table (no size prefix).
     return [
-        {"text": f"{short_size(d['size'])} {d['name']}",
-         "link": f"/screens/{d['slug']}"}
+        {"text": d["name"], "link": f"/screens/{d['slug']}"}
         for d in devices
     ]
 
