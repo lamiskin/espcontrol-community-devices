@@ -247,10 +247,11 @@ def device_table(devices):
 
 
 def sidebar(devices):
-    # Use the same device name as the Supported Devices table (no size prefix).
+    # Use the same device name as the Supported Devices table (no size prefix),
+    # ordered alphabetically by name to match the table.
     return [
         {"text": d["name"], "link": f"/screens/{d['slug']}"}
-        for d in devices
+        for d in sorted(devices, key=lambda d: d["name"].lower())
     ]
 
 
