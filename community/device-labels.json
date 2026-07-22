@@ -7,11 +7,6 @@
       "label": "device:guition-esp32-s3-jc3248w535"
     },
     {
-      "slug": "lilygo-jc3248w535",
-      "name": "Lilygo JC3248W535",
-      "label": "device:lilygo-jc3248w535"
-    },
-    {
       "slug": "seeed-esp32-p4-reterminal-d1001",
       "name": "Seeed reTerminal D1001",
       "label": "device:seeed-esp32-p4-reterminal-d1001"

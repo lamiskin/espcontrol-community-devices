@@ -68,18 +68,6 @@ guition-esp32-s3-jc3248w535:
     - components/**
     - src/**
 
-lilygo-jc3248w535:
-  allowed:
-    - devices/lilygo-jc3248w535/**
-    - builds/lilygo-jc3248w535*.yaml
-  required:
-    - devices/lilygo-jc3248w535/esphome.yaml
-    - devices/lilygo-jc3248w535/packages.yaml
-    - devices/lilygo-jc3248w535/device/device.yaml
-  forbidden:
-    - components/**
-    - src/**
-
 seeed-esp32-p4-reterminal-d1001:
   allowed:
     - devices/seeed-esp32-p4-reterminal-d1001/**

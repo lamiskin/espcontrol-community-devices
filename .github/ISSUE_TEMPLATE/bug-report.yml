@@ -17,7 +17,6 @@ body:
       description: The community device this issue is about.
       options:
         - Guition ESP32-S3-JC3248W535
-        - Lilygo JC3248W535
         - Seeed reTerminal D1001
         - Seeed SenseCAP Indicator D1
         - Tuya T3E Smart Panel
