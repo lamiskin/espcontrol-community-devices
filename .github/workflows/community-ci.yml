@@ -25,6 +25,7 @@ jobs:
           python3 community/scripts/check_pin_consistency.py --self-test
           python3 community/scripts/vendor_common.py --self-test
           python3 community/scripts/generate_manifest.py --self-test
+          python3 community/scripts/check_ota_buffer.py --self-test
           python3 community/scripts/check_status_consistency.py --self-test
           python3 community/scripts/check_generated_blocks.py --self-test
           python3 community/scripts/postprocess_www.py --self-test
@@ -32,6 +33,8 @@ jobs:
           python3 community/scripts/label_issue.py --self-test
       - name: Status consistency
         run: python3 community/scripts/check_status_consistency.py
+      - name: OTA buffer override present
+        run: python3 community/scripts/check_ota_buffer.py
       - name: Docs pages current
         run: python3 community/scripts/generate_docs.py --check
       - name: Issue labels & bug form current
