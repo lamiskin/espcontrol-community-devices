@@ -16,7 +16,9 @@
           "docsPath": "/screens/jc3248w535",
           "screenSize": "3.5 inches",
           "resolution": "480 x 320",
-          "orientation": "Landscape"
+          "orientation": "Landscape",
+          "buy": "https://www.aliexpress.com/item/1005007566315926.html",
+          "case": "https://www.thingiverse.com/thing:7127557"
         },
         "layout": {
           "cols": 3,

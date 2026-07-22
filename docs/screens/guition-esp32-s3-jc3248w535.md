@@ -32,6 +32,15 @@ This device has been verified on real hardware — it compiles, flashes, and run
 | **Processor** | ESP32-S3 |
 | **Card grid** | 3 × 2 (6 cards) |
 
+## Where to buy
+
+Available on [AliExpress](https://www.aliexpress.com/item/1005007566315926.html).
+
+## 3D printed case
+
+A community-made 3D-printable case is available on
+[Thingiverse](https://www.thingiverse.com/thing:7127557).
+
 ## Install
 
 Connect the display to your computer with a **USB-C data cable**, then click

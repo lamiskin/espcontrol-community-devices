@@ -117,6 +117,8 @@ def load_devices():
             "status": row.get("status", "Untested"),
             "owner": row.get("owner", ""),
             "source": row.get("source", ""),
+            "buy": public.get("buy", ""),
+            "case": public.get("case", ""),
         })
     devices.sort(key=size_sort_key)
     return devices
@@ -155,6 +157,23 @@ status note above.
         credit = (f"\nCommunity port contributed via {d['source']}"
                   + (f" by {d['owner']}" if d["owner"] else "") + ".\n")
 
+    buy = ""
+    if d["buy"]:
+        buy = f"""## Where to buy
+
+Available on [AliExpress]({d['buy']}).
+
+"""
+
+    case = ""
+    if d["case"]:
+        case = f"""## 3D printed case
+
+A community-made 3D-printable case is available on
+[Thingiverse]({d['case']}).
+
+"""
+
     return f"""---
 title: {short_size(d['size'])} {d['name']}
 description: "Community EspControl build for the {d['name']} — {d['size']} {d['resolution']} {d['orientation'].lower()} touchscreen with {d['slots']} cards, powered by {d['chip']}."
@@ -182,7 +201,7 @@ on the home screen.
 | **Processor** | {d['chip']} |
 | **Card grid** | {d['grid']} ({d['slots']} cards) |
 
-{install}
+{buy}{case}{install}
 ## ESPHome Manual Setup
 
 If you use ESPHome and prefer to compile firmware yourself:
