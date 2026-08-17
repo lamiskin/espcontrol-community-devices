@@ -143,6 +143,21 @@ def copy_overlay(slugs):
     status("Overlay copy complete.")
 
 
+def find_catalog_path():
+    """
+    Locate upstream's device catalog file. Moved from devices/catalog.json
+    to product/v2/device_catalog.json as of v2.8.0; older pins (<= v2.7.x)
+    still use the legacy path, so both are checked.
+    """
+    new_path = os.path.join(ASSEMBLY_DIR, "product", "v2", "device_catalog.json")
+    if os.path.isfile(new_path):
+        return new_path
+    legacy_path = os.path.join(ASSEMBLY_DIR, "devices", "catalog.json")
+    if os.path.isfile(legacy_path):
+        return legacy_path
+    error(f"Upstream device catalog not found at {new_path} or {legacy_path}")
+
+
 def merge_catalog(slugs):
     """
     Merge community catalog-fragment.json into upstream's device catalog.
@@ -173,9 +188,7 @@ def merge_catalog(slugs):
         status("Catalog fragment is empty, skipping catalog merge.")
         return
 
-    catalog_path = os.path.join(ASSEMBLY_DIR, "product", "v2", "device_catalog.json")
-    if not os.path.isfile(catalog_path):
-        error(f"Upstream device_catalog.json not found: {catalog_path}")
+    catalog_path = find_catalog_path()
 
     status(f"Merging {len(fragment_devices)} device(s) into device_catalog.json ...")
     catalog = json.loads(open(catalog_path).read())
@@ -523,9 +536,7 @@ def run_self_test():
     clone_upstream(pin)
 
     # Step 2: Verify the clone has expected structure
-    catalog_path = os.path.join(ASSEMBLY_DIR, "product", "v2", "device_catalog.json")
-    if not os.path.isfile(catalog_path):
-        error("Self-test failed: device_catalog.json not found after clone")
+    catalog_path = find_catalog_path()
 
     catalog = json.loads(open(catalog_path).read())
     if "devices" not in catalog:
