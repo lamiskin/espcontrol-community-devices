@@ -5,7 +5,7 @@ Assemble the full espcontrol tree with community device overlays.
 Builds a throwaway working tree at .assembly/ by:
 1. Cloning upstream espcontrol at the pinned ref
 2. Copying community device overlays into the tree
-3. Merging the community catalog fragment into upstream's catalog.json
+3. Merging the community catalog fragment into upstream's device catalog
 4. Running upstream generators (manifest, slots, build devices)
 5. Running upstream validators (manifest, matrix, profiles)
 6. Building the web bundle (npm ci + build.py www)
@@ -145,9 +145,10 @@ def copy_overlay(slugs):
 
 def merge_catalog(slugs):
     """
-    Merge community catalog-fragment.json into .assembly/devices/catalog.json.
+    Merge community catalog-fragment.json into upstream's device catalog.
 
-    Upstream catalog.json structure (discovered from v2.6.3):
+    Upstream catalog structure (discovered from v2.6.3, moved from
+    devices/catalog.json to product/v2/device_catalog.json as of v2.8.0):
     {
       "settings": { ... },
       "profiles": { ... },
@@ -172,11 +173,11 @@ def merge_catalog(slugs):
         status("Catalog fragment is empty, skipping catalog merge.")
         return
 
-    catalog_path = os.path.join(ASSEMBLY_DIR, "devices", "catalog.json")
+    catalog_path = os.path.join(ASSEMBLY_DIR, "product", "v2", "device_catalog.json")
     if not os.path.isfile(catalog_path):
-        error(f"Upstream catalog.json not found: {catalog_path}")
+        error(f"Upstream device_catalog.json not found: {catalog_path}")
 
-    status(f"Merging {len(fragment_devices)} device(s) into catalog.json ...")
+    status(f"Merging {len(fragment_devices)} device(s) into device_catalog.json ...")
     catalog = json.loads(open(catalog_path).read())
 
     # The upstream devices collection is catalog["devices"] (an object/dict)
@@ -195,6 +196,52 @@ def merge_catalog(slugs):
         f.write("\n")
 
     status("Catalog merge complete.")
+
+    register_product_model_v2_pilots(fragment_devices)
+
+
+def register_product_model_v2_pilots(fragment_devices):
+    """
+    Register each community device as a Product Model v2 "devices" pilot
+    source.
+
+    As of v2.8.0, upstream's generator/validator scripts load
+    product/model_v2.json and, at its "generated-source" stage, require
+    every product/v2/device_catalog.json entry to also exist as a
+    standalone file under product/v2/devices/<slug>.json and be listed in
+    model_v2.json's pilots.devices map — otherwise they raise
+    ProductModelV2Error and refuse to run. Older upstream pins have no
+    product/model_v2.json, so this is a no-op for them.
+    """
+    model_path = os.path.join(ASSEMBLY_DIR, "product", "model_v2.json")
+    if not os.path.isfile(model_path):
+        return
+
+    model = json.loads(open(model_path).read())
+    pilots = model.get("pilots")
+    if not isinstance(pilots, dict) or "devices" not in pilots:
+        return
+
+    pilot_devices = pilots["devices"]
+    devices_dir = os.path.join(ASSEMBLY_DIR, "product", "v2", "devices")
+    os.makedirs(devices_dir, exist_ok=True)
+
+    status(f"Registering {len(fragment_devices)} device(s) as Product Model v2 pilot sources ...")
+    for slug, entry in fragment_devices.items():
+        if slug in pilot_devices:
+            error(f"Pilot collision: slug '{slug}' already exists in model_v2.json pilots.devices")
+        pilot_path = os.path.join(devices_dir, f"{slug}.json")
+        with open(pilot_path, "w") as f:
+            json.dump(entry, f, indent=2)
+            f.write("\n")
+        pilot_devices[slug] = f"product/v2/devices/{slug}.json"
+        status(f"  Registered pilot source for '{slug}'")
+
+    with open(model_path, "w") as f:
+        json.dump(model, f, indent=2)
+        f.write("\n")
+
+    status("Product Model v2 pilot registration complete.")
 
 
 def extract_generated_blocks(content):
@@ -476,9 +523,9 @@ def run_self_test():
     clone_upstream(pin)
 
     # Step 2: Verify the clone has expected structure
-    catalog_path = os.path.join(ASSEMBLY_DIR, "devices", "catalog.json")
+    catalog_path = os.path.join(ASSEMBLY_DIR, "product", "v2", "device_catalog.json")
     if not os.path.isfile(catalog_path):
-        error("Self-test failed: catalog.json not found after clone")
+        error("Self-test failed: device_catalog.json not found after clone")
 
     catalog = json.loads(open(catalog_path).read())
     if "devices" not in catalog:
