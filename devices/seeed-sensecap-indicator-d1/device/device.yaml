@@ -8,7 +8,7 @@
 
 substitutions:
   espcontrol_component_url: "https://github.com/jtenniswood/espcontrol"
-  espcontrol_component_ref: "v2.7.1"
+  espcontrol_component_ref: "v2.8.0"
 
 # ---------------------------------------------------------------------------
 # ESP32-S3 platform (8MB flash, ESP-IDF framework)
