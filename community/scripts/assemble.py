@@ -445,10 +445,19 @@ def build_web_bundle(skip=False):
     # build.py www produces docs/public/webserver/www.js
     run(["python3", "scripts/build.py", "www"], cwd=ASSEMBLY_DIR)
 
-    # Locate the bundle — primary path is docs/public/webserver/www.js
-    bundle_path = os.path.join(
-        ASSEMBLY_DIR, "docs", "public", "webserver", "www.js"
-    )
+    # Locate the bundle. As of v2.8.0, docs/public/webserver/www.js is a
+    # small "bridge" loader that fetches a device/version-matched bundle at
+    # runtime via web-assets.json — it has no GUI content of its own and
+    # depends on endpoints a live ESPHome device serves, which community's
+    # statically-hosted community-pages/webserver/www.js can't provide.
+    # docs/public/webserver/embedded/www.js is the self-contained successor
+    # (same role the old monolithic www.js used to play), so it's preferred
+    # when present; older pins without the split fall back to the flat path.
+    webserver_dir = os.path.join(ASSEMBLY_DIR, "docs", "public", "webserver")
+    bundle_path = os.path.join(webserver_dir, "embedded", "www.js")
+
+    if not os.path.isfile(bundle_path):
+        bundle_path = os.path.join(webserver_dir, "www.js")
 
     if not os.path.isfile(bundle_path):
         # Fallback: search for www.js under docs/
