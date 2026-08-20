@@ -50,10 +50,15 @@ jobs:
           df -h
       - name: Assemble
         # Clones upstream; clone_upstream() wipes .assembly/ first, so a
-        # retry after a half-finished clone starts clean.
+        # retry after a half-finished clone starts clean. Builds the real
+        # web bundle (no --skip-web): this is the only place besides an
+        # actual release tag that runs postprocess_www.py and produces
+        # community-pages/webserver/www.js, which the factory compile step
+        # below needs. Catching a bundle-path or URL-rewrite break here
+        # costs a nightly red X instead of a failed release.
         run: |
           source .github/scripts/retry.sh
-          retry python3 community/scripts/assemble.py --skip-web
+          retry python3 community/scripts/assemble.py
       - name: Setup Python
         uses: actions/setup-python@v7.0.0
         with:
@@ -78,13 +83,25 @@ jobs:
         # config fails in seconds during validation, and a re-attempt after a
         # partial build reuses PlatformIO's cache. Fewer attempts than the
         # default, since the slow case is a real compile.
+        #
+        # Compiles both the OTA build and the factory build. The factory
+        # build embeds community-pages/webserver/www.js into the firmware
+        # binary (js_include) and is only ever compiled otherwise by the
+        # release workflow — a device whose bundle no longer fits its flash
+        # partitions (as happened for seeed-sensecap-indicator-d1 at v2.8.0)
+        # would not fail here without this, only during an actual release.
         run: |
           source .github/scripts/retry.sh
           cd .assembly
           # Fix external_components path for non-Docker CI (no /config mount)
           ASSEMBLY_ABS="$(pwd)"
-          sed -i "s|file:///config|file://${ASSEMBLY_ABS}|g" "builds/${{ matrix.device }}.yaml"
+          sed -i "s|file:///config|file://${ASSEMBLY_ABS}|g" "builds/${{ matrix.device }}.yaml" "builds/${{ matrix.device }}.factory.yaml"
           RETRY_ATTEMPTS=3 retry esphome compile builds/${{ matrix.device }}.yaml
+          # Free the first build's output before the second — this job now
+          # compiles two full firmware images back to back (release.yml only
+          # ever builds one per device), and runner disk is finite.
+          rm -rf builds/.esphome/build
+          RETRY_ATTEMPTS=3 retry esphome compile builds/${{ matrix.device }}.factory.yaml
 
   # Validate the supported install path against the *published* repo URL, so
   # nightly also catches broken remote wiring / GitHub-side resolution that
