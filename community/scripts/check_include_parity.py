@@ -27,7 +27,7 @@ PIN_FILE = os.path.join(COMMUNITY_DIR, "upstream-ref.txt")
 # Upstream reference clone (read-only)
 UPSTREAM_CLONE = os.environ.get(
     "UPSTREAM_CLONE",
-    "/Users/lachlan/Kiro/espcontrol"
+    os.path.join(REPO_ROOT, ".assembly")
 )
 
 # Reference devices per chip family
