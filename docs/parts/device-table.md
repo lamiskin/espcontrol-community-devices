@@ -12,3 +12,4 @@ community/catalog-fragment.json and community/STATUS.md.
 | [Tuya T3E Smart Panel](/screens/tuya-t3e) | 4 inches | 480 x 480 | 9 | ESP32-S3 | Untested |
 | [Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1](/screens/waveshare-esp32-p4-touch-lcd-10) | 10.1 inches | 1280 x 800 | 20 | ESP32-P4 | Untested |
 | [Waveshare ESP32-S3-Touch-LCD-4](/screens/waveshare-esp32-s3-touch-lcd-4) | 4 inches | 480 x 480 | 9 | ESP32-S3 | Untested |
+| [Wireless-Tag WT32-SC01 Plus](/screens/wireless-tag-wt32-sc01-plus) | 3.5 inches | 480 x 320 | 6 | ESP32-S3 | Untested |

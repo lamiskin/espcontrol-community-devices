@@ -30,6 +30,11 @@
       "slug": "waveshare-esp32-s3-touch-lcd-4",
       "name": "Waveshare ESP32-S3-Touch-LCD-4",
       "label": "device:waveshare-esp32-s3-touch-lcd-4"
+    },
+    {
+      "slug": "wireless-tag-wt32-sc01-plus",
+      "name": "Wireless-Tag WT32-SC01 Plus",
+      "label": "device:wireless-tag-wt32-sc01-plus"
     }
   ]
 }

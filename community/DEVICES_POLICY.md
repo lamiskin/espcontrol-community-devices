@@ -127,5 +127,18 @@ waveshare-esp32-p4-touch-lcd-10:
   forbidden:
     - components/**
     - src/**
+
+wireless-tag-wt32-sc01-plus:
+  allowed:
+    - devices/wireless-tag-wt32-sc01-plus/**
+    - builds/wireless-tag-wt32-sc01-plus*.yaml
+  required:
+    - devices/wireless-tag-wt32-sc01-plus/esphome.yaml
+    - devices/wireless-tag-wt32-sc01-plus/packages.yaml
+    - devices/wireless-tag-wt32-sc01-plus/device/device.yaml
+  forbidden:
+    - components/**
+    - src/**
+
 # --- end policy ---
 ```

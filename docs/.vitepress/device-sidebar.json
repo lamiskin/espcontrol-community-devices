@@ -22,5 +22,9 @@
   {
     "text": "Waveshare ESP32-S3-Touch-LCD-4",
     "link": "/screens/waveshare-esp32-s3-touch-lcd-4"
+  },
+  {
+    "text": "Wireless-Tag WT32-SC01 Plus",
+    "link": "/screens/wireless-tag-wt32-sc01-plus"
   }
 ]
