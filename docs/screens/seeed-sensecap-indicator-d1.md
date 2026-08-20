@@ -48,6 +48,10 @@ the button below (Chrome or Edge on desktop).
 For WiFi setup and Home Assistant pairing the flow is identical to official
 EspControl — follow the [Install guide](/getting-started/install).
 
+::: info First boot needs WiFi
+This panel has 8MB flash (the other community devices have 16MB), too little to fit the web UI alongside the firmware. The panel screen and controls work immediately, but the on-device web GUI won't appear until the device connects to WiFi and downloads it — on other community devices it's available immediately after flashing.
+:::
+
 ## ESPHome Manual Setup
 
 If you use ESPHome and prefer to compile firmware yourself:

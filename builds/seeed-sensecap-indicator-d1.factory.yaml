@@ -1,7 +1,13 @@
 # =============================================================================
 # FACTORY BUILD - Seeed SenseCAP Indicator D1 (4" square)
 # =============================================================================
-# Factory image: www.js bundled inline for first-boot web UI access.
+# This device has 8MB flash (the other 5 community devices have 16MB), and
+# upstream's shared www.js bundle (~2.5MB as of v2.8.0, same app code for
+# every device) no longer fits alongside firmware in its OTA partitions when
+# embedded (js_include). Falls back to fetching www.js at runtime (js_url),
+# same as this device's non-factory build already does — so the panel GUI
+# needs network access on first boot instead of working immediately. See
+# community/STATUS.md for the device-facing note.
 # =============================================================================
 
 substitutions:
@@ -26,8 +32,7 @@ dashboard_import:
 web_server:
   port: 80
   version: 3
-  js_url: ""
-  js_include: "../community-pages/webserver/www.js"
+  js_url: "https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js"
 
 wifi:
   ap:
