@@ -55,6 +55,7 @@ _global:
     - .github/**
     - LICENSE
     - NOTICE
+    - .kiro/**
 
 guition-esp32-s3-jc3248w535:
   allowed:
