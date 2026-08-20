@@ -13,3 +13,6 @@ docs/reference/download-stats.md
 # Python bytecode from running the community/scripts helpers
 __pycache__/
 *.pyc
+
+# Personal Claude Code permission overrides
+.claude/settings.local.json
