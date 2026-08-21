@@ -492,9 +492,24 @@ def build_web_bundle(skip=False):
                       "postprocess_www.py"),
          output_path])
 
+    # Factory builds embed the bundle with
+    # `js_include: ../community-pages/webserver/www.js`, resolved relative to
+    # .assembly/builds/ — so they need it inside the assembly tree, not just at
+    # the repo root. Copy the post-processed bundle across here rather than
+    # leaving each workflow to remember: community-release.yml did, the nightly
+    # factory step added in #79 did not, and every device that embeds the
+    # bundle failed config until this landed.
+    assembly_output_dir = os.path.join(
+        ASSEMBLY_DIR, "community-pages", "webserver"
+    )
+    os.makedirs(assembly_output_dir, exist_ok=True)
+    shutil.copy2(output_path,
+                 os.path.join(assembly_output_dir, "www.js"))
+
     size = os.path.getsize(output_path)
     status(
         f"Bundle copied to community-pages/webserver/www.js "
+        f"and .assembly/community-pages/webserver/www.js "
         f"({size} bytes)"
     )
 
