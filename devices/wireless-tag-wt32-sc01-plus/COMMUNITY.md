@@ -16,9 +16,16 @@
 
 The hardware definition comes from @jonnybergdahl's upstream PR #194, which the
 upstream maintainer declined under the own-the-hardware support policy ("by all
-means run it as a fork"). The PR branch was deleted before it could be revived,
-so the hardware layers were recovered from the patch set still attached to the
-PR on GitHub.
+means run it as a fork"). The fork that hosted the PR branch,
+`jonnybergdahl/espcontrol`, has since been deleted — but GitHub keeps a PR's
+head on the *target* repo (`refs/pull/194/head`), so the diff outlived the fork
+and the hardware layers were recovered from the patch set still attached to the
+PR. The author's standalone `jonnybergdahl/jb_espcontrol`, carrying his May-era
+firmware release, is still online as a second reference.
+
+That retention is the difference between this port and a parked one: upstream
+PR #293 (WaveShare Smart 86 Box) had its head rewritten before its fork was
+deleted, leaving the retained ref pointing at nothing recoverable.
 
 Because the PR predates upstream's display-lifecycle rework and the v2.7.1 and
 v2.8.0 breaking changes, the port is built the other way round from a plain
