@@ -30,13 +30,13 @@ The community build running on a hardware-verified Guition JC3248W535:
 
 | Device | Size | Resolution | Cards | Processor | Status |
 |---|---|---|---|---|---|
-| [Guition ESP32-S3-JC3248W535](https://lamiskin.github.io/espcontrol-community-devices/screens/guition-esp32-s3-jc3248w535) | 3.5 inches | 480 x 320 | 6 | ESP32-S3 | Working |
-| [Seeed reTerminal D1001](https://lamiskin.github.io/espcontrol-community-devices/screens/seeed-esp32-p4-reterminal-d1001) | 8 inches | 1280 x 800 | 20 | ESP32-P4 | Untested |
+| [Guition ESP32-S3-JC3248W535](https://lamiskin.github.io/espcontrol-community-devices/screens/guition-esp32-s3-jc3248w535) | 3.5 inches | 480 x 320 | 6 | ESP32-S3 | Broken |
+| [Seeed reTerminal D1001](https://lamiskin.github.io/espcontrol-community-devices/screens/seeed-esp32-p4-reterminal-d1001) | 8 inches | 1280 x 800 | 20 | ESP32-P4 | Broken |
 | [Seeed SenseCAP Indicator D1](https://lamiskin.github.io/espcontrol-community-devices/screens/seeed-sensecap-indicator-d1) | 4 inches | 480 x 480 | 9 | ESP32-S3 | Working |
-| [Tuya T3E Smart Panel](https://lamiskin.github.io/espcontrol-community-devices/screens/tuya-t3e) | 4 inches | 480 x 480 | 9 | ESP32-S3 | Untested |
-| [Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1](https://lamiskin.github.io/espcontrol-community-devices/screens/waveshare-esp32-p4-touch-lcd-10) | 10.1 inches | 1280 x 800 | 20 | ESP32-P4 | Untested |
-| [Waveshare ESP32-S3-Touch-LCD-4](https://lamiskin.github.io/espcontrol-community-devices/screens/waveshare-esp32-s3-touch-lcd-4) | 4 inches | 480 x 480 | 9 | ESP32-S3 | Untested |
-| [Wireless-Tag WT32-SC01 Plus](https://lamiskin.github.io/espcontrol-community-devices/screens/wireless-tag-wt32-sc01-plus) | 3.5 inches | 480 x 320 | 6 | ESP32-S3 | Untested |
+| [Tuya T3E Smart Panel](https://lamiskin.github.io/espcontrol-community-devices/screens/tuya-t3e) | 4 inches | 480 x 480 | 9 | ESP32-S3 | Broken |
+| [Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1](https://lamiskin.github.io/espcontrol-community-devices/screens/waveshare-esp32-p4-touch-lcd-10) | 10.1 inches | 1280 x 800 | 20 | ESP32-P4 | Broken |
+| [Waveshare ESP32-S3-Touch-LCD-4](https://lamiskin.github.io/espcontrol-community-devices/screens/waveshare-esp32-s3-touch-lcd-4) | 4 inches | 480 x 480 | 9 | ESP32-S3 | Broken |
+| [Wireless-Tag WT32-SC01 Plus](https://lamiskin.github.io/espcontrol-community-devices/screens/wireless-tag-wt32-sc01-plus) | 3.5 inches | 480 x 320 | 6 | ESP32-S3 | Broken |
 
 <!-- END GENERATED DEVICE LIST -->
 
