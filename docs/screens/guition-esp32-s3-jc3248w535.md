@@ -18,10 +18,8 @@ on the home screen.
 
 Community port contributed via [PR #823](https://github.com/jtenniswood/espcontrol/pull/823) by @lamiskin.
 
-::: tip Hardware-verified
-This device has been verified on real hardware — it compiles, flashes, and runs EspControl correctly.
-
-Confirmed by @lamiskin at `community-v0.0.6-upstream.v2.6.3`.
+::: danger Currently broken
+This device does not compile against the current pinned upstream version and has been pulled from the installer. Already-flashed panels keep working but will not receive updates until it is fixed.
 :::
 
 |  |  |
@@ -49,13 +47,8 @@ A community-made 3D-printable case is available on
 
 ## Install
 
-Connect the display to your computer with a **USB-C data cable**, then click
-the button below (Chrome or Edge on desktop).
-
-<EspInstallButton slug="guition-esp32-s3-jc3248w535" />
-
-For WiFi setup and Home Assistant pairing the flow is identical to official
-EspControl — follow the [Install guide](/getting-started/install).
+Installation is unavailable while this device is not building — see the
+status note above.
 
 ## ESPHome Manual Setup
 

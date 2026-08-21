@@ -18,8 +18,8 @@ on the home screen.
 
 Community port contributed via [Issue #838](https://github.com/jtenniswood/espcontrol/issues/838) by @sbuchbauer.
 
-::: warning Not yet hardware-verified
-This device compiles and is flashable, but nobody has confirmed it on real hardware yet. It may not work. If you own this panel, [verifying it](/reference/support-policy#hardware-verification) is the most valuable contribution you can make.
+::: danger Currently broken
+This device does not compile against the current pinned upstream version and has been pulled from the installer. Already-flashed panels keep working but will not receive updates until it is fixed.
 :::
 
 ## Specifications
@@ -34,13 +34,8 @@ This device compiles and is flashable, but nobody has confirmed it on real hardw
 
 ## Install
 
-Connect the display to your computer with a **USB-C data cable**, then click
-the button below (Chrome or Edge on desktop).
-
-<EspInstallButton slug="waveshare-esp32-p4-touch-lcd-10" />
-
-For WiFi setup and Home Assistant pairing the flow is identical to official
-EspControl — follow the [Install guide](/getting-started/install).
+Installation is unavailable while this device is not building — see the
+status note above.
 
 ## ESPHome Manual Setup
 
