@@ -3,11 +3,11 @@
   "files": {
     "common/assets/climate_card_icon_glyphs.yaml": "fd6ec17a38110a92fb70e7ad299196265aea416bb7f161d72a0e447543d0d151",
     "common/assets/hebrew_glyphs.yaml": "1819b779a2166a244ec76ff7b683925b5eccb69515c261d20d095601812f931d",
-    "common/assets/icon_glyphs.yaml": "3cf7c8c281e45b1ad925943378b9c4cfd98f929e675d6db2c777024050879979",
+    "common/assets/icon_glyphs.yaml": "c4d4720b4b66c41e11c22f3c1d6301d8bd2987baea7559fcce920007858cc2df",
     "common/assets/network_status_glyphs.yaml": "815a093500feb593a0366908ea6ab641901ce5b6fa0908a19ba7a048baa162f2",
     "common/assets/text_glyphs.yaml": "ca38e257350d54b1b6d1c7c7e39656b1fea51de40de6a8daefc95b4801360b60",
     "common/device/button_widget.yaml": "c6b833523534509675a1ec8f232ffc49b15c6fb2a00b89d3b98c07ffed74b948",
-    "common/device/core_infra.yaml": "27996447496967616896b5de5bae1c96e39109950c6b6f4703032bf18a4c9a31"
+    "common/device/core_infra.yaml": "e76f612759ceaa128f425f63234e05c2ea680681b1cb469cb6b61a02e1f4db92"
   },
-  "pin": "v2.8.1"
+  "pin": "v2.8.4"
 }
