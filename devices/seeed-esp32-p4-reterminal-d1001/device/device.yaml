@@ -69,17 +69,6 @@ external_components:
       ref: ${espcontrol_component_ref}
       path: components
     components: [espcontrol, web_server_idf, artwork_image]
-  # gsl3670 (GSL3670 capacitive touch driver, ESPHome-style license, same
-  # in-tree pattern as upstream's gsl3680) only exists on unmerged upstream
-  # PR #885. Pin its head SHA from the author's fork until upstream merges
-  # and tags a release containing it, then fold into the source above.
-  - source:
-      type: git
-      url: https://github.com/zacs/espcontrol
-      ref: 78e8ba5d8ea4e0fcc4ddf877a9d4fdb809fb85da
-      path: components
-    components: [gsl3670]
-    refresh: 1s
 
 espcontrol:
   id: espcontrol_app
@@ -326,14 +315,27 @@ binary_sensor:
         pulldown: true
 
 # ---------------------------------------------------------------------------
-# Touchscreen (GSL3670 capacitive, wakes screensaver on touch). Touch reset is
-# on expander pin 12 but the BSP leaves it unused, so no reset_pin is wired.
+# Touchscreen (GSL3670 capacitive, wakes screensaver on touch). Uses
+# ESPHome's native gsl3670 touchscreen platform (merged upstream in
+# esphome/esphome#16285) rather than an external component, so there's no
+# more dependency on any fork branch surviving. The firmware blob comes from
+# the driver's companion repo, esphome-libs/gsl3670-firmware, verified by
+# SHA-256 at compile time. Touch reset is on expander pin 12 but the BSP
+# leaves it unused, so no reset_pin is wired here either; the driver's
+# reset_pin handling is null-safe. Calibration is left unset so the driver
+# falls back to the display's native 800x1280 range, matching prior behavior
+# — the built-in SEEED-RETERMINAL-D1001 model's defaults aren't used because
+# its reset_pin default is a raw GPIO14, which collides with this device's
+# backlight PWM output on GPIO14.
 # ---------------------------------------------------------------------------
 touchscreen:
   - platform: gsl3670
     id: my_touchscreen
     i2c_id: bus_touch
     interrupt_pin: GPIO16
+    firmware:
+      url: "https://github.com/esphome-libs/gsl3670-firmware/releases/download/v1.0.0/seeed-d1001-fw.bin"
+      sha256: "2e50501ad83656fb6fa3d92591f9f31add4d442c8e8a79f29f5c4d335bd127a4"
     transform:
       swap_xy: false
       mirror_x: true
