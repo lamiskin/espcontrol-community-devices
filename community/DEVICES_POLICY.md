@@ -38,18 +38,25 @@ A tag containing `-preview` (e.g. `community-v0.6.0-upstream.v2.8.4-preview.1`)
 publishes as a GitHub **prerelease**. This exists to hand a device's porter a
 flashable binary before the device is public.
 
-It is safe because the two Pages lookups differ:
+A preview is **choosable but never automatic**, and that split is deliberate:
 
-- `gh release view` returns the latest **stable** release only, so a preview is
-  never staged as the current firmware and no installed device is offered it as
-  an update.
-- `gh release list` **does** include prereleases, so
-  `community-pages.yml` passes `--exclude-pre-releases` when building the
-  rollback list. Without that filter a preview would appear as a rollback target
-  on every device.
+- **`manifest.json`** — the only file the device's `update` entity polls — is
+  staged from `gh release view`, which returns the latest **stable** release.
+  A preview is therefore never advertised as an available update, and nothing
+  auto-upgrades to one.
+- **`versions.json`** — the "Previous firmware" picker — **does** list
+  previews. The panel filters out the advertised latest and the currently
+  installed version (`previousFirmwareInfos` in upstream's
+  `firmware_update_state.ts`) and installs an entry only when someone presses
+  the install button. So a preview shows up as something a person can
+  deliberately choose on any device, which is the point.
 
-A preview's assets are downloadable from its GitHub Release page. The browser
-installer still serves the latest stable release, so a device whose only build
+Because a preview occupies one of the picker's slots, the rollback query fetches
+one extra release (`--limit 6 | head -5`) to keep the same number of genuine
+older versions.
+
+A preview's assets are also downloadable from its GitHub Release page. The
+browser installer serves the latest stable release, so a device whose only build
 is a preview has no working Install button — the porter flashes the `.bin`
 directly, or builds from `devices/<slug>/esphome.yaml`.
 

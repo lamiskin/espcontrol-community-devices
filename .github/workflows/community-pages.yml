@@ -141,15 +141,18 @@ jobs:
           # Latest first, then the four releases before it. Order comes from
           # the API, never from parsing our version strings.
           TAGS="$TAG"
-          # --exclude-pre-releases matters: `gh release view` above returns
-          # the latest STABLE release, but `gh release list` includes
-          # prereleases. Without this filter a -preview build (cut to hand a
-          # porter a binary before a device is public) lands in every device's
-          # versions.json and is offered as a rollback target on panels that
-          # should never see it.
-          for prev in $(retry gh release list --repo "$GITHUB_REPOSITORY" --limit 5 \
-              --exclude-pre-releases \
-              --json tagName --jq '.[].tagName' | grep -vxF "$TAG" | head -4); do
+          # Prereleases are deliberately KEPT here. `gh release view` above
+          # returns the latest stable, so manifest.json — the only thing the
+          # update entity polls — never advertises a -preview build and no
+          # panel auto-upgrades to one. versions.json is the manual picker:
+          # the UI filters out the advertised latest and the installed version
+          # (previousFirmwareInfos in firmware_update_state.ts) and installs an
+          # entry only when someone presses the install button. So listing a
+          # preview here makes it choosable, never automatic.
+          # --limit 6 | head -5 rather than 5 | head -4: a preview occupies a
+          # slot, and this keeps the same number of genuine older releases.
+          for prev in $(retry gh release list --repo "$GITHUB_REPOSITORY" --limit 6 \
+              --json tagName --jq '.[].tagName' | grep -vxF "$TAG" | head -5); do
             # Best effort: a hiccup fetching an OLD release just shortens the
             # rollback list, and the next deploy rebuilds it. Only the latest
             # release is load-bearing, and its download above is already fatal.
