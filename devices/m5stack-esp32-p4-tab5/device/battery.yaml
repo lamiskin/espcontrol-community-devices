@@ -1,0 +1,42 @@
+# =============================================================================
+# BATTERY - Charge status diagnostics (PI4IOE5V6408 GPIO expander pins)
+# =============================================================================
+# Tab5's charge-management IC exposes only discrete status/control pins on
+# the "pi4ioe2" expander (no fuel-gauge or ADC voltage line), so this is a
+# plain charging-status/charge-enable diagnostic, not a battery percentage
+# reading. It is intentionally not wired into the shared
+# firmware.package.extraPackages.battery "battery_percent" web feature used
+# by other panels, which expects an actual percentage sensor.
+# =============================================================================
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      pi4ioe5v6408: pi4ioe2
+      number: 6
+    name: "Battery Charging"
+    id: battery_charging_status
+    device_class: battery_charging
+    entity_category: diagnostic
+
+switch:
+  - platform: gpio
+    pin:
+      pi4ioe5v6408: pi4ioe2
+      number: 7
+    id: battery_charge_enable
+    name: "Battery Charge Enable"
+    icon: "mdi:battery-charging"
+    entity_category: config
+    restore_mode: ALWAYS_ON
+
+  - platform: gpio
+    pin:
+      pi4ioe5v6408: pi4ioe2
+      number: 5
+      inverted: true
+    id: battery_quick_charge_enable
+    name: "Battery Quick Charge Enable"
+    icon: "mdi:battery-charging-high"
+    entity_category: config
+    restore_mode: ALWAYS_ON

@@ -4,6 +4,10 @@
     "link": "/screens/guition-esp32-s3-jc3248w535"
   },
   {
+    "text": "M5Stack Tab5",
+    "link": "/screens/m5stack-esp32-p4-tab5"
+  },
+  {
     "text": "Seeed reTerminal D1001",
     "link": "/screens/seeed-esp32-p4-reterminal-d1001"
   },

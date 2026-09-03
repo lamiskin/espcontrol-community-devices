@@ -9,6 +9,7 @@
 | Seeed reTerminal D1001 8" | seeed-esp32-p4-reterminal-d1001 | Untested | - | - | @zacs | [PR #885](https://github.com/jtenniswood/espcontrol/pull/885) |
 | Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1 10.1" | waveshare-esp32-p4-touch-lcd-10 | Untested | - | - | @sbuchbauer | [Issue #838](https://github.com/jtenniswood/espcontrol/issues/838) |
 | Wireless-Tag WT32-SC01 Plus 3.5" | wireless-tag-wt32-sc01-plus | Untested | - | - | @jonnybergdahl | [PR #194](https://github.com/jtenniswood/espcontrol/pull/194) |
+| M5Stack Tab5 5" | m5stack-esp32-p4-tab5 | Untested | - | - | @direk | [Issue #95](https://github.com/lamiskin/espcontrol-community-devices/issues/95) |
 | WaveShare ESP32-S3 Smart 86 Box | waveshare-esp32-s3-smart-86-box | Parked | - | - | @salnajjar | [PR #293](https://github.com/jtenniswood/espcontrol/pull/293) |
 
 ## Status meanings

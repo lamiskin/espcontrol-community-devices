@@ -7,6 +7,11 @@
       "label": "device:guition-esp32-s3-jc3248w535"
     },
     {
+      "slug": "m5stack-esp32-p4-tab5",
+      "name": "M5Stack Tab5",
+      "label": "device:m5stack-esp32-p4-tab5"
+    },
+    {
       "slug": "seeed-esp32-p4-reterminal-d1001",
       "name": "Seeed reTerminal D1001",
       "label": "device:seeed-esp32-p4-reterminal-d1001"
