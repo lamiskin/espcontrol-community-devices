@@ -18,8 +18,10 @@ on the home screen.
 
 Community port contributed via [Issue #95](https://github.com/lamiskin/espcontrol-community-devices/issues/95) by @direk.
 
-::: warning Not yet hardware-verified
-This device compiles and is flashable, but nobody has confirmed it on real hardware yet. It may not work. If you own this panel, [verifying it](/reference/support-policy#hardware-verification) is the most valuable contribution you can make.
+::: tip Hardware-verified
+This device has been verified on real hardware — it compiles, flashes, and runs EspControl correctly.
+
+Confirmed by @direk ([#95](https://github.com/lamiskin/espcontrol-community-devices/issues/95#issuecomment-5521806746)) at `community-v0.6.0-upstream.v2.8.4-preview.1`.
 :::
 
 ## Specifications

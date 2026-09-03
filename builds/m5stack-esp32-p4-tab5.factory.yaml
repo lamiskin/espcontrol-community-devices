@@ -13,6 +13,12 @@ substitutions:
 
 packages:
   core: !include ../devices/m5stack-esp32-p4-tab5/packages.yaml
+  # Keyless API encryption: the device takes the first provisioning connection
+  # in plaintext, then Home Assistant supplies a per-device Noise key it keeps.
+  # No shared key is baked into a binary we hand out. Upstream wires the same
+  # addon into its factory profiles and public entry points (jtenniswood/
+  # espcontrol#1738) while leaving dev/local build profiles plaintext, which is
+  # why builds/m5stack-esp32-p4-tab5.yaml does not include it.
 
 esphome:
   name_add_mac_suffix: true
@@ -34,3 +40,14 @@ wifi:
     ssid: "${name}"
 
 captive_portal:
+
+# Keyless API encryption, inlined from upstream's common/addon/
+# api_encryption_dynamic.yaml (jtenniswood/espcontrol#1738). The device takes
+# its first provisioning connection in plaintext, then Home Assistant supplies a
+# per-device Noise key it persists — so no shared key is baked into a binary we
+# hand out. Inlined rather than included because vendor_common.py only scans
+# devices/ for common/ includes, so a build-profile include would never be
+# vendored. Upstream keeps dev/local build profiles plaintext, which is why
+# builds/m5stack-esp32-p4-tab5.yaml does not carry this.
+api:
+  encryption: {}

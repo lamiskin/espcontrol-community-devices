@@ -44,9 +44,20 @@ If your screen stays blank on this build, that is the likeliest cause.
 - **Pin.** `espcontrol_component_ref` moved from `main` to this repo's pin
   (v2.8.4), so the device tracks a tested upstream release rather than a moving
   target.
-- **`api_encryption_dynamic.yaml` dropped.** The original entry point pulled
-  `common/addon/api_encryption_dynamic.yaml`, which exists on upstream `main` but
-  not at the pinned release. The device's own `api:` block covers what it needs.
+- **Keyless API encryption kept.** The original entry point pulled upstream's
+  `common/addon/api_encryption_dynamic.yaml` (`api: encryption: {}`). It is
+  inlined here instead — in the factory build profile, which is what the release
+  ships, and in the entry point for ESPHome-dashboard adopters — because
+  `vendor_common.py` only scans `devices/` for `common/` includes, so a build
+  profile include would never be vendored. The plain build profile stays
+  plaintext, matching upstream's dev/local split
+  ([jtenniswood/espcontrol#1738](https://github.com/jtenniswood/espcontrol/pull/1738)).
+
+  I removed this during the port on the mistaken belief it existed only on
+  upstream `main`; it has been in tagged releases since v2.8.3. @direk had it
+  right. Note the preview build he verified predates the restoration, so his
+  hardware confirmation covers display, touch and rotation, not the Home
+  Assistant key handoff.
 - **Remote-include form.** `packages.yaml` was converted from in-tree relative
   includes to this repo's remote-package form, with the community hosting
   overrides (web UI URL, OTA manifest, enlarged `http_request` buffers).
