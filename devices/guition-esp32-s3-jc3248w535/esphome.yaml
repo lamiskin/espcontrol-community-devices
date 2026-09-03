@@ -28,3 +28,12 @@ packages:
     url: https://github.com/lamiskin/espcontrol-community-devices/
     file: devices/guition-esp32-s3-jc3248w535/packages.yaml
     refresh: 1s
+
+# ---------------------------------------------------------------------------
+# Keyless API encryption (upstream's common/addon/api_encryption_dynamic.yaml).
+# The first provisioning connection is plaintext; Home Assistant then supplies a
+# per-device key the panel keeps. Set your own api.encryption.key here to
+# override it.
+# ---------------------------------------------------------------------------
+api:
+  encryption: {}
