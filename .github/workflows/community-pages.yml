@@ -141,7 +141,14 @@ jobs:
           # Latest first, then the four releases before it. Order comes from
           # the API, never from parsing our version strings.
           TAGS="$TAG"
+          # --exclude-pre-releases matters: `gh release view` above returns
+          # the latest STABLE release, but `gh release list` includes
+          # prereleases. Without this filter a -preview build (cut to hand a
+          # porter a binary before a device is public) lands in every device's
+          # versions.json and is offered as a rollback target on panels that
+          # should never see it.
           for prev in $(retry gh release list --repo "$GITHUB_REPOSITORY" --limit 5 \
+              --exclude-pre-releases \
               --json tagName --jq '.[].tagName' | grep -vxF "$TAG" | head -4); do
             # Best effort: a hiccup fetching an OLD release just shortens the
             # rollback list, and the next deploy rebuilds it. Only the latest

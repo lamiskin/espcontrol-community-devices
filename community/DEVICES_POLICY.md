@@ -32,6 +32,27 @@ overrides ---` block, an `http_request:` with `buffer_size_rx` and
 be edited here, hence the per-device override. `community/scripts/check_ota_buffer.py`
 enforces this in CI.
 
+## Preview releases
+
+A tag containing `-preview` (e.g. `community-v0.6.0-upstream.v2.8.4-preview.1`)
+publishes as a GitHub **prerelease**. This exists to hand a device's porter a
+flashable binary before the device is public.
+
+It is safe because the two Pages lookups differ:
+
+- `gh release view` returns the latest **stable** release only, so a preview is
+  never staged as the current firmware and no installed device is offered it as
+  an update.
+- `gh release list` **does** include prereleases, so
+  `community-pages.yml` passes `--exclude-pre-releases` when building the
+  rollback list. Without that filter a preview would appear as a rollback target
+  on every device.
+
+A preview's assets are downloadable from its GitHub Release page. The browser
+installer still serves the latest stable release, so a device whose only build
+is a preview has no working Install button — the porter flashes the `.bin`
+directly, or builds from `devices/<slug>/esphome.yaml`.
+
 ## Policy Rules
 
 The YAML block below is machine-parsed by `community/scripts/check_policy.py`.

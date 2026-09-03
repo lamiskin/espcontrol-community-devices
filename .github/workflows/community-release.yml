@@ -31,6 +31,17 @@ jobs:
           # Extract version from tag: community-vX.Y.Z+<pin> or community-vX.Y.Z-upstream.<pin>
           VERSION=$(echo "$TAG" | sed 's/^community-//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          # A tag carrying -preview publishes as a GitHub prerelease. That
+          # keeps it out of `gh release view` (which returns the latest stable
+          # only), so community-pages.yml does not stage it as the current
+          # firmware and no installed device is offered it as an update. Use it
+          # to hand a porter a flashable binary before a device is public.
+          case "$TAG" in
+            *-preview*) PRERELEASE=true ;;
+            *)          PRERELEASE=false ;;
+          esac
+          echo "prerelease=$PRERELEASE" >> $GITHUB_OUTPUT
+          echo "Publishing $TAG (prerelease=$PRERELEASE)"
 
       - name: Free disk space
         run: |
@@ -153,9 +164,14 @@ jobs:
 
           # Collect all binary files
           FILES=$(find release-artifacts -name "*.bin" -o -name "*-manifest.json" | sort)
+          PRERELEASE_FLAG=""
+          if [ "${{ steps.version.outputs.prerelease }}" = "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
           retry gh release create "$TAG" $FILES \
             --title "${VERSION}" \
-            --notes-file "$NOTES_FILE"
+            --notes-file "$NOTES_FILE" \
+            $PRERELEASE_FLAG
 
       # Pages deployment is owned entirely by community-pages.yml, which
       # triggers on this workflow's completion and rebuilds the site from
