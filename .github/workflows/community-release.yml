@@ -14,14 +14,20 @@ permissions:
   contents: write
 
 jobs:
-  build-release:
+  # Version/device-list prep only — no compiling here. Kept as its own job
+  # (rather than folded into `build`) so every matrix leg reads the same
+  # tag/version/prerelease/device-list instead of each recomputing it.
+  prepare:
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+      devices: ${{ steps.devices.outputs.devices }}
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
-          fetch-depth: 0
 
       - name: Determine version
         id: version
@@ -43,6 +49,34 @@ jobs:
           echo "prerelease=$PRERELEASE" >> $GITHUB_OUTPUT
           echo "Publishing $TAG (prerelease=$PRERELEASE)"
 
+      - name: Determine devices
+        id: devices
+        run: |
+          DEVICES_JSON=$(python3 -c "import json; print(json.dumps(json.load(open('community/devices.json'))['devices']))")
+          echo "devices=$DEVICES_JSON" >> $GITHUB_OUTPUT
+          echo "Building: $DEVICES_JSON"
+
+  # One job per device (mirrors community-ci.yml's compile matrix) instead
+  # of one job compiling all 8 in a loop: wall clock becomes the slowest
+  # single device (~5-8 min) rather than their sum (~40 min), at the cost of
+  # each device paying its own toolchain setup instead of sharing one warm
+  # install (issue #105). fail-fast: false so a single device's failure
+  # doesn't cancel the others mid-compile — release, below, only runs if
+  # every leg here succeeded, so a partial failure still yields no release
+  # (GitHub Actions skips a job whose `needs` didn't all succeed).
+  build:
+    runs-on: ubuntu-latest
+    needs: [prepare]
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        device: ${{ fromJson(needs.prepare.outputs.devices) }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
       - name: Free disk space
         run: |
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
@@ -63,99 +97,118 @@ jobs:
           source .github/scripts/retry.sh
           retry pip install esphome==$(grep ESPHOME_VERSION .assembly/.github/esphome.env | cut -d= -f2)
 
+      # Same key as community-ci.yml's compile matrix, so a release build can
+      # start warm from a PR that already compiled this device recently.
       - name: Cache PlatformIO
         uses: actions/cache@v6
         with:
           path: |
             ~/.platformio
             .assembly/.esphome
-          key: pio-release-${{ hashFiles('community/upstream-ref.txt') }}
-          restore-keys: |
-            pio-release-
-            pio-
+          key: pio-${{ matrix.device }}-${{ hashFiles('community/upstream-ref.txt') }}
+          restore-keys: pio-${{ matrix.device }}-
 
       - name: Compile and collect firmware
         run: |
           source .github/scripts/retry.sh
-          DEVICES=$(python3 -c "import json; print('\n'.join(json.load(open('community/devices.json'))['devices']))")
-          TAG="${{ steps.version.outputs.tag }}"
-          VERSION="${{ steps.version.outputs.version }}"
+          TAG="${{ needs.prepare.outputs.tag }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
+          SLUG="${{ matrix.device }}"
 
-          # Make www.js accessible where factory builds expect it
+          # Make www.js accessible where the factory build expects it
           mkdir -p .assembly/community-pages/webserver
           cp community-pages/webserver/www.js .assembly/community-pages/webserver/www.js
 
           mkdir -p release-artifacts
 
-          while IFS= read -r slug; do
-            [ -z "$slug" ] && continue
-            echo "=== Compiling $slug ==="
+          cd .assembly
 
-            # Patch firmware_version in the factory build
-            cd .assembly
-            sed -i "s/firmware_version: \"0.0.0\"/firmware_version: \"$VERSION\"/" \
-              "builds/${slug}.factory.yaml" 2>/dev/null || true
-            sed -i "s/firmware_version: \"dev\"/firmware_version: \"$VERSION\"/" \
-              "builds/${slug}.factory.yaml" 2>/dev/null || true
+          # Patch firmware_version in the factory build
+          sed -i "s/firmware_version: \"0.0.0\"/firmware_version: \"$VERSION\"/" \
+            "builds/${SLUG}.factory.yaml" 2>/dev/null || true
+          sed -i "s/firmware_version: \"dev\"/firmware_version: \"$VERSION\"/" \
+            "builds/${SLUG}.factory.yaml" 2>/dev/null || true
 
-            # A preview build must never let its update entity see the
-            # stable channel: ESPHome compares update versions by string
-            # inequality, not ordering, so a preview's version string always
-            # differs from whatever manifest.json (stable only) currently
-            # advertises — including looking "available" when stable is
-            # actually OLDER, silently downgrading a panel deliberately put
-            # on a preview and, worse, breaking Home Assistant's Noise
-            # connection to any panel HA has already keyed (issue #106).
-            # Pin this device's compiled update entity at this exact
-            # release's own manifest (so latest_version == current_version
-            # forever) and force its auto-update switch off.
-            case "$TAG" in
-              *-preview*)
-                python3 ../community/scripts/patch_preview_update.py "$slug" \
-                  --tag "$TAG" --repo-root .
-                ;;
-            esac
+          # A preview build must never let its update entity see the
+          # stable channel: ESPHome compares update versions by string
+          # inequality, not ordering, so a preview's version string always
+          # differs from whatever manifest.json (stable only) currently
+          # advertises — including looking "available" when stable is
+          # actually OLDER, silently downgrading a panel deliberately put
+          # on a preview and, worse, breaking Home Assistant's Noise
+          # connection to any panel HA has already keyed (issue #106).
+          # Pin this device's compiled update entity at this exact
+          # release's own manifest (so latest_version == current_version
+          # forever) and force its auto-update switch off.
+          case "$TAG" in
+            *-preview*)
+              python3 ../community/scripts/patch_preview_update.py "$SLUG" \
+                --tag "$TAG" --repo-root .
+              ;;
+          esac
 
-            # Fix external_components path for non-Docker CI (no /config mount)
-            ASSEMBLY_ABS="$(pwd)"
-            sed -i "s|file:///config|file://${ASSEMBLY_ABS}|g" "builds/${slug}.factory.yaml"
+          # Fix external_components path for non-Docker CI (no /config mount)
+          ASSEMBLY_ABS="$(pwd)"
+          sed -i "s|file:///config|file://${ASSEMBLY_ABS}|g" "builds/${SLUG}.factory.yaml"
 
-            RETRY_ATTEMPTS=3 retry esphome compile "builds/${slug}.factory.yaml"
+          RETRY_ATTEMPTS=3 retry esphome compile "builds/${SLUG}.factory.yaml"
 
-            # Find binaries
-            FACTORY=$(find builds/.esphome/build -name "firmware.factory.bin" | head -1)
-            OTA=$(find builds/.esphome/build -name "firmware.ota.bin" | head -1)
+          # Find binaries
+          FACTORY=$(find builds/.esphome/build -name "firmware.factory.bin" | head -1)
+          OTA=$(find builds/.esphome/build -name "firmware.ota.bin" | head -1)
 
-            if [ -z "$FACTORY" ] || [ -z "$OTA" ]; then
-              echo "ERROR: compiled binaries not found for ${slug}" \
-                "(factory='$FACTORY' ota='$OTA') — release aborted" >&2
-              exit 1
-            fi
+          if [ -z "$FACTORY" ] || [ -z "$OTA" ]; then
+            echo "ERROR: compiled binaries not found for ${SLUG}" \
+              "(factory='$FACTORY' ota='$OTA') — release aborted" >&2
+            exit 1
+          fi
 
-            cp "$FACTORY" "../release-artifacts/${slug}.factory.bin"
-            cp "$OTA" "../release-artifacts/${slug}.ota.bin"
+          cp "$FACTORY" "../release-artifacts/${SLUG}.factory.bin"
+          cp "$OTA" "../release-artifacts/${SLUG}.ota.bin"
 
-            # Generate manifest (device name + chip family resolved from
-            # the repo; hard-fails on ambiguity instead of defaulting)
-            OTA_MD5=$(md5sum "../release-artifacts/${slug}.ota.bin" | cut -d' ' -f1)
-            python3 ../community/scripts/generate_manifest.py "$slug" \
-              --version "$VERSION" \
-              --tag "$TAG" \
-              --ota-md5 "$OTA_MD5" \
-              --output "../release-artifacts/${slug}-manifest.json"
+          # Generate manifest (device name + chip family resolved from
+          # the repo; hard-fails on ambiguity instead of defaulting)
+          OTA_MD5=$(md5sum "../release-artifacts/${SLUG}.ota.bin" | cut -d' ' -f1)
+          python3 ../community/scripts/generate_manifest.py "$SLUG" \
+            --version "$VERSION" \
+            --tag "$TAG" \
+            --ota-md5 "$OTA_MD5" \
+            --output "../release-artifacts/${SLUG}-manifest.json"
 
-            # Clean build dir for next device
-            rm -rf builds/.esphome/build
-            cd ..
-          done <<< "$DEVICES"
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: firmware-${{ matrix.device }}
+          path: release-artifacts/
+          retention-days: 1
+
+  # Runs only if every device in `build` succeeded (GitHub Actions skips a
+  # job whose `needs` didn't all succeed) — a device that failed to compile
+  # means no release, matching the old single-job loop's `exit 1`.
+  release:
+    runs-on: ubuntu-latest
+    needs: [prepare, build]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Download firmware artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: release-artifacts
+          pattern: firmware-*
+          merge-multiple: true
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           source .github/scripts/retry.sh
-          TAG="${{ steps.version.outputs.tag }}"
-          VERSION="${{ steps.version.outputs.version }}"
+          TAG="${{ needs.prepare.outputs.tag }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
           UPSTREAM_REF=$(cat community/upstream-ref.txt)
 
           # Find previous release tag for changelog
@@ -183,7 +236,7 @@ jobs:
           # Collect all binary files
           FILES=$(find release-artifacts -name "*.bin" -o -name "*-manifest.json" | sort)
           PRERELEASE_FLAG=""
-          if [ "${{ steps.version.outputs.prerelease }}" = "true" ]; then
+          if [ "${{ needs.prepare.outputs.prerelease }}" = "true" ]; then
             PRERELEASE_FLAG="--prerelease"
           fi
           retry gh release create "$TAG" $FILES \
