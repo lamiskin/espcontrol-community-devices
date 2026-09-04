@@ -147,7 +147,9 @@ def check(repo_root=None):
     builds_dir = os.path.join(root, "builds")
     if os.path.isdir(builds_dir):
         for entry in sorted(os.listdir(builds_dir)):
-            match = re.match(r'^(.+?)(\.factory)?\.yaml$', entry)
+            # .recovery.yaml (issue #98): an optional third profile per
+            # slug, alongside the required dev/CI and factory ones.
+            match = re.match(r'^(.+?)(\.factory|\.recovery)?\.yaml$', entry)
             if match and match.group(1) not in registered:
                 p(f"orphan build profile not in devices.json: "
                   f"builds/{entry}")
@@ -239,14 +241,19 @@ def self_test():
         registered=["dev-b", "dev-a"], catalog=["dev-a", "dev-b"],
         policy_slugs=["dev-a", "dev-b"],
         device_dirs=["dev-a", "dev-b", "dev-orphan"],
-        builds=["dev-a.yaml", "dev-a.factory.yaml", "dev-b.yaml",
-                "dev-b.factory.yaml", "dev-ghost.yaml"],
+        # dev-a.recovery.yaml (issue #98): a registered device's optional
+        # third build profile must NOT be flagged as an orphan.
+        builds=["dev-a.yaml", "dev-a.factory.yaml", "dev-a.recovery.yaml",
+                "dev-b.yaml", "dev-b.factory.yaml", "dev-ghost.yaml"],
     )
     problems = check(tmp)
     for needle in ("orphan device directory", "orphan build profile",
                    "invalid status", "not sorted"):
         if not any(needle in p for p in problems):
             failures.append(f"'{needle}' not caught: {problems}")
+    if any("dev-a.recovery.yaml" in p for p in problems):
+        failures.append(
+            f"registered device's .recovery.yaml flagged as orphan: {problems}")
 
     # Parked with dir present → problem; Broken-but-unregistered → problem
     build_repo(
