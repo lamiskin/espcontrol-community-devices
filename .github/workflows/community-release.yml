@@ -98,6 +98,24 @@ jobs:
             sed -i "s/firmware_version: \"dev\"/firmware_version: \"$VERSION\"/" \
               "builds/${slug}.factory.yaml" 2>/dev/null || true
 
+            # A preview build must never let its update entity see the
+            # stable channel: ESPHome compares update versions by string
+            # inequality, not ordering, so a preview's version string always
+            # differs from whatever manifest.json (stable only) currently
+            # advertises — including looking "available" when stable is
+            # actually OLDER, silently downgrading a panel deliberately put
+            # on a preview and, worse, breaking Home Assistant's Noise
+            # connection to any panel HA has already keyed (issue #106).
+            # Pin this device's compiled update entity at this exact
+            # release's own manifest (so latest_version == current_version
+            # forever) and force its auto-update switch off.
+            case "$TAG" in
+              *-preview*)
+                python3 ../community/scripts/patch_preview_update.py "$slug" \
+                  --tag "$TAG" --repo-root .
+                ;;
+            esac
+
             # Fix external_components path for non-Docker CI (no /config mount)
             ASSEMBLY_ABS="$(pwd)"
             sed -i "s|file:///config|file://${ASSEMBLY_ABS}|g" "builds/${slug}.factory.yaml"
