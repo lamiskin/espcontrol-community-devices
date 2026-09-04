@@ -1,0 +1,30 @@
+# =============================================================================
+# C6 RECOVERY BUILD - Seeed reTerminal D1001
+# =============================================================================
+# USB-only repair image: reinstalls the main P4 firmware AND repairs the
+# ESP32-C6 WiFi co-processor from a pinned, verified firmware blob embedded
+# at compile time (issue #98). This panel uses upstream's hosted-WiFi
+# architecture (esp32_hosted: variant: esp32c6), so it is exposed to the
+# same C6-desync failure mode upstream built this for: repeated
+# disconnects, a first-time WiFi setup that never completes, disappearing
+# from Home Assistant after a restart, or "C6 firmware manifest timeout" in
+# the USB log. Recovery repairs the C6 over the board's internal SDIO link,
+# so it does not need a working network connection.
+#
+# Ported from upstream's common/device/esp32_c6_recovery.yaml
+# (jtenniswood/espcontrol) — pulled from the same pinned ref as everything
+# else in this build, not vendored locally.
+#
+# No OTA: this is a full USB reflash, not an incremental update, so
+# generate_manifest.py never gives it an `ota` block and it is only
+# reachable through a dedicated install button, never auto-offered.
+# =============================================================================
+
+packages:
+  factory: !include seeed-esp32-p4-reterminal-d1001.factory.yaml
+  c6_recovery:
+    url: https://github.com/jtenniswood/espcontrol
+    ref: v2.8.4
+    refresh: 1d
+    files:
+      - common/device/esp32_c6_recovery.yaml

@@ -48,6 +48,22 @@ the button below (Chrome or Edge on desktop).
 For WiFi setup and Home Assistant pairing the flow is identical to official
 EspControl — follow the [Install guide](/getting-started/install).
 
+### Repairing the ESP32-C6 WiFi processor
+
+If this panel repeatedly disconnects, never completes its first WiFi setup,
+disappears from Home Assistant after a restart, or reports a C6 firmware
+manifest timeout in its USB log, use the recovery image instead. It
+reinstalls the firmware above **and** repairs the ESP32-C6 WiFi processor
+from a known-good firmware image, entirely over USB — it does not need a
+working network connection.
+
+::: warning This reinstalls the firmware
+Export your configuration from **Settings > Backup** first if the panel is
+still accessible.
+:::
+
+<EspInstallButton slug="m5stack-esp32-p4-tab5" variant="recovery" />
+
 ## ESPHome Manual Setup
 
 If you use ESPHome and prefer to compile firmware yourself:

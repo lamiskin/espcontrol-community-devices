@@ -91,13 +91,21 @@ def load_retired(repo_root=None):
 
 
 def available_slugs(assets_dir):
-    """Slugs with a <slug>-manifest.json in the downloaded release assets."""
+    """
+    Slugs with a <slug>-manifest.json in the downloaded release assets.
+
+    Excludes *-recovery-manifest.json (issue #98, staged separately by
+    stage_recovery_manifests.py): it ends in "-manifest.json" too, so
+    without this it would be misread as the regular manifest for a
+    nonexistent "<slug>-recovery" device and warn on every release.
+    """
     if not os.path.isdir(assets_dir):
         return set()
     return {
         name[: -len("-manifest.json")]
         for name in os.listdir(assets_dir)
         if name.endswith("-manifest.json")
+        and not name.endswith("-recovery-manifest.json")
     }
 
 
@@ -273,6 +281,16 @@ def self_test():
             "reason": "duplicate",
         }
     }
+
+    # A *-recovery-manifest.json asset (issue #98) must never be misread as
+    # the regular manifest for a nonexistent "<slug>-recovery" device.
+    with tempfile.TemporaryDirectory(prefix="stage_firmware_recovery_test_") as recovery_tmp:
+        for name in ("alpha-manifest.json", "alpha-recovery-manifest.json"):
+            with open(os.path.join(recovery_tmp, name), "w") as f:
+                f.write("{}")
+        found = available_slugs(recovery_tmp)
+        check("recovery manifest misread as its own device",
+              found == {"alpha"})
 
     # Live devices staged from their own asset; handover staged from the
     # successor's; a stale asset for a slug in neither registry is dropped.

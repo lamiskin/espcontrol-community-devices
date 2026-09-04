@@ -10,20 +10,31 @@
     </div>
     <div v-else class="install-button">
       <esp-web-install-button :manifest="manifestUrl">
-        <button slot="activate" class="brand-button">Install community firmware</button>
+        <button slot="activate" class="brand-button">{{ buttonLabel }}</button>
       </esp-web-install-button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { withBase } from 'vitepress'
 
 const props = defineProps({
-  slug: { type: String, required: true }
+  slug: { type: String, required: true },
+  // 'install' (default): the regular factory image. 'recovery': the P4 C6
+  // co-processor repair image (issue #98) — a full USB reflash, never an
+  // OTA, so it lives at a separate manifest path that the device's own
+  // update entity never points at.
+  variant: { type: String, default: 'install' }
 })
-const manifestUrl = withBase(`/firmware/${props.slug}/manifest.json`)
+const manifestPath = computed(() => props.variant === 'recovery'
+  ? `recovery-manifest.json`
+  : `manifest.json`)
+const manifestUrl = computed(() => withBase(`/firmware/${props.slug}/${manifestPath.value}`))
+const buttonLabel = computed(() => props.variant === 'recovery'
+  ? 'Repair C6 & reinstall firmware'
+  : 'Install community firmware')
 const supported = ref(false)
 const loadError = ref(null)
 

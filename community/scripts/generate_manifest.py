@@ -133,6 +133,33 @@ def build_manifest(slug, version, tag, ota_md5, repo_root=None):
     }
 
 
+def build_recovery_manifest(slug, version, tag, repo_root=None):
+    """
+    The C6 recovery manifest (issue #98): a USB-only factory-flash image
+    that repairs a P4 panel's ESP32-C6 WiFi co-processor alongside
+    reinstalling the main firmware. Deliberately carries no `ota` block —
+    upstream's own verify_recovery_manifest() requires the same — so it can
+    never be offered as an update, only reached through a dedicated install
+    button; the device's normal update entity keeps pointing at the regular
+    manifest.
+    """
+    name = device_name(slug, repo_root)
+    family = chip_family(slug, repo_root)
+    dl = f"{REPO_URL}/releases/download/{tag}"
+    return {
+        "name": f"{name} — C6 Recovery",
+        "version": version,
+        "builds": [
+            {
+                "chipFamily": family,
+                "parts": [
+                    {"path": f"{dl}/{slug}.recovery.factory.bin", "offset": 0},
+                ],
+            }
+        ],
+    }
+
+
 def self_test():
     import shutil
     import tempfile
@@ -185,6 +212,19 @@ def self_test():
         if m["builds"][0]["chipFamily"] != "ESP32-P4":
             failures.append("variant-based P4 detection failed")
 
+        # Recovery manifest: no ota block (must never be auto-offered as an
+        # update — issue #98), points at the *.recovery.factory.bin asset,
+        # name is suffixed so it's distinguishable in an installer list.
+        rm = build_recovery_manifest("p4-via-variant", "1.0", "t", tmp)
+        if "ota" in rm["builds"][0]:
+            failures.append(f"recovery manifest exposes an ota block: {rm}")
+        if rm["builds"][0]["parts"][0]["path"] != f"{dl}/p4-via-variant.recovery.factory.bin":
+            failures.append(f"recovery factory path wrong: {rm}")
+        if rm["name"] != "Variant P4 — C6 Recovery":
+            failures.append(f"recovery manifest name wrong: {rm['name']}")
+        if rm["builds"][0]["chipFamily"] != "ESP32-P4":
+            failures.append("recovery manifest lost chip family detection")
+
         m = build_manifest("flat-public", "1.0", "t", "md5x", tmp)
         if m["name"] != "Flat Name":
             failures.append("flat public.name fallback failed")
@@ -216,25 +256,31 @@ def main():
     parser.add_argument("slug", nargs="?")
     parser.add_argument("--version")
     parser.add_argument("--tag")
-    parser.add_argument("--ota-md5")
+    parser.add_argument("--ota-md5", help="required unless --recovery")
     parser.add_argument("--output")
+    parser.add_argument("--recovery", action="store_true",
+                        help="build the C6 recovery manifest instead (no ota block, no --ota-md5 needed)")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
 
     if args.self_test:
         sys.exit(self_test())
 
-    missing = [n for n, v in (("slug", args.slug),
-                              ("--version", args.version),
-                              ("--tag", args.tag),
-                              ("--ota-md5", args.ota_md5),
-                              ("--output", args.output)) if not v]
+    required = [("slug", args.slug), ("--version", args.version),
+                ("--tag", args.tag), ("--output", args.output)]
+    if not args.recovery:
+        required.append(("--ota-md5", args.ota_md5))
+    missing = [n for n, v in required if not v]
     if missing:
         parser.error(f"missing required arguments: {', '.join(missing)}")
 
     try:
-        manifest = build_manifest(
-            args.slug, args.version, args.tag, args.ota_md5)
+        if args.recovery:
+            manifest = build_recovery_manifest(
+                args.slug, args.version, args.tag)
+        else:
+            manifest = build_manifest(
+                args.slug, args.version, args.tag, args.ota_md5)
     except (ValueError, FileNotFoundError) as exc:
         error(str(exc))
         sys.exit(1)

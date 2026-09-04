@@ -220,6 +220,32 @@ def device_page(d):
     if d["status"] in ("Working", "Untested"):
         note = INSTALL_NOTES.get(d["slug"], "")
         note_block = "\n" + note if note else ""
+        recovery_block = ""
+        if d["chip"] == "ESP32-P4":
+            # P4 panels use a separate ESP32-C6 chip for WiFi. If it
+            # desyncs or corrupts (repeated disconnects, first-time WiFi
+            # setup that never completes, disappearing from Home Assistant,
+            # "C6 firmware manifest timeout" in the USB log), a normal
+            # reflash of the main firmware does not fix it — only this
+            # dedicated recovery image, which also repairs the C6 over the
+            # board's internal SDIO link (issue #98).
+            recovery_block = f"""
+### Repairing the ESP32-C6 WiFi processor
+
+If this panel repeatedly disconnects, never completes its first WiFi setup,
+disappears from Home Assistant after a restart, or reports a C6 firmware
+manifest timeout in its USB log, use the recovery image instead. It
+reinstalls the firmware above **and** repairs the ESP32-C6 WiFi processor
+from a known-good firmware image, entirely over USB — it does not need a
+working network connection.
+
+::: warning This reinstalls the firmware
+Export your configuration from **Settings > Backup** first if the panel is
+still accessible.
+:::
+
+<EspInstallButton slug="{d['slug']}" variant="recovery" />
+"""
         install = f"""## Install
 
 Connect the display to your computer with a **USB-C data cable**, then click
@@ -229,7 +255,7 @@ the button below (Chrome or Edge on desktop).
 
 For WiFi setup and Home Assistant pairing the flow is identical to official
 EspControl — follow the [Install guide](/getting-started/install).
-{note_block}"""
+{note_block}{recovery_block}"""
     else:
         install = """## Install
 

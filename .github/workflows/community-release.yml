@@ -24,6 +24,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       prerelease: ${{ steps.version.outputs.prerelease }}
       devices: ${{ steps.devices.outputs.devices }}
+      recovery_devices: ${{ steps.devices.outputs.recovery_devices }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -55,6 +56,20 @@ jobs:
           DEVICES_JSON=$(python3 -c "import json; print(json.dumps(json.load(open('community/devices.json'))['devices']))")
           echo "devices=$DEVICES_JSON" >> $GITHUB_OUTPUT
           echo "Building: $DEVICES_JSON"
+
+          # P4 panels use a separate ESP32-C6 chip for WiFi and need a
+          # dedicated USB recovery build to repair it (issue #98) — see
+          # generate_manifest.py's chip_family() for how a device's chip is
+          # resolved from devices/<slug>/device/device.yaml.
+          RECOVERY_JSON=$(python3 -c "
+          import json, sys
+          sys.path.insert(0, 'community/scripts')
+          from generate_manifest import chip_family
+          devices = json.load(open('community/devices.json'))['devices']
+          print(json.dumps([s for s in devices if chip_family(s) == 'ESP32-P4']))
+          ")
+          echo "recovery_devices=$RECOVERY_JSON" >> $GITHUB_OUTPUT
+          echo "C6 recovery builds: $RECOVERY_JSON"
 
   # One job per device (mirrors community-ci.yml's compile matrix) instead
   # of one job compiling all 8 in a loop: wall clock becomes the slowest
@@ -174,6 +189,57 @@ jobs:
             --tag "$TAG" \
             --ota-md5 "$OTA_MD5" \
             --output "../release-artifacts/${SLUG}-manifest.json"
+
+      # P4 panels use a separate ESP32-C6 chip for WiFi and need a dedicated
+      # USB recovery build to repair it (issue #98). Both steps are
+      # deliberately best-effort (continue-on-error): the recovery build is
+      # a bonus artifact, not the release itself — a transient failure here
+      # (e.g. the C6 firmware host having a bad day) must never block
+      # shipping the real firmware for all 8 devices. A missing recovery
+      # asset just means stage_recovery_manifests.py has nothing to stage
+      # for this device until the next release.
+      - name: Prepare C6 recovery firmware dependency
+        if: contains(fromJson(needs.prepare.outputs.recovery_devices), matrix.device)
+        continue-on-error: true
+        run: |
+          source .github/scripts/retry.sh
+          retry python3 community/scripts/prepare_c6_firmware.py \
+            --output .assembly/.firmware-deps/esp32-c6/2.12.12/network_adapter_esp32c6.bin
+
+      - name: Compile and collect C6 recovery build
+        if: contains(fromJson(needs.prepare.outputs.recovery_devices), matrix.device)
+        continue-on-error: true
+        run: |
+          source .github/scripts/retry.sh
+          TAG="${{ needs.prepare.outputs.tag }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
+          SLUG="${{ matrix.device }}"
+          cd .assembly
+
+          # The normal factory compile above already patched firmware_version,
+          # the preview update-source pin, and file:///config in
+          # builds/${SLUG}.factory.yaml. This build re-includes that same
+          # file, so it inherits all three without re-patching.
+
+          # Clean the previous (normal factory) build output first, so the
+          # `find` below can only see this compile's binary, not a stale one
+          # left over from the normal factory compile above.
+          rm -rf builds/.esphome/build
+
+          RETRY_ATTEMPTS=3 retry esphome compile "builds/${SLUG}.recovery.yaml"
+
+          RECOVERY_FACTORY=$(find builds/.esphome/build -name "firmware.factory.bin" | head -1)
+          if [ -z "$RECOVERY_FACTORY" ]; then
+            echo "::warning::C6 recovery binary not found for ${SLUG} — skipping its recovery artifacts this release"
+            exit 1
+          fi
+          cp "$RECOVERY_FACTORY" "../release-artifacts/${SLUG}.recovery.factory.bin"
+
+          python3 ../community/scripts/generate_manifest.py "$SLUG" \
+            --version "$VERSION" \
+            --tag "$TAG" \
+            --recovery \
+            --output "../release-artifacts/${SLUG}-recovery-manifest.json"
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v7

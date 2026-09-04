@@ -25,6 +25,7 @@ on:
       - community/catalog-fragment.json
       - community/scripts/generate_docs.py
       - community/scripts/stage_firmware.py
+      - community/scripts/stage_recovery_manifests.py
       - docs/**
       - package.json
   # Daily rebuild so the download-stats page stays semi-live (GitHub's
@@ -132,6 +133,13 @@ jobs:
             --assets release-assets \
             --dest community-pages/firmware \
             --tag "$TAG"
+
+          # P4 devices' C6 recovery manifest (issue #98), when this release
+          # built one — best effort, never fails the deploy (see the
+          # script's own docstring).
+          python3 community/scripts/stage_recovery_manifests.py \
+            --assets release-assets \
+            --dest community-pages/firmware
 
           # The panel also fetches firmware/<slug>/versions.json — the latest
           # plus up to four previous releases, which is what the "Previous
