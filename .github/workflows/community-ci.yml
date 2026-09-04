@@ -27,6 +27,7 @@ jobs:
           python3 community/scripts/generate_manifest.py --self-test
           python3 community/scripts/patch_preview_update.py --self-test
           python3 community/scripts/generate_versions_index.py --self-test
+          python3 community/scripts/mirror_rollback_ota.py --self-test
           python3 community/scripts/stage_firmware.py --self-test
           python3 community/scripts/check_ota_buffer.py --self-test
           python3 community/scripts/download_stats.py --self-test

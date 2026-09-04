@@ -106,10 +106,12 @@ jobs:
             exit 1
           fi
           echo "Latest release: $TAG"
-          # Only the manifests are staged onto Pages now; the .bin files are
-          # served directly from the release assets (their download_count is
-          # the per-device metric). Skipping the large binaries also removes
-          # the download-and-re-host step that broke Pages during an outage.
+          # Manifests are staged onto Pages here; the .bin files stay on the
+          # release assets (their download_count is the per-device metric)
+          # EXCEPT for a couple of ota.bin files mirrored further down for
+          # the CORS fix (issue #104) — narrow and deliberate, not a return
+          # to re-hosting everything, which is what broke Pages during an
+          # outage.
           # --clobber so a retry after a partial download (e.g. a transient
           # HTTP 504 mid-fetch) overwrites the manifests already pulled
           # instead of failing with "already exists" — without it no retry
@@ -138,6 +140,15 @@ jobs:
           # themselves so it is regenerated from truth on every deploy.
           mkdir -p "release-assets/history/$TAG"
           cp release-assets/*-manifest.json "release-assets/history/$TAG/" 2>/dev/null || true
+          # Also mirror $TAG's ota.bin assets for the CORS fix below —
+          # best effort: a failure here only means this release's web
+          # installs stay CORS-blocked, not that the deploy fails.
+          MIRROR_TAGS="$TAG"
+          if ! retry gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --pattern "*.ota.bin" \
+              --dir "release-assets/history/$TAG" --clobber; then
+            echo "WARNING: could not fetch ota.bin assets for $TAG — its rollback/preview web installs stay CORS-blocked"
+          fi
           # Latest first, then the four releases before it. Order comes from
           # the API, never from parsing our version strings.
           TAGS="$TAG"
@@ -151,6 +162,7 @@ jobs:
           # preview here makes it choosable, never automatic.
           # --limit 6 | head -5 rather than 5 | head -4: a preview occupies a
           # slot, and this keeps the same number of genuine older releases.
+          prev_count=0
           for prev in $(retry gh release list --repo "$GITHUB_REPOSITORY" --limit 6 \
               --json tagName --jq '.[].tagName' | grep -vxF "$TAG" | head -5); do
             # Best effort: a hiccup fetching an OLD release just shortens the
@@ -160,6 +172,24 @@ jobs:
                 --pattern "*-manifest.json" \
                 --dir "release-assets/history/$prev" --clobber; then
               TAGS="$TAGS $prev"
+              prev_count=$((prev_count + 1))
+              # Mirror ota.bin for the single most recent OTHER release too
+              # (issue #104) — deliberately just this one on top of $TAG:
+              # every release served from Pages instead of a release asset
+              # stops counting toward the per-device download stats this
+              # project also cares about (39b32eb), so only the releases
+              # someone would actually reach for (current + most recent
+              # other, which for a device that's been auto-pinned off the
+              # stable channel by #106 is very often the one they want to
+              # move back to or the preview they want to test) are mirrored.
+              if [ "$prev_count" -eq 1 ]; then
+                MIRROR_TAGS="$MIRROR_TAGS $prev"
+                if ! retry gh release download "$prev" --repo "$GITHUB_REPOSITORY" \
+                    --pattern "*.ota.bin" \
+                    --dir "release-assets/history/$prev" --clobber; then
+                  echo "WARNING: could not fetch ota.bin assets for $prev — its rollback/preview web installs stay CORS-blocked"
+                fi
+              fi
             else
               echo "WARNING: could not fetch manifests for $prev — omitting it"
             fi
@@ -173,6 +203,15 @@ jobs:
             --assets-dir release-assets/history \
             --tags $TAGS \
             --output-root community-pages/firmware
+
+          # Rewrite ota.path for entries in MIRROR_TAGS to the copy staged
+          # above, so the browser can install them without hitting GitHub's
+          # release-download CORS wall (issue #104). manifest.json — the
+          # device's own update entity — is never touched by this script.
+          python3 community/scripts/mirror_rollback_ota.py \
+            --assets-dir release-assets/history \
+            --firmware-root community-pages/firmware \
+            --tags $MIRROR_TAGS
 
           echo "Firmware manifests staged from $TAG:"
           # Guarded: stage_firmware.py legitimately stages nothing when a
