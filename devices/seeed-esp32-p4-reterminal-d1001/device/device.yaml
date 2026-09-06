@@ -320,19 +320,43 @@ binary_sensor:
 # esphome/esphome#16285) rather than an external component, so there's no
 # more dependency on any fork branch surviving. The firmware blob comes from
 # the driver's companion repo, esphome-libs/gsl3670-firmware, verified by
-# SHA-256 at compile time. Touch reset is on expander pin 12 but the BSP
-# leaves it unused, so no reset_pin is wired here either; the driver's
-# reset_pin handling is null-safe. Calibration is left unset so the driver
-# falls back to the display's native 800x1280 range, matching prior behavior
-# — the built-in SEEED-RETERMINAL-D1001 model's defaults aren't used because
-# its reset_pin default is a raw GPIO14, which collides with this device's
-# backlight PWM output on GPIO14.
+# SHA-256 at compile time.
+#
+# reset_pin is the touch controller's TP_RST, and wiring it is load-bearing
+# on this panel (issue #113). The BSP calls it BSP_LCD_TOUCH_RST = 1<<12,
+# i.e. expander bit 12; ESPHome's xl9535 numbers the second port 10-17, so
+# bit 12 is pin 14 — the same +2 offset as power_hold above. That is exactly
+# what the built-in SEEED-RETERMINAL-D1001 model defaults to; an earlier
+# comment here read its {xl9535, number: 14} default as a raw GPIO14 and
+# dropped it to avoid a collision with the backlight PWM, but the two are
+# different pins on different controllers and never collided.
+#
+# The BSP's explicit reset pulse in bsp_touch_new() is commented out, which
+# is why this looked optional. It isn't: bsp_power_init() runs
+# esp_io_expander_set_dir(io_expander, 0xffff, IO_EXPANDER_OUTPUT), and
+# against the PCA9535's all-ones power-on output register that alone drives
+# TP_RST high and releases the controller. Leave the pin unconfigured and it
+# stays a high-impedance input after the expander's power-on reset, holding
+# the GSL3670 in reset: the bus scan finds nothing on bus_touch and every
+# firmware-load write NAKs. A warm reboot hid this because the expander is
+# not power-cycled and keeps whatever direction bits the previous firmware
+# set, so touch only died on a true cold boot — and setup() logs
+# "initialised OK" either way, as it checks no write's return value.
+#
+# Calibration is left unset so the driver falls back to the display's native
+# 800x1280 range, matching prior behavior. Note the built-in model instead
+# declares the panel's real raw range (x 20-872, y 20-1644) and swap_xy: true;
+# adopting those interacts with the lvgl rotation below and is deliberately
+# not part of this fix.
 # ---------------------------------------------------------------------------
 touchscreen:
   - platform: gsl3670
     id: my_touchscreen
     i2c_id: bus_touch
     interrupt_pin: GPIO16
+    reset_pin:
+      xl9535: xl9535_hub
+      number: 14
     firmware:
       url: "https://github.com/esphome-libs/gsl3670-firmware/releases/download/v1.0.0/seeed-d1001-fw.bin"
       sha256: "2e50501ad83656fb6fa3d92591f9f31add4d442c8e8a79f29f5c4d335bd127a4"
