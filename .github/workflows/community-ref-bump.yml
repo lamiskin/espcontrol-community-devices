@@ -2,7 +2,7 @@ name: Community Ref Bump
 
 on:
   schedule:
-    - cron: "0 4 * * 1"  # Weekly Monday 4am UTC
+    - cron: "0 4 * * *"  # Daily 4am UTC
   workflow_dispatch:
 
 # Read-only by default; each job below widens this for itself, and only for
