@@ -343,15 +343,37 @@ binary_sensor:
 # set, so touch only died on a true cold boot — and setup() logs
 # "initialised OK" either way, as it checks no write's return value.
 #
-# Calibration is left unset so the driver falls back to the display's native
-# 800x1280 range, matching prior behavior. Note the built-in model instead
-# declares the panel's real raw range (x 20-872, y 20-1644) and swap_xy: true;
-# adopting those interacts with the lvgl rotation below and is deliberately
-# not part of this fix.
+# model: SEEED-RETERMINAL-D1001 supplies this panel's touch calibration
+# (issue #113). Without it the platform falls back to the CUSTOM model, which
+# declares no calibration at all, and setup() then uses the display's native
+# 800x1280 as the raw range. The controller actually reports its long axis as
+# x over roughly 20-1644 and its short axis as y over 20-872, transposed
+# relative to the display, so everything past 800 clamps in normalize_() and
+# the long axis collapses onto one value - the "wrongly calibrated" taps in
+# the issue. The model's ranges match the raw values measured on the
+# reporter's hardware.
+#
+# Note calibration bounds are applied *after* the swap: add_raw_touch_position_
+# swaps the raw pair first, then normalises, so x_max 872 belongs to the
+# display's 800px axis rather than to the controller's own x.
+#
+# The transform block is dropped rather than restated, for two reasons. It
+# described the panel in the rotated frame, which is wrong: LVGL rotates touch
+# input itself (LVTouchListener's read callback calls rotate_coordinates on the
+# point), so the transform must describe the native, unrotated panel and must
+# not compensate for the lvgl rotation below. And a partial transform: block
+# still takes per-key defaults from the model, so a leftover one would only
+# invite drifting back out of sync.
+#
+# interrupt_pin, reset_pin and firmware duplicate the model's defaults. They
+# stay spelled out: reset_pin is what #114 fixed and naming xl9535_hub beats
+# relying on the model's auto-resolved hub id, and pinning the firmware blob's
+# SHA-256 here keeps the artifact fixed independently of the model.
 # ---------------------------------------------------------------------------
 touchscreen:
   - platform: gsl3670
     id: my_touchscreen
+    model: SEEED-RETERMINAL-D1001
     i2c_id: bus_touch
     interrupt_pin: GPIO16
     reset_pin:
@@ -360,10 +382,6 @@ touchscreen:
     firmware:
       url: "https://github.com/esphome-libs/gsl3670-firmware/releases/download/v1.0.0/seeed-d1001-fw.bin"
       sha256: "2e50501ad83656fb6fa3d92591f9f31add4d442c8e8a79f29f5c4d335bd127a4"
-    transform:
-      swap_xy: false
-      mirror_x: true
-      mirror_y: true
     on_touch:
       - script.execute: cover_art_pause_after_touch
       - script.wait: cover_art_pause_after_touch
