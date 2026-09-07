@@ -41,6 +41,7 @@ jobs:
           python3 community/scripts/builder_smoke.py --self-test
           python3 community/scripts/ui_stamp.py --self-test
           bash .github/scripts/retry.sh --self-test
+          bash .github/scripts/publish_release.sh --self-test
       - name: Status consistency
         run: python3 community/scripts/check_status_consistency.py
       - name: OTA buffer override present

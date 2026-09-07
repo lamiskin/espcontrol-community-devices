@@ -272,7 +272,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          source .github/scripts/retry.sh
           TAG="${{ needs.prepare.outputs.tag }}"
           VERSION="${{ needs.prepare.outputs.version }}"
           UPSTREAM_REF=$(cat community/upstream-ref.txt)
@@ -301,14 +300,18 @@ jobs:
 
           # Collect all binary files
           FILES=$(find release-artifacts -name "*.bin" -o -name "*-manifest.json" | sort)
-          PRERELEASE_FLAG=""
-          if [ "${{ needs.prepare.outputs.prerelease }}" = "true" ]; then
-            PRERELEASE_FLAG="--prerelease"
-          fi
-          retry gh release create "$TAG" $FILES \
-            --title "${VERSION}" \
-            --notes-file "$NOTES_FILE" \
-            $PRERELEASE_FLAG
+
+          # publish_release.sh rather than a bare `gh release create`: the
+          # release may already exist (a tag made through GitHub's UI brings
+          # one with it, and a create whose upload was cut off leaves one
+          # behind), and it finishes the job either way. It wraps itself in
+          # `retry`.
+          .github/scripts/publish_release.sh \
+            "$TAG" \
+            "$VERSION" \
+            "$NOTES_FILE" \
+            "${{ needs.prepare.outputs.prerelease }}" \
+            $FILES
 
       # Pages deployment is owned entirely by community-pages.yml, which
       # triggers on this workflow's completion and rebuilds the site from
