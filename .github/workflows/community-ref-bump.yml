@@ -39,6 +39,22 @@ jobs:
             echo "needs_bump=false" >> $GITHUB_OUTPUT
           fi
 
+  # Device list doesn't depend on the bump itself, so this can run
+  # independently and feed the compile matrix below.
+  determine-devices:
+    runs-on: ubuntu-latest
+    needs: check-upstream
+    if: needs.check-upstream.outputs.needs_bump == 'true'
+    outputs:
+      devices: ${{ steps.list.outputs.devices }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: List all devices
+        id: list
+        run: |
+          DEVICES=$(python3 -c "import json; print(json.dumps(json.load(open('community/devices.json'))['devices']))")
+          echo "devices=$DEVICES" >> $GITHUB_OUTPUT
+
   # Only step that needs write access to create the branch. Runs before any
   # third-party code (upstream generators, esphome) executes, so a
   # compromised dependency later in the pipeline never runs alongside this
@@ -108,18 +124,48 @@ jobs:
             retry git push
           fi
 
+  # Global check, independent of any single device's compile — runs
+  # alongside the compile matrix instead of blocking on it.
+  parity:
+    runs-on: ubuntu-latest
+    needs: [check-upstream, push, assemble]
+    timeout-minutes: 15
+    outputs:
+      report: ${{ steps.parity.outputs.report }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ref-bump/${{ needs.check-upstream.outputs.new_ref }}
+      - name: Assemble
+        run: |
+          source .github/scripts/retry.sh
+          retry python3 community/scripts/assemble.py --skip-web
+      - name: Include parity report
+        id: parity
+        continue-on-error: true
+        env:
+          UPSTREAM_CLONE: .assembly
+        run: |
+          {
+            echo "report<<EOF"
+            python3 community/scripts/check_include_parity.py 2>&1
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
   # Runs the esphome compiler — the highest-risk third-party code execution
   # in this pipeline (it fetches and runs platformio toolchains). No
   # contents:write here: this job cannot push anywhere in the repo even if
-  # compromised. It re-runs assemble to reproduce .assembly locally, since
-  # each job starts on a fresh runner.
+  # compromised. One matrix leg per device so a slow or stuck device no
+  # longer serializes behind the rest; fail-fast is off so one broken device
+  # doesn't cancel the others.
   compile:
     runs-on: ubuntu-latest
-    needs: [check-upstream, push, assemble]
+    needs: [check-upstream, push, assemble, determine-devices]
     timeout-minutes: 120
-    permissions:
-      contents: read
-      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        device: ${{ fromJson(needs.determine-devices.outputs.devices) }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -139,51 +185,67 @@ jobs:
         run: |
           source .github/scripts/retry.sh
           retry pip install esphome==$(grep ESPHOME_VERSION .assembly/.github/esphome.env | cut -d= -f2)
-      - name: Include parity report
-        id: parity
-        continue-on-error: true
-        env:
-          UPSTREAM_CLONE: .assembly
-        run: |
-          python3 community/scripts/check_include_parity.py 2>&1 | tee /tmp/parity-report.txt
-      - name: Compile all devices
-        id: compile
-        continue-on-error: true
+      - name: Cache PlatformIO
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.platformio
+            .assembly/.esphome
+          key: pio-refbump-${{ matrix.device }}-${{ hashFiles('community/upstream-ref.txt') }}
+          restore-keys: pio-refbump-${{ matrix.device }}-
+      - name: Compile
         run: |
           source .github/scripts/retry.sh
-          # Without pipefail, `if esphome compile ... | tail -5` tests tail's
-          # exit status, which is always 0 — every device was reported ✅ in
-          # the PR body no matter how the compile went.
-          set -o pipefail
-          DEVICES=$(python3 -c "import json; print('\n'.join(json.load(open('community/devices.json'))['devices']))")
-          RESULTS=""
-          OVERALL="success"
-          while IFS= read -r slug; do
-            [ -z "$slug" ] && continue
-            echo "=== Compiling $slug ==="
-            cd .assembly
-            # Fix external_components path for non-Docker CI (no /config mount)
-            ASSEMBLY_ABS="$(pwd)"
-            sed -i "s|file:///config|file://${ASSEMBLY_ABS}|g" "builds/$slug.yaml"
-            if RETRY_ATTEMPTS=3 retry esphome compile "builds/$slug.yaml" 2>&1 | tail -5; then
-              RESULTS="$RESULTS\n- ✅ $slug"
-            else
-              RESULTS="$RESULTS\n- ❌ $slug"
-              OVERALL="failure"
-            fi
-            cd ..
-          done <<< "$DEVICES"
-          echo "COMPILE_RESULTS<<EOF" >> $GITHUB_ENV
-          echo -e "$RESULTS" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-          echo "overall=$OVERALL" >> $GITHUB_OUTPUT
+          cd .assembly
+          # Fix external_components path for non-Docker CI (no /config mount)
+          ASSEMBLY_ABS="$(pwd)"
+          sed -i "s|file:///config|file://${ASSEMBLY_ABS}|g" "builds/${{ matrix.device }}.yaml"
+          RETRY_ATTEMPTS=3 retry esphome compile "builds/${{ matrix.device }}.yaml"
+
+  # Aggregates the compile matrix and parity report into the PR. Runs
+  # regardless of whether individual devices failed — a failed device still
+  # needs to show up as ❌ in the PR body for review, not silently skip it.
+  # Guarded on compile.result != 'skipped' (rather than bare always()) so an
+  # earlier failure — e.g. assemble, which both compile and parity depend on
+  # — skips the matrix and this job together instead of opening a PR with
+  # every device falsely marked ❌.
+  open-pr:
+    runs-on: ubuntu-latest
+    needs: [check-upstream, push, compile, parity]
+    if: always() && needs.push.result == 'success' && needs.compile.result != 'skipped'
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ref-bump/${{ needs.check-upstream.outputs.new_ref }}
       - name: Open PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           source .github/scripts/retry.sh
-          PARITY=$(cat /tmp/parity-report.txt 2>/dev/null || echo "N/A")
+          PARITY="${{ needs.parity.outputs.report }}"
+          [ -z "$PARITY" ] && PARITY="N/A"
           BRANCH="ref-bump/${{ needs.check-upstream.outputs.new_ref }}"
+
+          # One fetch of this run's jobs, then match each device against it
+          # locally — avoids a gh api call per device.
+          JOBS_JSON=$(retry gh run view ${{ github.run_id }} --json jobs)
+          DEVICES=$(python3 -c "import json; print('\n'.join(json.load(open('community/devices.json'))['devices']))")
+
+          RESULTS=""
+          while IFS= read -r slug; do
+            [ -z "$slug" ] && continue
+            CONCLUSION=$(echo "$JOBS_JSON" | jq -r --arg slug "$slug" \
+              '.jobs[] | select((.name | startswith("compile")) and (.name | contains($slug))) | .conclusion')
+            if [ "$CONCLUSION" = "success" ]; then
+              RESULTS="$RESULTS\n- ✅ $slug"
+            else
+              RESULTS="$RESULTS\n- ❌ $slug"
+            fi
+          done <<< "$DEVICES"
 
           retry gh pr create \
             --base main \
@@ -195,7 +257,7 @@ jobs:
           Bumps from \`${{ needs.check-upstream.outputs.current_ref }}\` to \`${{ needs.check-upstream.outputs.new_ref }}\`.
 
           ### Compile Results
-          ${{ env.COMPILE_RESULTS }}
+          $(echo -e "$RESULTS")
 
           ### Include Parity Report
           \`\`\`
