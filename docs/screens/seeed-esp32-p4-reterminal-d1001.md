@@ -18,8 +18,8 @@ on the home screen.
 
 Community port contributed via [PR #885](https://github.com/jtenniswood/espcontrol/pull/885) by @zacs.
 
-::: warning Not yet hardware-verified
-This device compiles and is flashable, but nobody has confirmed it on real hardware yet. It may not work. If you own this panel, [verifying it](/reference/support-policy#hardware-verification) is the most valuable contribution you can make.
+::: danger Currently broken
+This device does not compile against the current pinned upstream version and has been pulled from the installer. Already-flashed panels keep working but will not receive updates until it is fixed.
 :::
 
 ## Specifications
@@ -34,29 +34,8 @@ This device compiles and is flashable, but nobody has confirmed it on real hardw
 
 ## Install
 
-Connect the display to your computer with a **USB-C data cable**, then click
-the button below (Chrome or Edge on desktop).
-
-<EspInstallButton slug="seeed-esp32-p4-reterminal-d1001" />
-
-For WiFi setup and Home Assistant pairing the flow is identical to official
-EspControl — follow the [Install guide](/getting-started/install).
-
-### Repairing the ESP32-C6 WiFi processor
-
-If this panel repeatedly disconnects, never completes its first WiFi setup,
-disappears from Home Assistant after a restart, or reports a C6 firmware
-manifest timeout in its USB log, use the recovery image instead. It
-reinstalls the firmware above **and** repairs the ESP32-C6 WiFi processor
-from a known-good firmware image, entirely over USB — it does not need a
-working network connection.
-
-::: warning This reinstalls the firmware
-Export your configuration from **Settings > Backup** first if the panel is
-still accessible.
-:::
-
-<EspInstallButton slug="seeed-esp32-p4-reterminal-d1001" variant="recovery" />
+Installation is unavailable while this device is not building — see the
+status note above.
 
 ## ESPHome Manual Setup
 

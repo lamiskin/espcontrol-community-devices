@@ -18,10 +18,8 @@ on the home screen.
 
 Community port contributed via [PR #351](https://github.com/jtenniswood/espcontrol/pull/351) by @davidmerrique.
 
-::: tip Hardware-verified
-This device has been verified on real hardware — it compiles, flashes, and runs EspControl correctly.
-
-Confirmed by @mglev1n ([#62](https://github.com/lamiskin/espcontrol-community-devices/issues/62)) at `community-v0.1.2-upstream.v2.6.3`.
+::: danger Currently broken
+This device does not compile against the current pinned upstream version and has been pulled from the installer. Already-flashed panels keep working but will not receive updates until it is fixed.
 :::
 
 |  |
@@ -40,17 +38,8 @@ Confirmed by @mglev1n ([#62](https://github.com/lamiskin/espcontrol-community-de
 
 ## Install
 
-Connect the display to your computer with a **USB-C data cable**, then click
-the button below (Chrome or Edge on desktop).
-
-<EspInstallButton slug="seeed-sensecap-indicator-d1" />
-
-For WiFi setup and Home Assistant pairing the flow is identical to official
-EspControl — follow the [Install guide](/getting-started/install).
-
-::: info First boot needs WiFi
-This panel has 8MB flash (the other community devices have 16MB), too little to fit the web UI alongside the firmware. The panel screen and controls work immediately, but the on-device web GUI won't appear until the device connects to WiFi and downloads it — on other community devices it's available immediately after flashing.
-:::
+Installation is unavailable while this device is not building — see the
+status note above.
 
 ## ESPHome Manual Setup
 
