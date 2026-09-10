@@ -32,9 +32,77 @@ jobs:
           DEVICES=$(python3 -c "import json; print(json.dumps(json.load(open('community/devices.json'))['devices']))")
           echo "devices=$DEVICES" >> $GITHUB_OUTPUT
 
+  # Single upstream-availability check, run once before the 8-device
+  # matrix rather than left to fail independently inside each leg. A
+  # per-device compile/builder-smoke failure below gets reported as that
+  # device being broken — a [broken] issue and a STATUS.md flip — which is
+  # right when the device's own config is actually at fault, but wrong
+  # when upstream itself is unreachable (a deleted/repointed release tag,
+  # a GitHub outage): that fails every device identically and says nothing
+  # about any of them. This happened for real: upstream deleted v2.8.5 and
+  # nightly filed 8 near-identical "broken" issues + flipped 8 STATUS.md
+  # rows, when the true story was one sentence about upstream, not eight
+  # devices. This job isolates that shared failure mode into one tracking
+  # issue and skips the matrix below entirely instead of misreporting it
+  # eight times over.
+  verify-upstream-pin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write        # open/comment/close the single tracking issue
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - name: Resolve and verify upstream pin
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          source .github/scripts/retry.sh
+          DISPLAY_REF=$(cat community/upstream-ref.txt)
+          REF=$(cat community/upstream-sha.txt 2>/dev/null || echo "$DISPLAY_REF")
+          ENV_URL="https://raw.githubusercontent.com/jtenniswood/espcontrol/${REF}/.github/esphome.env"
+          ISSUE_TITLE="[infra] upstream pin unreachable"
+
+          # Same fetch+parse-separately shape as builder-smoke below: piping
+          # curl straight into grep would hide a fetch failure behind
+          # grep's exit status.
+          if ESPHOME_ENV=$(retry curl -sSfL --max-time 60 "$ENV_URL") \
+             && printf '%s\n' "$ESPHOME_ENV" | grep -q '^ESPHOME_VERSION='; then
+            echo "Upstream pin $DISPLAY_REF ($REF) resolves fine."
+            EXISTING=$(retry gh issue list --state open --search "\"$ISSUE_TITLE\" in:title" --json number --jq '.[0].number' 2>/dev/null || true)
+            if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
+              retry gh issue close "$EXISTING" \
+                --comment "Upstream pin resolves again as of $(date -u +%Y-%m-%d) ($DISPLAY_REF / $REF).
+
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            fi
+            exit 0
+          fi
+
+          echo "::error::Upstream pin $DISPLAY_REF ($REF) did not resolve at $ENV_URL"
+
+          BODY="Nightly could not resolve the pinned upstream ref on $(date -u +%Y-%m-%d) — fetching \`.github/esphome.env\` failed.
+
+          Pin: \`$DISPLAY_REF\` ($REF)
+          URL: $ENV_URL
+
+          This means upstream's tag likely moved, was deleted, or GitHub had a transient issue — it is **not** a sign that any community device config is broken. Compile and builder-smoke were skipped this run; STATUS.md and the per-device \`[broken]\` issues were left untouched. Likely fix: wait for Community Ref Bump to pick up a newer upstream release, or re-run this workflow once upstream is reachable again.
+
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          EXISTING=$(retry gh issue list --state open --search "\"$ISSUE_TITLE\" in:title" --json number --jq '.[0].number' 2>/dev/null || true)
+          if [ -z "$EXISTING" ] || [ "$EXISTING" = "null" ]; then
+            retry gh issue create --title "$ISSUE_TITLE" --body "$BODY" --label "sync-broken"
+          else
+            retry gh issue comment "$EXISTING" --body "$BODY"
+          fi
+          exit 1
+
   compile:
     runs-on: ubuntu-latest
-    needs: determine-devices
+    needs: [determine-devices, verify-upstream-pin]
     timeout-minutes: 120
     strategy:
       fail-fast: false
@@ -109,7 +177,7 @@ jobs:
   # community/scripts/builder_smoke.py and Community CI's builder-smoke job.
   builder-smoke:
     runs-on: ubuntu-latest
-    needs: determine-devices
+    needs: [determine-devices, verify-upstream-pin]
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -126,7 +194,12 @@ jobs:
       - name: Install ESPHome (upstream-pinned version)
         run: |
           source .github/scripts/retry.sh
-          REF=$(cat community/upstream-ref.txt)
+          # Prefer the resolved commit SHA over the tag name when one has
+          # been recorded (community/upstream-sha.txt) — see verify-
+          # upstream-pin above and assemble.py's clone_upstream(). A tag
+          # can be deleted or repointed upstream after the fact; a SHA
+          # can't.
+          REF=$(cat community/upstream-sha.txt 2>/dev/null || cat community/upstream-ref.txt)
           ENV_URL="https://raw.githubusercontent.com/jtenniswood/espcontrol/${REF}/.github/esphome.env"
           # Fetch and parse separately: piping curl straight into grep hides
           # a fetch failure behind grep's exit status, so a reset connection

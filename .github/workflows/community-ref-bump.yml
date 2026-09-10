@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new_ref: ${{ steps.check.outputs.new_ref }}
+      new_sha: ${{ steps.check.outputs.new_sha }}
       current_ref: ${{ steps.check.outputs.current_ref }}
       needs_bump: ${{ steps.check.outputs.needs_bump }}
     steps:
@@ -35,6 +36,21 @@ jobs:
           if [ "$LATEST" != "$CURRENT" ]; then
             echo "new_ref=$LATEST" >> $GITHUB_OUTPUT
             echo "needs_bump=true" >> $GITHUB_OUTPUT
+
+            # Resolve the tag to its commit SHA now, while it's known to
+            # exist, and pin the clone to that instead of the tag name.
+            # A tag can be deleted or repointed upstream after the fact —
+            # this happened to v2.8.5 and took every device's nightly
+            # build down at once (#122-#129) even though no device config
+            # had actually changed. A resolved SHA can't be deleted out
+            # from under us the same way.
+            SHA=$(retry gh api "repos/jtenniswood/espcontrol/commits/$LATEST" --jq .sha)
+            if [ -z "$SHA" ] || [ "$SHA" = "null" ]; then
+              echo "::error::Could not resolve $LATEST to a commit SHA" >&2
+              exit 1
+            fi
+            echo "Resolved $LATEST -> $SHA"
+            echo "new_sha=$SHA" >> $GITHUB_OUTPUT
           else
             echo "needs_bump=false" >> $GITHUB_OUTPUT
           fi
@@ -72,7 +88,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Bump refs
         run: |
-          python3 community/scripts/bump_refs.py ${{ needs.check-upstream.outputs.new_ref }}
+          python3 community/scripts/bump_refs.py \
+            ${{ needs.check-upstream.outputs.new_ref }} \
+            --sha ${{ needs.check-upstream.outputs.new_sha }}
       - name: Refresh UI cache stamp
         run: |
           # bump_refs.py just changed community/upstream-ref.txt, a
@@ -87,7 +105,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "chore: bump upstream ref to ${{ needs.check-upstream.outputs.new_ref }}"
+          git commit -m "chore: bump upstream ref to ${{ needs.check-upstream.outputs.new_ref }}" \
+            -m "Resolved commit: ${{ needs.check-upstream.outputs.new_sha }}" \
+            -m "Pins the clone to this SHA (community/upstream-sha.txt) instead of the tag name, so the tag being deleted or repointed upstream later can't break it."
           retry git push -u origin "$BRANCH"
 
   # Clones upstream and runs its generator scripts — third-party code. Keeps
@@ -254,7 +274,7 @@ jobs:
             --label "ref-bump" \
             --body "## Upstream Ref Bump
 
-          Bumps from \`${{ needs.check-upstream.outputs.current_ref }}\` to \`${{ needs.check-upstream.outputs.new_ref }}\`.
+          Bumps from \`${{ needs.check-upstream.outputs.current_ref }}\` to \`${{ needs.check-upstream.outputs.new_ref }}\` (resolved commit \`${{ needs.check-upstream.outputs.new_sha }}\` — clones pin to this SHA, immune to the tag being deleted/repointed later).
 
           ### Compile Results
           $(echo -e "$RESULTS")

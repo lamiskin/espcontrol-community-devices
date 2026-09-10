@@ -3,7 +3,7 @@
 bump_refs.py – Update all upstream espcontrol ref pins in device YAML files.
 
 Usage:
-    python3 community/scripts/bump_refs.py <new-ref>
+    python3 community/scripts/bump_refs.py <new-ref> [--sha <resolved-sha>]
     python3 community/scripts/bump_refs.py --self-test
 
 The <new-ref> must be either a tag like vX.Y.Z or a 40-character SHA.
@@ -14,8 +14,14 @@ Algorithm:
    - Replace ref: lines within blocks that have url:.*jtenniswood/espcontrol
    - Replace espcontrol_component_ref: "..." values
 3. Write the new ref to community/upstream-ref.txt.
-4. Run check_pin_consistency.py as a post-condition.
-5. Print summary.
+4. If --sha was given, write it to community/upstream-sha.txt. This is the
+   new_ref tag resolved to its commit at bump time; assemble.py clones by
+   this SHA instead of the tag when present, so a tag later being deleted
+   or repointed upstream (as happened to v2.8.5) can't break the clone.
+   devices/*.yaml and upstream-ref.txt keep showing the human-readable tag
+   either way — the SHA is only ever used for the actual git fetch.
+5. Run check_pin_consistency.py as a post-condition.
+6. Print summary.
 
 Idempotent: running with the current pin is a no-op.
 """
@@ -32,6 +38,7 @@ REPO_ROOT = os.path.abspath(
 )
 COMMUNITY_DIR = os.path.join(REPO_ROOT, "community")
 PIN_FILE = os.path.join(COMMUNITY_DIR, "upstream-ref.txt")
+PIN_SHA_FILE = os.path.join(COMMUNITY_DIR, "upstream-sha.txt")
 DEVICES_DIR = os.path.join(REPO_ROOT, "devices")
 CHECK_SCRIPT = os.path.join(
     COMMUNITY_DIR, "scripts", "check_pin_consistency.py"
@@ -76,6 +83,17 @@ def write_pin(new_ref):
     """Write the new pin to community/upstream-ref.txt."""
     with open(PIN_FILE, "w", encoding="utf-8") as f:
         f.write(new_ref + "\n")
+
+
+def write_sha_pin(sha):
+    """Write the resolved commit SHA to community/upstream-sha.txt.
+
+    Only ever consulted by assemble.py's clone step; every other consumer
+    (devices/*.yaml, upstream-ref.txt, release notes, STATUS.md) keeps
+    reading the human-readable tag as before.
+    """
+    with open(PIN_SHA_FILE, "w", encoding="utf-8") as f:
+        f.write(sha + "\n")
 
 
 def bump_yaml_content(content, new_ref):
@@ -326,6 +344,16 @@ def main():
         help="New ref (vX.Y.Z tag or 40-char SHA)"
     )
     parser.add_argument(
+        "--sha", default=None,
+        help=(
+            "Commit SHA that new_ref resolves to. Written to "
+            "community/upstream-sha.txt for assemble.py to clone by, so "
+            "new_ref being a tag that's later deleted or repointed "
+            "upstream can't break the clone. Only meaningful when "
+            "new_ref is a tag; ignored if new_ref is already a SHA."
+        )
+    )
+    parser.add_argument(
         "--self-test", action="store_true",
         help="Run self-test mode"
     )
@@ -349,23 +377,38 @@ def main():
         )
         sys.exit(1)
 
+    if args.sha and not SHA_RE.match(args.sha):
+        print(
+            f"Error: '{args.sha}' is not a valid 40-character SHA.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     # Check if already at this pin (idempotent)
     current_pin = read_pin()
-    if current_pin == new_ref:
+    already_current = current_pin == new_ref
+    if already_current and not args.sha:
         print(f"Pin is already {new_ref}. Nothing to do.")
         sys.exit(0)
 
-    # Bump all refs
-    files_modified = bump_refs(new_ref)
+    # Bump all refs (no-op if already_current — new_ref == current refs)
+    files_modified = bump_refs(new_ref) if not already_current else 0
 
     # Update pin file
     write_pin(new_ref)
+
+    # Resolved SHA is independent of whether the tag itself changed: a
+    # scheduled run can re-resolve the same tag to a fresher SHA if the
+    # first bump's --sha was never recorded (e.g. an older workflow run).
+    if args.sha and not SHA_RE.match(new_ref):
+        write_sha_pin(args.sha)
 
     # Run consistency check as post-condition
     if not run_consistency_check():
         sys.exit(1)
 
-    print(f"Updated {files_modified} files, pin is now {new_ref}")
+    print(f"Updated {files_modified} files, pin is now {new_ref}"
+          + (f" (sha {args.sha})" if args.sha and not SHA_RE.match(new_ref) else ""))
 
 
 if __name__ == "__main__":

@@ -211,7 +211,11 @@ jobs:
           source .github/scripts/retry.sh
           # Match the ESPHome version the pinned upstream ships/tests with,
           # so validation mirrors what a user's builder would resolve.
-          REF=$(cat community/upstream-ref.txt)
+          # Prefer the resolved commit SHA when recorded (community/
+          # upstream-sha.txt) — a tag can be deleted or repointed upstream
+          # after the fact (this took nightly down for every device at
+          # once, see #122-#129); a SHA can't.
+          REF=$(cat community/upstream-sha.txt 2>/dev/null || cat community/upstream-ref.txt)
           ENV_URL="https://raw.githubusercontent.com/jtenniswood/espcontrol/${REF}/.github/esphome.env"
           # Fetch and parse separately: piping curl straight into grep hides
           # a fetch failure behind grep's exit status, so a reset connection
