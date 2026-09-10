@@ -123,6 +123,14 @@ def clone_upstream(pin):
         run(["git", "clone", "--depth", "1", UPSTREAM_REPO, ASSEMBLY_DIR])
         run(["git", "fetch", "origin", fetch_ref], cwd=ASSEMBLY_DIR)
         run(["git", "checkout", fetch_ref], cwd=ASSEMBLY_DIR)
+        if resolved_sha and not is_sha(pin):
+            # Downstream tooling (check_include_parity.py) does
+            # `git show <tag>:<path>` against this clone, expecting the
+            # tag name itself to resolve as a git ref — true when cloning
+            # by --branch, not when fetching a bare SHA. Recreate it
+            # locally from the commit we just checked out, so that still
+            # works without needing the tag to exist on the remote.
+            run(["git", "tag", pin], cwd=ASSEMBLY_DIR)
     else:
         # For tags/branches: clone directly at that ref
         run(["git", "clone", "--depth", "1", "--branch", fetch_ref, UPSTREAM_REPO, ASSEMBLY_DIR])
