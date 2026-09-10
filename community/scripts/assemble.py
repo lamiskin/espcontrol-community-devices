@@ -29,6 +29,7 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 ASSEMBLY_DIR = os.path.join(REPO_ROOT, ".assembly")
 COMMUNITY_DIR = os.path.join(REPO_ROOT, "community")
 PIN_FILE = os.path.join(COMMUNITY_DIR, "upstream-ref.txt")
+PIN_SHA_FILE = os.path.join(COMMUNITY_DIR, "upstream-sha.txt")
 DEVICES_JSON = os.path.join(COMMUNITY_DIR, "devices.json")
 CATALOG_FRAGMENT = os.path.join(COMMUNITY_DIR, "catalog-fragment.json")
 
@@ -83,21 +84,48 @@ def is_sha(ref):
     return bool(re.fullmatch(r"[0-9a-f]{40}", ref))
 
 
+def read_resolved_sha():
+    """Read the resolved commit SHA for the pin, if one has been recorded.
+
+    Written by community-ref-bump.yml alongside upstream-ref.txt, so a
+    clone can target an immutable commit even when `pin` itself is a tag
+    name. Tags can be deleted or repointed upstream (this happened: v2.8.5
+    vanished from jtenniswood/espcontrol and took every device's nightly
+    build down with it, see #122-#129); a resolved SHA can't be. Absent on
+    older commits or local runs — callers fall back to cloning by tag.
+    """
+    if not os.path.isfile(PIN_SHA_FILE):
+        return None
+    sha = open(PIN_SHA_FILE).read().strip()
+    return sha or None
+
+
 def clone_upstream(pin):
-    """Clone upstream at the pinned ref into .assembly/."""
+    """Clone upstream at the pinned ref into .assembly/.
+
+    Prefers the resolved commit SHA (community/upstream-sha.txt) over the
+    `pin` tag name when both are available — see read_resolved_sha().
+    """
     if os.path.isdir(ASSEMBLY_DIR):
         status("Removing existing .assembly/ ...")
         shutil.rmtree(ASSEMBLY_DIR)
 
-    status(f"Cloning upstream at {pin} ...")
-    if is_sha(pin):
+    resolved_sha = None if is_sha(pin) else read_resolved_sha()
+    fetch_ref = resolved_sha or pin
+
+    if resolved_sha:
+        status(f"Cloning upstream at {pin} (resolved: {fetch_ref}) ...")
+    else:
+        status(f"Cloning upstream at {pin} ...")
+
+    if is_sha(fetch_ref):
         # For SHA refs: clone default branch, fetch the SHA, checkout
         run(["git", "clone", "--depth", "1", UPSTREAM_REPO, ASSEMBLY_DIR])
-        run(["git", "fetch", "origin", pin], cwd=ASSEMBLY_DIR)
-        run(["git", "checkout", pin], cwd=ASSEMBLY_DIR)
+        run(["git", "fetch", "origin", fetch_ref], cwd=ASSEMBLY_DIR)
+        run(["git", "checkout", fetch_ref], cwd=ASSEMBLY_DIR)
     else:
         # For tags/branches: clone directly at that ref
-        run(["git", "clone", "--depth", "1", "--branch", pin, UPSTREAM_REPO, ASSEMBLY_DIR])
+        run(["git", "clone", "--depth", "1", "--branch", fetch_ref, UPSTREAM_REPO, ASSEMBLY_DIR])
 
     status("Clone complete.")
 
