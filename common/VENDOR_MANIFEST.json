@@ -7,7 +7,7 @@
     "common/assets/network_status_glyphs.yaml": "815a093500feb593a0366908ea6ab641901ce5b6fa0908a19ba7a048baa162f2",
     "common/assets/text_glyphs.yaml": "ca38e257350d54b1b6d1c7c7e39656b1fea51de40de6a8daefc95b4801360b60",
     "common/device/button_widget.yaml": "c6b833523534509675a1ec8f232ffc49b15c6fb2a00b89d3b98c07ffed74b948",
-    "common/device/core_infra.yaml": "520e61bdbadf588fe3e1979b88dd5a058b6c50928da9582922bce1938a3cc44a"
+    "common/device/core_infra.yaml": "302c7dc2b930bf4eb6df0685dfd6522c0546c9c9b1db6b83fa682cb8cb119dad"
   },
-  "pin": "v2.8.5"
+  "pin": "v2.8.6"
 }
