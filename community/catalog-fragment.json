@@ -1449,6 +1449,7 @@
         "firmware": {
           "display": {
             "wrapTallLabels": true,
+            "refreshRebuildsSubpages": true,
             "volumeWidthCompensationPercent": 95,
             "mediaArtworkWidthCompensationPercent": 98,
             "coverArt": {
