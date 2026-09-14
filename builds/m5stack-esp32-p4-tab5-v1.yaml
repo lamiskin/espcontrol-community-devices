@@ -1,0 +1,31 @@
+# =============================================================================
+# BUILD PROFILE - M5Stack Tab5 V1 (5" landscape ESP32-P4)
+# =============================================================================
+# CI/local build entry point for the 1280x720 landscape ESP32-P4 V1 panel.
+# Loads the web UI from GitHub Pages so CI can skip building www.js.
+# =============================================================================
+
+substitutions:
+  name: "espcontrol-tab5-v1"
+  friendly_name: "M5Stack Tab5 V1 (Community)"
+  espcontrol_component_url: "file:///config"
+  espcontrol_component_ref: "HEAD"
+
+esphome:
+  name_add_mac_suffix: true
+
+packages:
+  espcontrol: !include ../devices/m5stack-esp32-p4-tab5-v1/packages.yaml
+
+wifi:
+  # Compile-only station credentials for CI/local builds. User-imported
+  # deployed configs supply their real WiFi credentials in device YAML.
+  ssid: "ESPControl"
+  password: "espcontrol"
+  ap:
+    ssid: "${name}"
+
+captive_portal:
+
+web_server:
+  js_url: "https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js"

@@ -26,7 +26,7 @@ wifi:
 packages:
   setup:
     url: https://github.com/lamiskin/espcontrol-community-devices/
-    file: devices/m5stack-esp32-p4-tab5/packages.yaml
+    file: devices/m5stack-esp32-p4-tab5-v1/packages.yaml
     refresh: 1s
 
 # ---------------------------------------------------------------------------

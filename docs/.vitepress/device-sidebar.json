@@ -8,6 +8,10 @@
     "link": "/screens/m5stack-esp32-p4-tab5"
   },
   {
+    "text": "M5Stack Tab5 (V1)",
+    "link": "/screens/m5stack-esp32-p4-tab5-v1"
+  },
+  {
     "text": "Seeed reTerminal D1001",
     "link": "/screens/seeed-esp32-p4-reterminal-d1001"
   },

@@ -10,6 +10,7 @@
 | Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1 10.1" | waveshare-esp32-p4-touch-lcd-10 | Untested | - | - | @sbuchbauer | [Issue #838](https://github.com/jtenniswood/espcontrol/issues/838) |
 | Wireless-Tag WT32-SC01 Plus 3.5" | wireless-tag-wt32-sc01-plus | Working | community-v0.7.2-upstream.v2.8.6 | @jonnybergdahl ([#134](https://github.com/lamiskin/espcontrol-community-devices/pull/134)) | @jonnybergdahl | [PR #194](https://github.com/jtenniswood/espcontrol/pull/194) |
 | M5Stack Tab5 5" | m5stack-esp32-p4-tab5 | Working | community-v0.6.0-upstream.v2.8.4-preview.1 | @direk ([#95](https://github.com/lamiskin/espcontrol-community-devices/issues/95#issuecomment-5521806746)) | @direk | [Issue #95](https://github.com/lamiskin/espcontrol-community-devices/issues/95) |
+| M5Stack Tab5 5" (V1) | m5stack-esp32-p4-tab5-v1 | Untested | - | - | @persuader72 | [PR #136](https://github.com/lamiskin/espcontrol-community-devices/pull/136) |
 | WaveShare ESP32-S3 Smart 86 Box | waveshare-esp32-s3-smart-86-box | Parked | - | - | @salnajjar | [PR #293](https://github.com/jtenniswood/espcontrol/pull/293) |
 
 ## Status meanings

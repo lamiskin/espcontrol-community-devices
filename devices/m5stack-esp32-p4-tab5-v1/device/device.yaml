@@ -14,7 +14,7 @@
 
 substitutions:
   espcontrol_component_url: "https://github.com/jtenniswood/espcontrol"
-  espcontrol_component_ref: "v2.8.6"
+  espcontrol_component_ref: "v2.9.0"
   mdi_font_file: "https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf"
 
 # ---------------------------------------------------------------------------
@@ -340,7 +340,9 @@ light:
       then:
         - script.execute: display_backlight_handle_state
 
-# Touch GT911
+# ---------------------------------------------------------------------------
+# Touchscreen (GT911 on V1 boards, wakes screensaver on touch)
+# ---------------------------------------------------------------------------
 touchscreen:
   - platform: gt911
     id: my_touchscreen
@@ -354,6 +356,10 @@ touchscreen:
       x_max: 720
       y_min: 0
       y_max: 1280
+    on_touch:
+      - script.execute: cover_art_pause_after_touch
+      - script.wait: cover_art_pause_after_touch
+      - script.execute: screensaver_wake
 
 # Display MIPI DSI — Tab5 v1 (ILI9881C)
 display:
@@ -370,7 +376,7 @@ display:
     update_interval: never
 
 # ---------------------------------------------------------------------------
-# LVGL base (display bin\ding, must be before any page definitions)
+# LVGL base (display binding, must be before any page definitions)
 # ---------------------------------------------------------------------------
 lvgl:
   id: main_lvgl

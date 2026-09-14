@@ -195,5 +195,17 @@ m5stack-esp32-p4-tab5:
     - components/**
     - src/**
 
+m5stack-esp32-p4-tab5-v1:
+  allowed:
+    - devices/m5stack-esp32-p4-tab5-v1/**
+    - builds/m5stack-esp32-p4-tab5-v1*.yaml
+  required:
+    - devices/m5stack-esp32-p4-tab5-v1/esphome.yaml
+    - devices/m5stack-esp32-p4-tab5-v1/packages.yaml
+    - devices/m5stack-esp32-p4-tab5-v1/device/device.yaml
+  forbidden:
+    - components/**
+    - src/**
+
 # --- end policy ---
 ```
