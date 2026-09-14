@@ -29,8 +29,10 @@ switch:
     icon: "mdi:battery-charging"
     entity_category: config
     # Charging is left off at boot: on the author's V1 board, enabling it
-    # makes the panel run hot. Not yet confirmed whether this affects all
-    # V1 units. Toggle "Battery Charge Enable" to charge.
+    # makes the panel run hot near the USB-C / IP2326. Not yet confirmed
+    # whether this affects all V1 units. Toggle "Battery Charge Enable" to
+    # charge. CHG_EN (this pin) drives IP2326 EN; when low the charger IC
+    # is in standby and cannot negotiate or charge.
     restore_mode: ALWAYS_OFF
 
   - platform: gpio
@@ -42,7 +44,10 @@ switch:
     name: "Battery Quick Charge Enable"
     icon: "mdi:battery-charging-high"
     entity_category: config
-    # Keep OFF with charge enable: QC is only a current select, but leave it
-    # off at boot so a later charge toggle does not start in high-current mode.
+    # nCHG_QC_EN (active-low) gates a board MOSFET, not an IP2326 pin. The
+    # IP2326 has only EN (via CHG_EN above); DP/DM fast-charge negotiation
+    # runs only while EN is high, so QC asserted while charge is off is
+    # safe for the IC. Still default OFF to match M5Unified's charge-disable
+    # path and avoid surprise high current when charge is later turned on.
     restore_mode: ALWAYS_OFF
 

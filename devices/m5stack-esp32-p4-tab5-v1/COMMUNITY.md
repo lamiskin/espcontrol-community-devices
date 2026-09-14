@@ -31,7 +31,8 @@ catalog profile) and changing only what the older board needs.
 - **Touch controller.** `st7123` → `gt911`, with explicit `calibration`
   (720×1280 native extents) and `interrupt_pin: GPIO23` driving interrupt-based
   updates. The screensaver/cover-art `on_touch` handler is carried over
-  unchanged.
+  unchanged. Four-corner tracking verified on author hardware without an
+  explicit `transform`.
 - **Display panel.** `model: M5STACK-TAB5-ST7123` → `model: M5Stack-Tab5` with
   explicit `dimensions` (720×1280), selecting the ILI9881C panel.
 - **Extra power-rail switches.** V1 exposes three additional IO-expander rails
@@ -63,18 +64,21 @@ not one of the V2 variants above.
 ## Known quirks
 
 - **Charging left off at boot.** On the author's V1 board, enabling
-  `battery_charge_enable` makes the panel run hot near the USB-C / charge IC.
+  `battery_charge_enable` makes the panel run hot near the USB-C / IP2326.
   Both charge and quick-charge default to off; toggle **Battery Charge Enable**
   (and Quick Charge if you want higher current) when you intentionally charge.
   Not yet confirmed whether this affects all V1 units.
-- **Touch transform not set.** The GT911 block uses `calibration` (720×1280)
-  without an explicit `transform`. Confirm touch tracks accurately in all four
-  corners after the 270° landscape rotation before promoting status.
+- **Quick-charge pin is board-level.** Tab5 `nCHG_QC_EN` drives a discrete
+  MOSFET, not an IP2326 pin. The IP2326 only has `EN` (wired to `CHG_EN`);
+  DP/DM fast-charge negotiation only runs while `EN` is high. Leaving QC
+  asserted while charge is off is therefore safe for the IC, but we still
+  default QC off to match M5Unified's charge-disable path.
 
 ## Verification
 
-Untested in this repo. @persuader72 compiled and flashed this on real V1
-hardware and attached a photo of the panel running to
-[PR #136](https://github.com/lamiskin/espcontrol-community-devices/pull/136);
-promoting it to **Working** needs that confirmation against a release pin that
-actually ships this device, plus the touch-corner check above.
+@persuader72 compiled and flashed this on real V1 hardware (photo on
+[PR #136](https://github.com/lamiskin/espcontrol-community-devices/pull/136)).
+GT911 touch was checked in all four corners after the 270° landscape rotation
+and tracks correctly with the existing `calibration` (no explicit `transform`
+needed on this unit). Repo status can be promoted once a release pin that
+ships this device is confirmed.
