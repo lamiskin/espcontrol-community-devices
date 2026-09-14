@@ -35,8 +35,15 @@ Checks per device:
      firmware.display.refreshRebuildsSubpages, and therefore emit
      grid_rebuild_all in apply_button_grid rather than grid_refresh_layout.
      This mirrors upstream's own test_rotation_refresh_rebuilds_subpages.
-  2. No device still calls a helper that its same-chip upstream reference
-     device has stopped calling.
+  2. Set parity with the same-chip upstream reference device: the scripts
+     defined and the helpers called must match in both directions. This is
+     deliberately generic — it compares sets rather than a list of known
+     names, so a helper introduced upstream after this check was written
+     still trips it. That is the point: the drift it was written for was
+     found by a contributor, not by us.
+
+Known-legitimate divergence goes in ACCEPTED_DIVERGENCE with a reason,
+rather than being absorbed silently by a broad allowlist.
 """
 
 import argparse
@@ -60,12 +67,23 @@ REFERENCE_DEVICES = {
     "esp32-p4": "guition-esp32-p4-jc1060p470",
 }
 
-# Helpers whose presence/absence is meaningful to compare. Keep this list
-# small and deliberate — it is a drift tripwire, not a diff.
-TRACKED_HELPERS = (
-    "grid_rebuild_all",
-    "grid_refresh_layout",
-)
+# Deliberately NOT a list of known helpers. An allowlist only ever catches
+# the drift we already know about — the whole reason this check exists is
+# that grid_rebuild_all was found by a contributor, not by us. Instead we
+# compare the *sets* of scripts defined and helpers called against the
+# upstream reference device, so a helper nobody here has heard of yet still
+# trips it.
+#
+# Words that appear as `name(` in these files but are not upstream helpers.
+CALL_NOISE = frozenset({
+    "id", "if", "for", "while", "return", "switch", "sizeof", "lambda",
+    "else", "catch", "defined", "static_cast", "reinterpret_cast",
+})
+
+# Divergences from the reference device that are known-legitimate. Empty by
+# design: add an entry only with a reason, so a real finding is never
+# silently absorbed. Format: slug -> {"scripts": {...}, "calls": {...}}
+ACCEPTED_DIVERGENCE = {}
 
 
 def load_devices():
@@ -106,8 +124,15 @@ def apply_button_grid_block(sensors_text):
     return None
 
 
-def helpers_called(block):
-    return {h for h in TRACKED_HELPERS if re.search(rf"\b{h}\s*\(", block)}
+def helpers_called(text):
+    """Every `name(` in the text that looks like an upstream helper call."""
+    found = set(re.findall(r"\b([a-z_][a-z0-9_]{3,})\s*\(", text))
+    return found - CALL_NOISE
+
+
+def scripts_defined(text):
+    """The set of `- id: <name>` script definitions."""
+    return set(re.findall(r"^  - id: (\S+)", text, re.M))
 
 
 def check_device(slug, entry, sensors_text, reference_text):
@@ -118,7 +143,7 @@ def check_device(slug, entry, sensors_text, reference_text):
     if block is None:
         return [f"{slug}: no apply_button_grid/refresh_button_grid script found"]
 
-    called = helpers_called(block)
+    called = helpers_called(block)   # apply_button_grid scope only
 
     # 1. Rotation implies rebuild-on-refresh.
     if rotation_enabled(entry):
@@ -136,19 +161,67 @@ def check_device(slug, entry, sensors_text, reference_text):
                 f"refreshRebuildsSubpages and sync device/sensors.yaml"
             )
 
-    # 2. Don't keep calling a helper the upstream reference has dropped.
+    # 2. Set parity against the upstream reference device, in both
+    #    directions. No list of known helpers — anything upstream calls that
+    #    we never call (or vice versa) is drift, including helpers that did
+    #    not exist when this check was written.
     if reference_text is not None:
-        ref_block = apply_button_grid_block(reference_text)
-        if ref_block is not None:
-            ref_called = helpers_called(ref_block)
-            for helper in sorted(called - ref_called):
-                problems.append(
-                    f"{slug}: apply_button_grid calls {helper}(), which the "
-                    f"upstream reference device no longer calls — upstream "
-                    f"wiring changed and this device was not regenerated"
-                )
+        accepted = ACCEPTED_DIVERGENCE.get(slug, {})
+        ok_scripts = set(accepted.get("scripts", ()))
+        ok_calls = set(accepted.get("calls", ()))
+
+        ref_scripts, our_scripts = scripts_defined(reference_text), scripts_defined(sensors_text)
+        ref_calls, our_calls = helpers_called(reference_text), helpers_called(sensors_text)
+
+        for name in sorted(ref_scripts - our_scripts - ok_scripts):
+            problems.append(
+                f"{slug}: upstream's reference device defines script "
+                f"'{name}' and this device does not — upstream restructured "
+                f"and this device was not regenerated")
+        for name in sorted(our_scripts - ref_scripts - ok_scripts):
+            problems.append(
+                f"{slug}: defines script '{name}' that upstream's reference "
+                f"device does not — upstream dropped it, or it is a local "
+                f"addition that needs an ACCEPTED_DIVERGENCE entry")
+        for name in sorted(ref_calls - our_calls - ok_calls):
+            problems.append(
+                f"{slug}: upstream's reference device calls {name}() and "
+                f"this device never does — upstream wiring changed")
+        for name in sorted(our_calls - ref_calls - ok_calls):
+            problems.append(
+                f"{slug}: calls {name}(), which upstream's reference device "
+                f"no longer does — this device was not regenerated")
 
     return problems
+
+
+# device.yaml keys that legitimately differ per device — pin assignments,
+# peripherals, per-board tuning. Comparing device.yaml structure finds real
+# drift (panel_config was missing on 7 of 8 devices) but also a lot of this,
+# which is why that comparison advises rather than fails.
+DEVICE_YAML_EXPECTED_DIFFS = frozenset({
+    "scl", "sda", "switch", "button", "sensor", "binary_sensor", "number",
+    "build_flags", "max_connections", "cpu_frequency", "setup_priority",
+    "api", "i2c", "uart", "spi", "light", "output", "mdi_font_file",
+})
+
+
+def device_yaml_drift(slug, platform):
+    """Structural differences in device.yaml vs the reference. Advisory."""
+    ref = REFERENCE_DEVICES.get(platform)
+    ref_path = os.path.join(UPSTREAM_CLONE, "devices", ref or "",
+                            "device", "device.yaml")
+    our_path = os.path.join(DEVICES_DIR, slug, "device", "device.yaml")
+    if not ref or not os.path.isfile(ref_path) or not os.path.isfile(our_path):
+        return []
+    ref_text, our_text = open(ref_path).read(), open(our_path).read()
+
+    def keys(text):
+        return (set(re.findall(r"^([a-z_]+):", text, re.M))
+                | set(re.findall(r"^  ([a-z_]+):", text, re.M)))
+
+    missing = keys(ref_text) - keys(our_text) - DEVICE_YAML_EXPECTED_DIFFS
+    return sorted(missing)
 
 
 def read_reference(platform):
@@ -171,6 +244,7 @@ def check_wiring_parity():
     devices = load_devices()
     catalog = load_catalog()
     all_problems = []
+    advisories = []
 
     for slug in devices:
         entry = catalog.get(slug)
@@ -201,12 +275,26 @@ def check_wiring_parity():
         else:
             print(f"Wiring parity OK: {slug} (ref: {ref_slug})")
 
+        # Advisory only — device.yaml carries genuinely per-device content
+        # (pins, peripherals, board tuning), so this reports for review at
+        # ref-bump time rather than failing the build.
+        for key in device_yaml_drift(slug, platform):
+            advisories.append(
+                f"{slug}: device.yaml has no '{key}:' block, but upstream's "
+                f"reference device ({ref_slug}) does")
+
     if all_problems:
         print(f"\nWiring parity drift found ({len(all_problems)}):",
               file=sys.stderr)
         for p in all_problems:
             print(f"  ✗ {p}", file=sys.stderr)
         return 1
+
+    if advisories:
+        print(f"\nAdvisory — device.yaml structure differs from upstream "
+              f"({len(advisories)}). Not a failure; review at ref-bump time:")
+        for a in advisories:
+            print(f"  · {a}")
 
     print(f"\nWiring parity check passed ({len(devices)} device(s)).")
     return 0
@@ -308,6 +396,44 @@ def self_test():
     block = apply_button_grid_block(legacy)
     assert block is not None and "grid_refresh_layout" in block
     print("  ✓ Legacy single-script layout is still parsed")
+
+    # 7. The property that actually matters: a helper nobody has heard of.
+    #    An allowlist-based check can only ever catch known drift, and the
+    #    drift this script exists for was found by a contributor rather than
+    #    by us. So: invent a helper, put it only upstream, and require that
+    #    it trips — without the script knowing anything about it.
+    ref_novel = REF_OK.replace(
+        "          grid_rebuild_all(slots, cfg, sp_cfgs,",
+        "          grid_frobnicate_v3(slots);\n          grid_rebuild_all(slots, cfg, sp_cfgs,")
+    problems = check_device("dev-f", rotating_set, REF_OK, ref_novel)
+    assert any("grid_frobnicate_v3" in p for p in problems), problems
+    print("  ✓ Novel upstream helper is caught without being listed anywhere")
+
+    # 8. And in the other direction: a script upstream adds that we lack.
+    ref_new_script = REF_OK.replace(
+        "  - id: refresh_subpage_grid",
+        "  - id: rebind_sensor_subscriptions\n    then:\n      - lambda: |-\n"
+        "          ha_reannounce_state_subscriptions();\n  - id: refresh_subpage_grid")
+    problems = check_device("dev-g", rotating_set, REF_OK, ref_new_script)
+    assert any("rebind_sensor_subscriptions" in p for p in problems), problems
+    print("  ✓ Script added upstream is caught")
+
+    # 9. ACCEPTED_DIVERGENCE suppresses a known-legitimate difference, so a
+    #    real local addition does not force weakening the whole check.
+    ours_extra = REF_OK.replace(
+        "  - id: refresh_subpage_grid",
+        "  - id: community_only_helper\n    then:\n      - lambda: |-\n"
+        "          do_community_thing();\n  - id: refresh_subpage_grid")
+    problems = check_device("dev-h", rotating_set, ours_extra, REF_OK)
+    assert any("community_only_helper" in p for p in problems), problems
+    ACCEPTED_DIVERGENCE["dev-h"] = {
+        "scripts": {"community_only_helper"}, "calls": {"do_community_thing"}}
+    try:
+        problems = check_device("dev-h", rotating_set, ours_extra, REF_OK)
+        assert problems == [], problems
+    finally:
+        ACCEPTED_DIVERGENCE.pop("dev-h", None)
+    print("  ✓ ACCEPTED_DIVERGENCE suppresses a recorded difference")
 
     print("\nAll check_wiring_parity self-tests passed! ✓")
 

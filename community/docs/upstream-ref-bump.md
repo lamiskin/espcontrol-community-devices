@@ -29,8 +29,14 @@ This is not hypothetical:
 - **v2.9.0** also moved every upstream device to a `panel_config:` block in
   `device.yaml`, which a ref bump never touches beyond the pin substitution.
 
-`check_wiring_parity.py` now catches the first class automatically. It cannot
-catch everything, hence the manual step below.
+`check_wiring_parity.py` catches the first class automatically, and does so
+*generically* — it compares the set of scripts defined and helpers called
+against the upstream reference device, rather than checking a list of known
+names. A helper introduced upstream after the check was written still trips
+it. It also prints an **advisory** list of `device.yaml` blocks the reference
+device has and ours does not (that is how the `panel_config` gap shows up);
+those are reported, not failed, because `device.yaml` legitimately differs
+per board. Read the advisories at bump time — step 3 below.
 
 ## Procedure
 
