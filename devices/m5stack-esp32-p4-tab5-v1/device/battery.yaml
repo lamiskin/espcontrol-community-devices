@@ -28,6 +28,9 @@ switch:
     name: "Battery Charge Enable"
     icon: "mdi:battery-charging"
     entity_category: config
+    # Charging is left off at boot: on the author's V1 board, enabling it
+    # makes the panel run hot. Not yet confirmed whether this affects all
+    # V1 units. Toggle "Battery Charge Enable" to charge.
     restore_mode: ALWAYS_OFF
 
   - platform: gpio
@@ -39,5 +42,7 @@ switch:
     name: "Battery Quick Charge Enable"
     icon: "mdi:battery-charging-high"
     entity_category: config
-    restore_mode: ALWAYS_ON
+    # Keep OFF with charge enable: QC is only a current select, but leave it
+    # off at boot so a later charge toggle does not start in high-current mode.
+    restore_mode: ALWAYS_OFF
 

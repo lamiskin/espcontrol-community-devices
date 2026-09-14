@@ -37,8 +37,9 @@ catalog profile) and changing only what the older board needs.
 - **Extra power-rail switches.** V1 exposes three additional IO-expander rails
   not wired on the V2 entry: `speaker_enable`, `usb_5v_power` and
   `external_5v_power`, all defaulting to off.
-- **Battery charge default.** `battery_charge_enable` uses
-  `restore_mode: ALWAYS_OFF` rather than `ALWAYS_ON`.
+- **Battery charge defaults.** `battery_charge_enable` and
+  `battery_quick_charge_enable` both use `restore_mode: ALWAYS_OFF`
+  (V2 uses `ALWAYS_ON`). See Known quirks.
 
 Everything else — `device/lvgl.yaml`, `device/fonts.yaml`, `device/sensors.yaml`,
 the catalog profile and the grid geometry — is identical to the V2 device and
@@ -59,15 +60,21 @@ The Tab5 ships with more than one panel, and ESPHome selects it at compile time:
 If your screen stays blank on this build, check that you are on a V1 board and
 not one of the V2 variants above.
 
+## Known quirks
+
+- **Charging left off at boot.** On the author's V1 board, enabling
+  `battery_charge_enable` makes the panel run hot near the USB-C / charge IC.
+  Both charge and quick-charge default to off; toggle **Battery Charge Enable**
+  (and Quick Charge if you want higher current) when you intentionally charge.
+  Not yet confirmed whether this affects all V1 units.
+- **Touch transform not set.** The GT911 block uses `calibration` (720×1280)
+  without an explicit `transform`. Confirm touch tracks accurately in all four
+  corners after the 270° landscape rotation before promoting status.
+
 ## Verification
 
 Untested in this repo. @persuader72 compiled and flashed this on real V1
 hardware and attached a photo of the panel running to
 [PR #136](https://github.com/lamiskin/espcontrol-community-devices/pull/136);
 promoting it to **Working** needs that confirmation against a release pin that
-actually ships this device.
-
-Worth checking first: touch accuracy across all four corners after the 270°
-rotation (the GT911 block supplies calibration rather than an explicit
-`transform`), and whether the battery charge default of `ALWAYS_OFF` is intended
-for V1 boards.
+actually ships this device, plus the touch-corner check above.
