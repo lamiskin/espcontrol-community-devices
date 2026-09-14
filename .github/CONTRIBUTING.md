@@ -10,7 +10,13 @@ Most devices here are compile-tested but **Untested** on real hardware. If you
 own one, flash it from the
 [installer](https://lamiskin.github.io/espcontrol-community-devices/) and
 report back (a photo or short video of the panel running) — that promotes it
-to **Working**. See the
+to **Working**.
+
+Photos are stripped of EXIF before being committed. Phone photos carry GPS
+coordinates, and a verification shot is usually taken at home — CI refuses any
+image with location metadata (`check_image_privacy.py`), so your address never
+reaches the published site. You don't need to do anything; just be aware it
+happens. See the
 [support policy](https://lamiskin.github.io/espcontrol-community-devices/reference/support-policy#hardware-verification).
 
 ## Adding a device

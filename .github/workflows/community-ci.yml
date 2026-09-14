@@ -23,6 +23,7 @@ jobs:
           python3 community/scripts/check_policy.py --self-test
           python3 community/scripts/check_include_parity.py --self-test
           python3 community/scripts/check_wiring_parity.py --self-test
+          python3 community/scripts/check_image_privacy.py --self-test
           python3 community/scripts/check_pin_consistency.py --self-test
           python3 community/scripts/vendor_common.py --self-test
           python3 community/scripts/generate_manifest.py --self-test
@@ -43,6 +44,14 @@ jobs:
           python3 community/scripts/ui_stamp.py --self-test
           bash .github/scripts/retry.sh --self-test
           bash .github/scripts/publish_release.sh --self-test
+      # A hardware-verification photo is taken at someone's home with
+      # location services on. Publishing its GPS tags would expose a
+      # contributor's address, permanently and in git history.
+      - name: Image privacy (no location metadata)
+        run: |
+          pip install --quiet Pillow
+          python3 community/scripts/check_image_privacy.py
+
       - name: Status consistency
         run: python3 community/scripts/check_status_consistency.py
       - name: OTA buffer override present
