@@ -2,7 +2,7 @@
 
 | Device | Slug | Status | Last verified | Verified by | Owner | Source |
 |--------|------|--------|---------------|-------------|-------|--------|
-| Guition JC3248W535 3.5" | guition-esp32-s3-jc3248w535 | Working | community-v0.0.6-upstream.v2.6.3 | @lamiskin | @lamiskin | [PR #823](https://github.com/jtenniswood/espcontrol/pull/823) |
+| Guition JC3248W535 3.5" | guition-esp32-s3-jc3248w535 | Working | community-v0.7.4-upstream.v2.9.0-preview.1 | @lamiskin | @lamiskin | [PR #823](https://github.com/jtenniswood/espcontrol/pull/823) |
 | Waveshare ESP32-S3-Touch-LCD-4 4" | waveshare-esp32-s3-touch-lcd-4 | Untested | - | - | @codenamefez | [PR #797](https://github.com/jtenniswood/espcontrol/pull/797) |
 | Tuya T3E 4" | tuya-t3e | Untested | - | - | @txptr | [PR #660](https://github.com/jtenniswood/espcontrol/pull/660) |
 | SenseCAP Indicator D1 4" | seeed-sensecap-indicator-d1 | Working | community-v0.1.2-upstream.v2.6.3 | @mglev1n ([#62](https://github.com/lamiskin/espcontrol-community-devices/issues/62)) | @davidmerrique | [PR #351](https://github.com/jtenniswood/espcontrol/pull/351) |
