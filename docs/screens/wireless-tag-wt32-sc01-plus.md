@@ -24,6 +24,10 @@ This device has been verified on real hardware — it compiles, flashes, and run
 Confirmed by @jonnybergdahl ([#134](https://github.com/lamiskin/espcontrol-community-devices/pull/134)) at `community-v0.7.2-upstream.v2.8.6`.
 :::
 
+|  |  |
+|:--:|:--:|
+| ![Wireless-Tag WT32-SC01 Plus running EspControl](/images/wireless-tag-wt32-sc01-plus-verified-1.jpg) | ![Wireless-Tag WT32-SC01 Plus running EspControl](/images/wireless-tag-wt32-sc01-plus-verified-2.jpg) |
+
 ## Specifications
 
 | | |
