@@ -5,6 +5,18 @@ on:
     - cron: "0 4 * * *"  # Daily 4am UTC
   workflow_dispatch:
 
+# One ref bump at a time. This workflow pushes a ref-bump/<tag> branch and
+# opens a PR against it; two runs overlapping means the second push lands on
+# a branch the first already created. That happened on 2026-09-10 (run
+# 34455679446), which failed with "! [rejected] ... (fetch first)" after the
+# branch had been created and merged by another path.
+#
+# cancel-in-progress is false: a bump already running the compile matrix
+# should finish and open its PR rather than be discarded part-way.
+concurrency:
+  group: community-ref-bump
+  cancel-in-progress: false
+
 # Read-only by default; each job below widens this for itself, and only for
 # as long as it actually needs write access. Without an explicit grant the
 # run inherits the repository default, which is read-only here.

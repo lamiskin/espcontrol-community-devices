@@ -10,6 +10,23 @@ on:
         required: false
         default: ""
 
+# One nightly at a time. The report job below searches for an existing
+# `[broken] <device>` issue and then creates one if it finds none — a
+# read-then-write that produces duplicates if two runs reach it together. It
+# can also push a nightly-status branch, open a PR and auto-merge it, so
+# concurrent runs can leave two competing STATUS.md PRs.
+#
+# This is not hypothetical: a manual dispatch was started six minutes after
+# the scheduled run and both compiled the whole fleet at once, against
+# different commits.
+#
+# cancel-in-progress is deliberately false — a nightly that is already
+# compiling should finish and report rather than be killed part-way, which
+# would look like a device failure. The newer run waits its turn instead.
+concurrency:
+  group: community-nightly
+  cancel-in-progress: false
+
 # Read-only by default; the report job widens this for itself. Without an
 # explicit grant the run inherits the repository default, which is read-only
 # here — that is why the first nightly to actually hit a broken device died
