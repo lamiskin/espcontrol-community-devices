@@ -186,7 +186,7 @@ wireless-tag-wt32-sc01-plus:
 m5stack-esp32-p4-tab5:
   allowed:
     - devices/m5stack-esp32-p4-tab5/**
-    - builds/m5stack-esp32-p4-tab5*.yaml
+    - builds/m5stack-esp32-p4-tab5.*yaml
   required:
     - devices/m5stack-esp32-p4-tab5/esphome.yaml
     - devices/m5stack-esp32-p4-tab5/packages.yaml
@@ -198,7 +198,7 @@ m5stack-esp32-p4-tab5:
 m5stack-esp32-p4-tab5-v1:
   allowed:
     - devices/m5stack-esp32-p4-tab5-v1/**
-    - builds/m5stack-esp32-p4-tab5-v1*.yaml
+    - builds/m5stack-esp32-p4-tab5-v1.*yaml
   required:
     - devices/m5stack-esp32-p4-tab5-v1/esphome.yaml
     - devices/m5stack-esp32-p4-tab5-v1/packages.yaml

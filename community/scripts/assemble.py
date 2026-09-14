@@ -170,6 +170,14 @@ def copy_overlay(slugs):
         pattern = os.path.join(builds_src, f"{slug}*.yaml")
         for build_file in glob.glob(pattern):
             fname = os.path.basename(build_file)
+            # `{slug}*` also matches a *longer* slug that starts with this
+            # one — m5stack-esp32-p4-tab5 would otherwise swallow
+            # m5stack-esp32-p4-tab5-v1's build files and then collide with
+            # itself when the loop reached that device. Build files are
+            # always `<slug>.yaml` or `<slug>.<profile>.yaml`, so require the
+            # separator right after the slug.
+            if not fname[len(slug):].startswith("."):
+                continue
             dst_path = os.path.join(builds_dst, fname)
             if os.path.exists(dst_path):
                 error(f"Collision: build file {fname} already exists in upstream")
@@ -694,6 +702,49 @@ def run_self_test():
     # Cleanup
     if os.path.isdir(ASSEMBLY_DIR):
         shutil.rmtree(ASSEMBLY_DIR)
+
+    # Build-file globbing must not let one slug claim a longer slug's files.
+    # devices/<a> and devices/<a>-v1 both exist in this repo, and the naive
+    # f"{slug}*.yaml" glob made <a> copy <a>-v1's build files and then
+    # collide with itself on the next iteration.
+    status("Checking build-file glob is prefix-safe ...")
+    build_tmp = tempfile.mkdtemp(prefix="assemble_glob_test_")
+    try:
+        base = "panel-x"
+        variant = "panel-x-v1"
+        names = [
+            f"{base}.yaml", f"{base}.factory.yaml", f"{base}.recovery.yaml",
+            f"{variant}.yaml", f"{variant}.factory.yaml",
+        ]
+        for n in names:
+            open(os.path.join(build_tmp, n), "w").close()
+
+        def matches(slug):
+            found = []
+            for path in glob.glob(os.path.join(build_tmp, f"{slug}*.yaml")):
+                fname = os.path.basename(path)
+                if not fname[len(slug):].startswith("."):
+                    continue
+                found.append(fname)
+            return sorted(found)
+
+        base_files = matches(base)
+        variant_files = matches(variant)
+        expected_base = sorted(
+            [f"{base}.yaml", f"{base}.factory.yaml", f"{base}.recovery.yaml"])
+        expected_variant = sorted([f"{variant}.yaml", f"{variant}.factory.yaml"])
+
+        if base_files != expected_base:
+            error(f"Self-test failed: '{base}' matched {base_files}, "
+                  f"expected {expected_base}")
+        if variant_files != expected_variant:
+            error(f"Self-test failed: '{variant}' matched {variant_files}, "
+                  f"expected {expected_variant}")
+        if set(base_files) & set(variant_files):
+            error("Self-test failed: base and variant globs overlap")
+        status("  Build-file glob is prefix-safe.")
+    finally:
+        shutil.rmtree(build_tmp, ignore_errors=True)
 
     status("Self-test PASSED.")
 
