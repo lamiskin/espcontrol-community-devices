@@ -10,9 +10,11 @@ The <new-ref> must be either a tag like vX.Y.Z or a 40-character SHA.
 
 Algorithm:
 1. Validate the new ref format.
-2. For each .yaml file under devices/:
+2. For each .yaml file under devices/ and builds/:
    - Replace ref: lines within blocks that have url:.*jtenniswood/espcontrol
-   - Replace espcontrol_component_ref: "..." values
+   - Replace espcontrol_component_ref: "..." values, except in build profiles
+     that point the component at the local assembly tree (file:///config),
+     where "HEAD" is correct and a pin would break local and CI builds
 3. Write the new ref to community/upstream-ref.txt.
 4. If --sha was given, write it to community/upstream-sha.txt. This is the
    new_ref tag resolved to its commit at bump time; assemble.py clones by
@@ -40,6 +42,7 @@ COMMUNITY_DIR = os.path.join(REPO_ROOT, "community")
 PIN_FILE = os.path.join(COMMUNITY_DIR, "upstream-ref.txt")
 PIN_SHA_FILE = os.path.join(COMMUNITY_DIR, "upstream-sha.txt")
 DEVICES_DIR = os.path.join(REPO_ROOT, "devices")
+BUILDS_DIR = os.path.join(REPO_ROOT, "builds")
 CHECK_SCRIPT = os.path.join(
     COMMUNITY_DIR, "scripts", "check_pin_consistency.py"
 )
@@ -107,6 +110,15 @@ def bump_yaml_content(content, new_ref):
     replacements = 0
     in_upstream_block = False
 
+    # Build profiles point the component at the local assembly tree
+    # (`espcontrol_component_url: "file:///config"`) with
+    # `espcontrol_component_ref: "HEAD"`. That is not an upstream pin and
+    # must not be rewritten — doing so breaks local and CI builds. Their
+    # `ref:` lines inside genuine upstream url blocks (the C6 recovery
+    # include) are still bumped.
+    local_component = re.search(
+        r'espcontrol_component_url:\s*["\']?file://', content) is not None
+
     for line in lines:
         stripped = line.strip()
 
@@ -131,9 +143,9 @@ def bump_yaml_content(content, new_ref):
                 if line != old_line:
                     replacements += 1
 
-        # Replace espcontrol_component_ref anywhere
+        # Replace espcontrol_component_ref anywhere (except local builds)
         match = COMPONENT_REF_RE.match(line)
-        if match:
+        if match and not local_component:
             old_line = line
             # Preserve quoting style
             old_value = match.group(2)
@@ -163,9 +175,13 @@ def bump_refs(new_ref):
 
     Returns the number of files modified.
     """
-    # Find all YAML files under devices/
-    pattern = os.path.join(DEVICES_DIR, "**", "*.yaml")
-    yaml_files = glob.glob(pattern, recursive=True)
+    # Find all YAML files under devices/ and builds/. builds/ was missed
+    # originally, which is how the C6 recovery profiles' upstream ref sat at
+    # v2.8.4 while the repo moved through v2.8.5, v2.8.6 and v2.9.0.
+    yaml_files = (
+        glob.glob(os.path.join(DEVICES_DIR, "**", "*.yaml"), recursive=True)
+        + glob.glob(os.path.join(BUILDS_DIR, "**", "*.yaml"), recursive=True)
+    )
 
     files_modified = 0
 
@@ -326,6 +342,45 @@ substitutions:
     assert "ref: v2.5.0" not in new_content6
     assert 'espcontrol_component_ref: "v2.5.0"' not in new_content6
     print("  ✓ Combined ref: and espcontrol_component_ref updated")
+
+    # Test 8: a C6 recovery profile's upstream ref is bumped. These live
+    # under builds/, which this script did not scan until their pins had sat
+    # at v2.8.4 across three releases.
+    recovery_yaml = """\
+packages:
+  factory: !include some-device.factory.yaml
+  c6_recovery:
+    url: https://github.com/jtenniswood/espcontrol
+    ref: v2.8.4
+    files:
+      - common/device/esp32_c6_recovery.yaml
+"""
+    new_content7, count7 = bump_yaml_content(recovery_yaml, "v2.9.0")
+    assert count7 == 1, f"Expected 1 replacement, got {count7}"
+    assert "ref: v2.9.0" in new_content7
+    print("  ✓ C6 recovery build profile ref is bumped")
+
+    # Test 9: a build profile pointing at the local assembly tree keeps HEAD.
+    local_build_yaml = """\
+substitutions:
+  espcontrol_component_url: "file:///config"
+  espcontrol_component_ref: "HEAD"
+"""
+    new_content8, count8 = bump_yaml_content(local_build_yaml, "v2.9.0")
+    assert count8 == 0, f"Expected local build profile untouched, got {count8}"
+    assert '"HEAD"' in new_content8
+    print("  ✓ Local (file://) build profile keeps HEAD")
+
+    # Test 10: a remote component url is still bumped.
+    remote_yaml = """\
+substitutions:
+  espcontrol_component_url: "https://github.com/jtenniswood/espcontrol"
+  espcontrol_component_ref: "v2.8.4"
+"""
+    new_content9, count9 = bump_yaml_content(remote_yaml, "v2.9.0")
+    assert count9 == 1, f"Expected 1 replacement, got {count9}"
+    assert '"v2.9.0"' in new_content9
+    print("  ✓ Remote component ref is still bumped")
 
     print("\nAll bump_refs self-tests passed! ✓")
 

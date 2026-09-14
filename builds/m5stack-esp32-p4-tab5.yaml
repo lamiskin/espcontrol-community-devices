@@ -1,7 +1,7 @@
 # =============================================================================
-# BUILD PROFILE - Seeed reTerminal D1001 (8" landscape ESP32-P4)
+# BUILD PROFILE - M5Stack Tab5 (5" landscape ESP32-P4)
 # =============================================================================
-# CI/local build entry point for the 1280x800 landscape ESP32-P4 panel.
+# CI/local build entry point for the 1280x720 landscape ESP32-P4 panel.
 # Loads the web UI from GitHub Pages so CI can skip building www.js.
 # =============================================================================
 
