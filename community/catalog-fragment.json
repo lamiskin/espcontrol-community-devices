@@ -89,6 +89,7 @@
         "firmware": {
           "display": {
             "wrapTallLabels": false,
+            "refreshRebuildsSubpages": true,
             "subpageChevronX": 3,
             "subpageChevronY": -2,
             "subpageChevronTextWidthPercent": 96,
@@ -255,6 +256,7 @@
         "firmware": {
           "display": {
             "wrapTallLabels": false,
+            "refreshRebuildsSubpages": true,
             "subpageChevronX": 3,
             "subpageChevronY": -2,
             "subpageChevronTextWidthPercent": 96,
@@ -421,6 +423,7 @@
         "firmware": {
           "display": {
             "wrapTallLabels": false,
+            "refreshRebuildsSubpages": true,
             "subpageChevronX": 3,
             "subpageChevronY": -2,
             "subpageChevronTextWidthPercent": 96,
@@ -595,6 +598,7 @@
         "firmware": {
           "display": {
             "wrapTallLabels": true,
+            "refreshRebuildsSubpages": true,
             "volumeWidthCompensationPercent": 95,
             "mediaArtworkWidthCompensationPercent": 98,
             "coverArt": {
@@ -758,6 +762,7 @@
         "firmware": {
           "display": {
             "wrapTallLabels": false,
+            "refreshRebuildsSubpages": true,
             "subpageChevronX": 3,
             "subpageChevronY": -2,
             "subpageChevronTextWidthPercent": 96,
@@ -932,6 +937,7 @@
         "firmware": {
           "display": {
             "wrapTallLabels": true,
+            "refreshRebuildsSubpages": true,
             "volumeWidthCompensationPercent": 95,
             "mediaArtworkWidthCompensationPercent": 98,
             "coverArt": {
@@ -1269,6 +1275,7 @@
         "firmware": {
           "display": {
             "wrapTallLabels": true,
+            "refreshRebuildsSubpages": true,
             "volumeWidthCompensationPercent": 95,
             "mediaArtworkWidthCompensationPercent": 98,
             "coverArt": {

@@ -22,6 +22,7 @@ jobs:
           python3 community/scripts/convert_packages.py --self-test
           python3 community/scripts/check_policy.py --self-test
           python3 community/scripts/check_include_parity.py --self-test
+          python3 community/scripts/check_wiring_parity.py --self-test
           python3 community/scripts/check_pin_consistency.py --self-test
           python3 community/scripts/vendor_common.py --self-test
           python3 community/scripts/generate_manifest.py --self-test
@@ -115,6 +116,14 @@ jobs:
         env:
           UPSTREAM_CLONE: .assembly
         run: python3 community/scripts/check_include_parity.py
+      # Include parity compares common/ include paths; this compares the
+      # wiring upstream's generator emits around the generated blocks, which
+      # a ref bump silently leaves stale when it is gated on a catalog flag
+      # we never set.
+      - name: Wiring parity
+        env:
+          UPSTREAM_CLONE: .assembly
+        run: python3 community/scripts/check_wiring_parity.py
       - name: Vendored common check
         run: python3 community/scripts/vendor_common.py --source .assembly --check
       - name: Generated-block drift check

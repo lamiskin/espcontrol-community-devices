@@ -23,6 +23,13 @@ In short: ESP32-S3 / ESP32-P4 panels only (see
 upstream at the pinned release, and CI must compile it before merge. Hardware
 evidence is required to mark a device Working.
 
+## Maintaining the upstream pin
+
+Ref bumps are opened automatically by `community-ref-bump.yml`, but a green
+bump does not prove the devices still match upstream — see
+[community/docs/upstream-ref-bump.md](../community/docs/upstream-ref-bump.md)
+for the manual parity steps that catch flag-gated drift.
+
 ## Reporting a problem
 
 Use the **Bug report** issue form — its *Which device?* dropdown auto-labels
