@@ -24,10 +24,11 @@ happens. See the
 Full walkthrough:
 [community/docs/adding-a-device.md](../community/docs/adding-a-device.md).
 
-In short: ESP32-S3 / ESP32-P4 panels only (see
-[DEVICES_POLICY.md](../community/DEVICES_POLICY.md)), each device builds against
-upstream at the pinned release, and CI must compile it before merge. Hardware
-evidence is required to mark a device Working.
+In short: ESP32-S3 / ESP32-P4 panels are what's expected — other chip families
+need evidence they perform well on real hardware, they are not refused outright
+(see [DEVICES_POLICY.md](../community/DEVICES_POLICY.md)). Each device builds
+against upstream at the pinned release, and CI must compile it before merge.
+Hardware evidence is required to mark a device Working.
 
 ## Maintaining the upstream pin
 

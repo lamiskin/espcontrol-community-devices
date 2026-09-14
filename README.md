@@ -82,7 +82,8 @@ This is a thin overlay on upstream, pinned to an upstream release
 
 - **New device:** see
   [community/docs/adding-a-device.md](community/docs/adding-a-device.md).
-  ESP32-S3/P4 class panels only (see
+  ESP32-S3/P4 class panels expected; other chip families need evidence of good
+  real-world performance rather than being refused outright (see
   [community/DEVICES_POLICY.md](community/DEVICES_POLICY.md)).
 - **Request a device:** open a
   [device request](https://github.com/lamiskin/espcontrol-community-devices/issues/new/choose).

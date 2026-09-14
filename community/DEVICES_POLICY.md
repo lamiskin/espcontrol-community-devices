@@ -1,10 +1,25 @@
 # Community Devices Policy
 
-This repository accepts device configurations for **ESP32-S3** and **ESP32-P4** based
-touchscreen panels only. Other chip families (ESP32, ESP32-C3, ESP8266, etc.) are not
-supported — see upstream issues
+This repository expects **ESP32-S3** and **ESP32-P4** based touchscreen panels.
+Those are the families upstream targets and the ones every device here uses, so a
+submission on either is assessed on its config alone.
+
+Other chip families (ESP32, ESP32-C3, ESP8266, etc.) are **not automatically
+rejected, but they are not accepted on a compile alone either.** The concern is
+real-world behaviour on hardware with less headroom, so a port on one of these
+needs evidence from someone running it:
+
+- **Responsiveness in normal use** — grid refresh, opening and closing modals,
+  page transitions. Comparable to the S3/P4 panels, or noticeably laggier?
+- **Memory headroom** — how much free heap remains once the UI is up, and
+  whether OTA completes reliably.
+- **Stability over time** — days, not minutes. A panel that degrades after a
+  week is the failure mode that is hardest to catch.
+
+Bring that and the port will be considered on its merits. See upstream issues
 [#283](https://github.com/jtenniswood/espcontrol/issues/283) and
-[#90](https://github.com/jtenniswood/espcontrol/issues/90) for context.
+[#90](https://github.com/jtenniswood/espcontrol/issues/90) for why these
+families are the default.
 
 **Hardware evidence requirement:** Every device submission must include photo or video
 proof of hardware-tested operation. Compile-only submissions are accepted as Untested
