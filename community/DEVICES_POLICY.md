@@ -47,6 +47,27 @@ overrides ---` block, an `http_request:` with `buffer_size_rx` and
 be edited here, hence the per-device override. `community/scripts/check_ota_buffer.py`
 enforces this in CI.
 
+## Version numbering
+
+Release tags are `community-vX.Y.Z-upstream.vA.B.C[-preview.N]`. `A.B.C` is
+whatever upstream ref we're pinned to; `X.Y.Z` is ours, and its digits mean:
+
+- **`Y`** (what we call our "major" — `X` stays `0` for now, see below) bumps
+  when upstream's own `A` or `B` changes, **or** we add a new device, **or**
+  we ship some other change to this repo significant enough to want calling
+  out on its own. This is the digit that actually moves in practice.
+- **`Z`** (patch) covers everything smaller: an upstream patch-only bump
+  (`C` changes, `A.B` doesn't), or a community-side fix/doc/CI change that
+  isn't "new device" or otherwise notable.
+- **`X`** is a deliberate, manual call (e.g. the jump straight to `v0.8.0`
+  for the first release the maintainer called genuinely stable) — nothing
+  above bumps it automatically.
+
+A stable release can reuse the same `X.Y.Z` as an earlier preview of
+different content (e.g. `v0.6.1-preview.1` and `v0.6.1` shipped different
+things) — the `-preview.N` suffix is what disambiguates them, not the
+version number.
+
 ## Preview releases
 
 A tag containing `-preview` (e.g. `community-v0.6.0-upstream.v2.8.4-preview.1`)
