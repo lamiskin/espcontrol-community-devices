@@ -18,9 +18,15 @@ on the home screen.
 
 Community port contributed via [PR #885](https://github.com/jtenniswood/espcontrol/pull/885) by @zacs.
 
-::: warning Not yet hardware-verified
-This device compiles and is flashable, but nobody has confirmed it on real hardware yet. It may not work. If you own this panel, [verifying it](/reference/support-policy#hardware-verification) is the most valuable contribution you can make.
+::: tip Hardware-verified
+This device has been verified on real hardware — it compiles, flashes, and runs EspControl correctly.
+
+Confirmed by @zacs ([#151](https://github.com/lamiskin/espcontrol-community-devices/issues/151)) at `community-v0.9.0-upstream.v2.9.0`.
 :::
+
+|  |
+|:--:|
+| ![Seeed reTerminal D1001 running EspControl](/images/seeed-esp32-p4-reterminal-d1001-verified-1.jpg) |
 
 ## Specifications
 
