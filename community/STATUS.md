@@ -6,7 +6,7 @@
 | Waveshare ESP32-S3-Touch-LCD-4 4" | waveshare-esp32-s3-touch-lcd-4 | Untested | - | - | @codenamefez | [PR #797](https://github.com/jtenniswood/espcontrol/pull/797) |
 | Tuya T3E 4" | tuya-t3e | Untested | - | - | @txptr | [PR #660](https://github.com/jtenniswood/espcontrol/pull/660) |
 | SenseCAP Indicator D1 4" | seeed-sensecap-indicator-d1 | Working | community-v0.1.2-upstream.v2.6.3 | @mglev1n ([#62](https://github.com/lamiskin/espcontrol-community-devices/issues/62)) | @davidmerrique | [PR #351](https://github.com/jtenniswood/espcontrol/pull/351) |
-| Seeed reTerminal D1001 8" | seeed-esp32-p4-reterminal-d1001 | Working | v0.9.0-upstream.v2.9.0 | @zacs | @zacs | [PR #885](https://github.com/jtenniswood/espcontrol/pull/885) |
+| Seeed reTerminal D1001 8" | seeed-esp32-p4-reterminal-d1001 | Working | community-v0.9.0-upstream.v2.9.0 | @zacs ([#151](https://github.com/lamiskin/espcontrol-community-devices/pull/151)) | @zacs | [PR #885](https://github.com/jtenniswood/espcontrol/pull/885) |
 | Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1 10.1" | waveshare-esp32-p4-touch-lcd-10 | Untested | - | - | @sbuchbauer | [Issue #838](https://github.com/jtenniswood/espcontrol/issues/838) |
 | Wireless-Tag WT32-SC01 Plus 3.5" | wireless-tag-wt32-sc01-plus | Working | community-v0.7.2-upstream.v2.8.6 | @jonnybergdahl ([#134](https://github.com/lamiskin/espcontrol-community-devices/pull/134)) | @jonnybergdahl | [PR #194](https://github.com/jtenniswood/espcontrol/pull/194) |
 | M5Stack Tab5 5" | m5stack-esp32-p4-tab5 | Working | community-v0.6.0-upstream.v2.8.4-preview.1 | @direk ([#95](https://github.com/lamiskin/espcontrol-community-devices/issues/95#issuecomment-5521806746)) | @direk | [Issue #95](https://github.com/lamiskin/espcontrol-community-devices/issues/95) |
