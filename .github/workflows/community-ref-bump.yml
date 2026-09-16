@@ -270,8 +270,12 @@ jobs:
           RESULTS=""
           while IFS= read -r slug; do
             [ -z "$slug" ] && continue
-            CONCLUSION=$(echo "$JOBS_JSON" | jq -r --arg slug "$slug" \
-              '.jobs[] | select((.name | startswith("compile")) and (.name | contains($slug))) | .conclusion')
+            # Exact job-name match, not `contains($slug)` — a substring match
+            # made every m5stack-esp32-p4-tab5 result also match
+            # m5stack-esp32-p4-tab5-v1's job, turning one CONCLUSION into a
+            # two-line string that could never equal "success".
+            CONCLUSION=$(echo "$JOBS_JSON" | jq -r --arg name "compile ($slug)" \
+              '.jobs[] | select(.name == $name) | .conclusion')
             if [ "$CONCLUSION" = "success" ]; then
               RESULTS="$RESULTS\n- ✅ $slug"
             else
