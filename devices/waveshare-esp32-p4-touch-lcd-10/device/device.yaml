@@ -36,8 +36,16 @@ esp32:
       CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC: "y"
       CONFIG_ESP_TASK_WDT_TIMEOUT_S: "60"
       CONFIG_SPI_FLASH_YIELD_DURING_ERASE: "n"
-      CONFIG_ESP_HOSTED_USE_MEMPOOL: "n"
+      # ESP-Hosted preallocates a DMA transport buffer pool before ESPHome
+      # starts; disabling it (our old fix here) avoided the "HS_MP: mempool
+      # create failed: no mem" OTA-rollback boot failure but left inbound HA
+      # API/web requests dependent on dynamic buffer allocation, which can
+      # silently starve and never recover (jtenniswood/espcontrol#1099).
+      # Upstream's real fix keeps the pool but relocates it to PSRAM instead
+      # (esp32_hosted: use_psram: true below), which fixes both. Let
+      # WiFi/LWIP buffers use PSRAM too.
       CONFIG_ESP_HOSTED_DFLT_TASK_FROM_SPIRAM: "y"
+      CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: "y"
       CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS: "1"
       CONFIG_LOG_DEFAULT_LEVEL: "2"
 
@@ -157,6 +165,9 @@ esphome:
 # ---------------------------------------------------------------------------
 esp32_hosted:
   variant: esp32c6
+  # Keep the preallocated transport receive buffers for reliable inbound
+  # connections, but place them in PSRAM to protect scarce internal memory.
+  use_psram: true
   reset_pin: GPIO54
   cmd_pin: GPIO19
   clk_pin: GPIO18

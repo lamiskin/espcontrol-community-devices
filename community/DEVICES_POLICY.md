@@ -47,6 +47,22 @@ overrides ---` block, an `http_request:` with `buffer_size_rx` and
 be edited here, hence the per-device override. `community/scripts/check_ota_buffer.py`
 enforces this in CI.
 
+## ESP32-P4 hosted-WiFi buffer pool
+
+Every ESP32-P4 device (an ESP32-C6 co-processor providing WiFi/BLE over
+SDIO/SPI via `esp32_hosted:`) must set `use_psram: true` in that block. The
+alternative some of these devices previously carried,
+`CONFIG_ESP_HOSTED_USE_MEMPOOL: "n"`, avoids a boot-time allocation failure
+but leaves inbound HA API/web requests dependent on dynamic buffer
+allocation, which can silently starve and never recover
+(jtenniswood/espcontrol#1099) — the WiFi just stops responding, with no
+crash and no log line naming the cause. `use_psram: true` keeps the buffer
+pool (avoiding the boot failure) but relocates it to PSRAM (avoiding the
+starvation). `community/scripts/check_esp32_hosted_psram.py` enforces this
+in CI — as a standing assertion, not a diff against any single upstream
+device, because upstream's own device fleet is inconsistent here: only the
+device the bug was originally reported against carries the fix.
+
 ## Version numbering
 
 Release tags are `community-vX.Y.Z-upstream.vA.B.C[-preview.N]`. `A.B.C` is
