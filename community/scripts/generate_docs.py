@@ -24,6 +24,7 @@ import json
 import os
 import re
 import sys
+from urllib.parse import urlparse
 
 REPO_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..")
@@ -37,6 +38,27 @@ SITE_URL = "https://lamiskin.github.io/espcontrol-community-devices"
 # regenerated fails the build rather than leaving the front page stale.
 README_BEGIN = "<!-- BEGIN GENERATED DEVICE LIST -->"
 README_END = "<!-- END GENERATED DEVICE LIST -->"
+
+# Host -> display name for "Where to buy" links. Matched against the buy
+# URL's hostname with a leading "www." stripped.
+VENDOR_NAMES = {
+    "aliexpress.com": "AliExpress",
+    "elecrow.com": "Elecrow",
+    "seeedstudio.com": "Seeed Studio",
+    "m5stack.com": "M5Stack",
+    "waveshare.com": "Waveshare",
+}
+
+
+def buy_link_text(url):
+    """Render a "Where to buy" link, deriving the vendor name from the URL's host."""
+    host = urlparse(url).hostname or ""
+    if host.startswith("www."):
+        host = host[4:]
+    vendor = VENDOR_NAMES.get(host)
+    if vendor:
+        return f"Available on [{vendor}]({url})."
+    return f"Available [from the vendor]({url})."
 
 CHIP_NAMES = {"esp32-s3": "ESP32-S3", "esp32-p4": "ESP32-P4"}
 
@@ -273,7 +295,7 @@ status note above.
     if d["buy"]:
         buy = f"""## Where to buy
 
-Available on [AliExpress]({d['buy']}).
+{buy_link_text(d['buy'])}
 
 """
 
