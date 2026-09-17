@@ -105,9 +105,14 @@ object. Copy the structure from the existing reference device and adapt:
 - `config.layout` — cols, rows, firmwareGrid
 - `config.web` — web configurator dimensions and spacing
 
-## 7. Register the slug in devices.json
+## 7. Register the device
 
-Add your slug to the `"devices"` array in `community/devices.json`:
+A device isn't fully wired up just by having a directory and a catalog
+entry — several more files have to reference the same slug before assembly,
+CI, or the docs site will treat it as real.
+
+Add your slug to the `"devices"` array in `community/devices.json`, keeping
+the array **alphabetically sorted**:
 
 ```json
 {"devices": ["...", "your-device-slug", "..."]}
@@ -121,6 +126,39 @@ a catalog entry whose `fonts.yaml` (and every other device file) is never
 overlaid — the validator then reports "unknown font id" for every id in a
 perfectly correct `fonts.yaml`, because the file was never read. If you hit
 that error, this file is the first place to check.
+
+Also add:
+
+- `builds/<slug>.yaml` and `builds/<slug>.factory.yaml` — dev/CI and
+  factory-image build profiles. ESP32-P4 devices also need
+  `builds/<slug>.recovery.yaml`, which repairs the onboard ESP32-C6 WiFi
+  co-processor.
+- An entry for your device in `community/device-labels.json` — but don't
+  hand-edit it, it's generated (see below).
+
+`community/scripts/check_status_consistency.py` enforces that every slug in
+`devices.json` has a matching STATUS.md row, device directory, build
+profiles, catalog-fragment entry, and DEVICES_POLICY.md block, and that
+`devices.json` stays sorted:
+
+```bash
+python3 community/scripts/check_status_consistency.py
+```
+
+Then regenerate the derived docs and issue-label files so they pick up the
+new device:
+
+```bash
+python3 community/scripts/generate_docs.py
+python3 community/scripts/generate_issue_labels.py
+```
+
+The first regenerates the per-device docs pages, the home-page device table,
+and the docs sidebar from `catalog-fragment.json` + `STATUS.md`. The second
+regenerates `community/device-labels.json` and the bug-report issue template
+from `devices.json` + `catalog-fragment.json` — this is what actually
+populates `device-labels.json`. CI runs both with `--check` and fails the
+build if the regenerated output wasn't committed.
 
 ## 8. Local compile test
 
