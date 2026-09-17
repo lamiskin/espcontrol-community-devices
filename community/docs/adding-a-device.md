@@ -105,7 +105,24 @@ object. Copy the structure from the existing reference device and adapt:
 - `config.layout` — cols, rows, firmwareGrid
 - `config.web` — web configurator dimensions and spacing
 
-## 7. Local compile test
+## 7. Register the slug in devices.json
+
+Add your slug to the `"devices"` array in `community/devices.json`:
+
+```json
+{"devices": ["...", "your-device-slug", "..."]}
+```
+
+This is easy to miss and **not optional** — `community/scripts/assemble.py`
+only copies `devices/<slug>/` into the build tree for slugs listed here.
+`catalog-fragment.json` entries are merged unconditionally regardless of this
+list, so a slug present in the fragment but missing from `devices.json` gets
+a catalog entry whose `fonts.yaml` (and every other device file) is never
+overlaid — the validator then reports "unknown font id" for every id in a
+perfectly correct `fonts.yaml`, because the file was never read. If you hit
+that error, this file is the first place to check.
+
+## 8. Local compile test
 
 Run the full assembly to verify your device compiles cleanly against the pinned
 upstream:
@@ -124,7 +141,7 @@ cd .assembly
 esphome compile devices/<your-slug>/esphome.yaml
 ```
 
-## 8. Hardware evidence
+## 9. Hardware evidence
 
 Every device submission must include photo or video proof of hardware-tested
 operation. Attach evidence to your PR showing:
@@ -136,7 +153,7 @@ operation. Attach evidence to your PR showing:
 Compile-only submissions are accepted with **Untested** status — the device
 won't be marked **Working** in STATUS.md until hardware evidence is provided.
 
-## 9. Add STATUS.md row
+## 10. Add STATUS.md row
 
 Add a row to `community/STATUS.md`:
 
@@ -144,7 +161,7 @@ Add a row to `community/STATUS.md`:
 | Your Device Name | your-device-slug | Untested | community-v0.x.x-upstream.v2.6.3 | @your-github |
 ```
 
-## 10. Open a PR
+## 11. Open a PR
 
 - Add a policy block for your slug in `community/DEVICES_POLICY.md` (same PR)
 - Use `Co-authored-by: Name <email>` in the commit message for all contributors
