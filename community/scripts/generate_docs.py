@@ -159,6 +159,7 @@ def load_devices():
             "source": row.get("source", ""),
             "buy": public.get("buy", ""),
             "case": public.get("case", ""),
+            "extra_features": public.get("extraFeatures", []),
         })
     devices.sort(key=size_sort_key)
     return devices
@@ -285,6 +286,15 @@ A community-made 3D-printable case is available on
 
 """
 
+    extra_features = ""
+    if d["extra_features"]:
+        items = "\n".join(f"- {feature}" for feature in d["extra_features"])
+        extra_features = f"""## Additional hardware
+
+{items}
+
+"""
+
     return f"""---
 title: {short_size(d['size'])} {d['name']}
 description: "Community EspControl build for the {d['name']} — {d['size']} {d['resolution']} {d['orientation'].lower()} touchscreen with {d['slots']} cards, powered by {d['chip']}."
@@ -312,7 +322,7 @@ on the home screen.
 | **Processor** | {d['chip']} |
 | **Card grid** | {d['grid']} ({d['slots']} cards) |
 
-{buy}{case}{install}
+{extra_features}{buy}{case}{install}
 ## ESPHome Manual Setup
 
 If you use ESPHome and prefer to compile firmware yourself:

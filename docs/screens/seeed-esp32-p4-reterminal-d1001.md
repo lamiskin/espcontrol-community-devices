@@ -38,6 +38,12 @@ Confirmed by @zacs ([#151](https://github.com/lamiskin/espcontrol-community-devi
 | **Processor** | ESP32-P4 |
 | **Card grid** | 5 × 4 (20 cards) |
 
+## Additional hardware
+
+- **Bezel RGB status LED** — exposed to Home Assistant as a `light` entity with pulse and color-specific strobe effects ([PR #154](https://github.com/lamiskin/espcontrol-community-devices/pull/154) by @zacs).
+
+  ![reTerminal D1001 status LED lit](/images/seeed-esp32-p4-reterminal-d1001-led-1.png)
+
 ## Install
 
 Connect the display to your computer with a **USB-C data cable**, then click

@@ -1029,7 +1029,10 @@
           "docsPath": "/screens/reterminal-d1001",
           "screenSize": "8 inches",
           "resolution": "1280 x 800",
-          "orientation": "Landscape"
+          "orientation": "Landscape",
+          "extraFeatures": [
+            "**Bezel RGB status LED** — exposed to Home Assistant as a `light` entity with pulse and color-specific strobe effects ([PR #154](https://github.com/lamiskin/espcontrol-community-devices/pull/154) by @zacs).\n\n  ![reTerminal D1001 status LED lit](/images/seeed-esp32-p4-reterminal-d1001-led-1.png)"
+          ]
         },
         "layout": {
           "cols": 5,
