@@ -1,0 +1,609 @@
+# =============================================================================
+# DEVICE - Waveshare ESP32-S3 Smart 86 Box hardware definition
+# =============================================================================
+# 4" 480x480 ST7701 RGB panel, GT911 touch, TCA9554 I/O expander.
+#
+# The "Smart 86 Box" is Waveshare's enclosed 86mm-wall-box build of the
+# ESP32-S3-Touch-LCD-4B. Note the trailing "B": it is NOT the same board as
+# devices/waveshare-esp32-s3-touch-lcd-4/ in this repo. That one is the bare
+# ESP32-S3-Touch-LCD-4 with a CH32V003 I/O expander on I2C 0x24 and SDA/SCL on
+# GPIO15/GPIO7. The 4B uses a TCA9554 at 0x20 with SDA/SCL on GPIO47/GPIO48
+# and a completely different RGB pin map, so the LCD-4 firmware does not boot
+# here (community issue #15: I2C scan finds nothing, expander reports
+# "Communication failed").
+#
+# Every pin and register value below is transcribed from Waveshare's own
+# ESP-IDF board support package, waveshareteam/Waveshare-ESP32-components at
+# 9daffb7168b3c093a330da700988a22092294eef, path bsp/esp32_s3_touch_lcd_4b
+# (esp32_s3_touch_lcd_4b.h + esp32_s3_touch_lcd_4b.c + include/bsp/display.h).
+# Individual values cite the BSP symbol they came from.
+#
+# Out of scope for this port, deliberately: the ES8311 codec, ES7210 echo
+# canceller, QMI8658 IMU, AXP2101 PMIC and PCF85063 RTC the 4B also carries.
+# None of them are needed to drive the panel (Waveshare's own bsp_display_new()
+# touches only I2C + the expander), and EspControl does not use them here —
+# hence voice_interaction_active_condition: "false" in packages.yaml, the same
+# parity exception the other non-voice devices in this repo take. The audio
+# power amp on expander pin 3 (BSP_POWER_AMP_IO) is left as an input, which is
+# the TCA9554 power-on default, so the amp stays disabled.
+# =============================================================================
+
+substitutions:
+  espcontrol_component_url: "https://github.com/jtenniswood/espcontrol"
+  espcontrol_component_ref: "v2.9.1"
+  mdi_font_file: "https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf"
+
+# ---------------------------------------------------------------------------
+# ESP32-S3 platform (ESP32-S3R8: 16MB flash, 8MB octal PSRAM)
+# ---------------------------------------------------------------------------
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      # The S3 display stack leaves little internal RAM for HTTPS OTA checks.
+      # Allocate mbedTLS buffers from PSRAM so firmware downloads can connect.
+      CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC: "y"
+      # Display bring-up on this board is unusually slow: the ST7701 init
+      # sequence is bit-banged through the I2C expander (see the spi: block
+      # below), so setup() can hold the main task for the best part of a
+      # second. Keep the task watchdog well clear of that.
+      CONFIG_ESP_TASK_WDT_TIMEOUT_S: "30"
+      # Keep WiFi startup inside the internal-RAM budget after the RGB display
+      # and LVGL buffers are initialized.
+      CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM: "8"
+      CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: "y"
+      CONFIG_SPIRAM_XIP_FROM_PSRAM: "y"
+
+external_components:
+  - source:
+      type: git
+      url: ${espcontrol_component_url}
+      ref: ${espcontrol_component_ref}
+      path: components
+    components: [espcontrol, web_server_idf, artwork_image, mipi_rgb]
+    refresh: 1s
+
+espcontrol:
+  id: espcontrol_app
+  panel_config:
+    device_profile: ${device_slug}
+    storage: card_images
+    button_order: button_order
+    button_on_color: button_on_color
+    buttons:
+      - config: button_1_config
+        subpage_chunks: [subpage_1_config, subpage_1_config_ext, subpage_1_config_ext_2, subpage_1_config_ext_3]
+      - config: button_2_config
+        subpage_chunks: [subpage_2_config, subpage_2_config_ext, subpage_2_config_ext_2, subpage_2_config_ext_3]
+      - config: button_3_config
+        subpage_chunks: [subpage_3_config, subpage_3_config_ext, subpage_3_config_ext_2, subpage_3_config_ext_3]
+      - config: button_4_config
+        subpage_chunks: [subpage_4_config, subpage_4_config_ext, subpage_4_config_ext_2, subpage_4_config_ext_3]
+      - config: button_5_config
+        subpage_chunks: [subpage_5_config, subpage_5_config_ext, subpage_5_config_ext_2, subpage_5_config_ext_3]
+      - config: button_6_config
+        subpage_chunks: [subpage_6_config, subpage_6_config_ext, subpage_6_config_ext_2, subpage_6_config_ext_3]
+      - config: button_7_config
+        subpage_chunks: [subpage_7_config, subpage_7_config_ext, subpage_7_config_ext_2, subpage_7_config_ext_3]
+      - config: button_8_config
+        subpage_chunks: [subpage_8_config, subpage_8_config_ext, subpage_8_config_ext_2, subpage_8_config_ext_3]
+      - config: button_9_config
+        subpage_chunks: [subpage_9_config, subpage_9_config_ext, subpage_9_config_ext_2, subpage_9_config_ext_3]
+
+# ---------------------------------------------------------------------------
+# ESPHome core (device name from substitutions)
+# ---------------------------------------------------------------------------
+# ESP32-S3 with octal PSRAM and an RGB display can fail to reinitialize
+# peripherals after a software reset. A brief deep sleep forces a hardware
+# reset on wake, equivalent to a power cycle. Same workaround the other S3
+# RGB panels in this repo carry.
+# ---------------------------------------------------------------------------
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  platformio_options:
+    build_flags:
+      - "-DESPCONTROL_DISABLE_TODO=1"
+      - "-DESPCONTROL_MAX_GRID_SLOTS=9"
+    build_src_flags:
+      - "-mtext-section-literals"
+  on_boot:
+    - priority: 800
+      then:
+        - lambda: |-
+            auto reason = esp_reset_reason();
+            if (reason == ESP_RST_SW) {
+              esp_ota_img_states_t ota_state;
+              const esp_partition_t *running = esp_ota_get_running_partition();
+              if (running != nullptr &&
+                  esp_ota_get_state_partition(running, &ota_state) == ESP_OK &&
+                  ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
+                ESP_LOGI("waveshare_reset", "Marking OTA image valid before hardware-reset workaround");
+                id(waveshare_86box_safe_mode).mark_successful();
+                global_preferences->sync();
+                esp_sleep_enable_timer_wakeup(100000);
+                esp_deep_sleep_start();
+                return;
+              }
+            }
+            if (reason == ESP_RST_USB || reason == ESP_RST_SW) {
+              esp_sleep_enable_timer_wakeup(100000);
+              esp_deep_sleep_start();
+            }
+    - priority: -100
+      then:
+        - lambda: 'id(screen_rotation_ready) = true;'
+        - script.execute: apply_screen_rotation
+        - script.execute: clock_bar_apply
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+ota:
+  - platform: esphome
+    on_begin:
+      then:
+        - script.execute: show_update_writing
+        - script.wait: show_update_writing
+    on_end:
+      then:
+        - globals.set:
+            id: firmware_update_complete_pending
+            value: 'true'
+        - lambda: 'global_preferences->sync();'
+        - lambda: |-
+            esp_sleep_enable_timer_wakeup(100000);
+            esp_deep_sleep_start();
+    on_error:
+      then:
+        - script.execute: show_update_failed
+  - platform: http_request
+    on_begin:
+      then:
+        - script.execute: show_update_writing
+        - script.wait: show_update_writing
+    on_end:
+      then:
+        - globals.set:
+            id: firmware_update_complete_pending
+            value: 'true'
+        - lambda: 'global_preferences->sync();'
+        - lambda: |-
+            esp_sleep_enable_timer_wakeup(100000);
+            esp_deep_sleep_start();
+    on_error:
+      then:
+        - script.execute: show_update_failed
+
+safe_mode:
+  id: waveshare_86box_safe_mode
+  boot_is_good_after: 10s
+
+packages:
+  core_infra: !include ../../../common/device/core_infra.yaml
+
+api:
+  listen_backlog: 4
+  max_connections: 3
+  max_send_queue: 12
+
+logger:
+  hardware_uart: UART0
+
+wifi:
+  use_psram: true
+
+# ---------------------------------------------------------------------------
+# I2C bus — BSP_I2C_SDA / BSP_I2C_SCL, 400kHz (CONFIG_BSP_I2C_FAST_MODE).
+# ---------------------------------------------------------------------------
+# Everything on this board that is not an RGB data line hangs off this bus:
+# the TCA9554 expander, the GT911 touch controller, and the audio/sensor parts
+# this port does not use.
+#
+# setup_priority is raised above the default BUS (1000) on purpose — see the
+# ordering note on the spi: block below.
+# ---------------------------------------------------------------------------
+i2c:
+  - id: board_i2c
+    setup_priority: 1200
+    sda: GPIO47
+    scl: GPIO48
+    scan: true
+    frequency: 400kHz
+
+# ---------------------------------------------------------------------------
+# TCA9554 I/O expander — BSP_IO_EXPANDER_I2C_ADDRESS, which is
+# ESP_IO_EXPANDER_I2C_TCA9554_ADDRESS_000 (0x20, all three address pins low).
+# ---------------------------------------------------------------------------
+# ESPHome has no tca9554 platform; its pca9554 component drives the identical
+# command interface (INPUT/OUTPUT/POLARITY/CONFIG registers 0-3) and documents
+# TCA9554/TCA9535 as supported parts.
+#
+# Expander pin map, from esp32_s3_touch_lcd_4b.h/.c:
+#   0  BSP_LCD_IO_SPI_CS   ST7701 3-wire SPI chip select
+#   1  BSP_LCD_IO_SPI_SDA  ST7701 3-wire SPI data
+#   2  BSP_LCD_IO_SPI_SCL  ST7701 3-wire SPI clock
+#   3  BSP_POWER_AMP_IO    audio amp enable (unused here, left as input)
+#   5  shared LCD + touch reset, active low (bsp_display_new())
+#   6  GT911 interrupt / I2C address select (bsp_display_new())
+#
+# setup_priority 1100 puts this after the I2C bus (1200) but before the SPI
+# bus (BUS, 1000). That ordering is load-bearing: PCA9554Component::setup()
+# rewrites CONFIG_REG to "all pins are inputs", so any pin whose direction was
+# set before it runs would silently revert to an input and stop driving.
+# ---------------------------------------------------------------------------
+pca9554:
+  - id: io_hub
+    setup_priority: 1100
+    i2c_id: board_i2c
+    address: 0x20
+    pin_count: 8
+
+# ---------------------------------------------------------------------------
+# ST7701 3-wire SPI — BSP_LCD_IO_SPI_SCL / _SDA, both expander pins.
+# ---------------------------------------------------------------------------
+# The 4B routes the panel's register-init SPI entirely through the TCA9554
+# (spi_line_config_t in bsp_display_new() sets cs/scl/sda io_type to
+# IO_TYPE_EXPANDER), so there is no MCU SPI peripheral involved at all. The
+# ESP32-S3-Touch-LCD-4 by contrast wires the same three signals to real GPIOs.
+#
+# interface: software is mandatory, not a preference. ESPHome's default
+# (interface: any) runs validate_hw_pins(), which on ESP32 only checks that the
+# clock pin number is >= 0 — an expander pin number passes that test, and the
+# bus would then be handed to a hardware SPI peripheral that cannot reach these
+# pins. "software" selects SPIDelegateBitBash, which drives clk/mosi through
+# the generic GPIOPin interface and therefore works with expander pins.
+#
+# Cost: every SPI bit is three I2C register writes, so the ~240-byte init
+# sequence takes roughly half a second at boot. It runs once, in setup(), and
+# nothing touches this bus afterwards (the pixel data goes over the parallel
+# RGB bus, not here). CONFIG_ESP_TASK_WDT_TIMEOUT_S above covers it.
+#
+# No miso_pin: the ST7701 3-wire link is write-only, and mipi_rgb registers
+# itself with write_only=true.
+# ---------------------------------------------------------------------------
+spi:
+  - id: lcd_spi
+    interface: software
+    clk_pin:
+      pca9554: io_hub
+      number: 2
+    mosi_pin:
+      pca9554: io_hub
+      number: 1
+
+# ---------------------------------------------------------------------------
+# Backlight — BSP_LCD_BACKLIGHT, a direct MCU pin, NOT an expander pin.
+# ---------------------------------------------------------------------------
+# bsp_display_brightness_init() drives it from LEDC at 5kHz / 10-bit with duty
+# 0 meaning off, so it is active high and needs no inversion.
+# ---------------------------------------------------------------------------
+output:
+  - platform: ledc
+    pin: GPIO4
+    id: gpio_backlight_pwm
+    frequency: 5000Hz
+    min_power: 0.01
+    zero_means_zero: true
+
+light:
+  - platform: monochromatic
+    output: gpio_backlight_pwm
+    name: Display Backlight
+    icon: mdi:lightbulb-on
+    id: display_backlight
+    restore_mode: RESTORE_DEFAULT_ON
+    default_transition_length: 0s
+    gamma_correct: 1.0
+    on_turn_on:
+      then:
+        - if:
+            condition:
+              lambda: |-
+                auto now = panel_time_or_fallback(id(panel_time).now(), id(homeassistant_time).now());
+                return (id(espcontrol_app).display().target_source_is(
+                            espcontrol::DisplayRequestSource::SCREEN_SCHEDULE) &&
+                        id(espcontrol_app).display().target_mode_is(
+                            espcontrol::DisplayMode::DISPLAY_OFF)) ||
+                       screen_schedule_waiting_for_time(
+                         id(screen_schedule_trigger).state,
+                         id(schedule_enabled).state,
+                         now.is_valid());
+            then:
+              - script.execute: backlight_force_display_off
+            else:
+              - if:
+                  condition:
+                    lambda: |-
+                      return id(espcontrol_app).display().current_mode_is(
+                          espcontrol::DisplayMode::DISPLAY_OFF);
+                  then:
+                    - script.execute: screensaver_wake
+    on_turn_off:
+      then:
+        - if:
+            condition:
+              lambda: |-
+                return id(espcontrol_app).display().target_mode_is(
+                    espcontrol::DisplayMode::ACTIVE);
+            then:
+              - script.execute: screen_schedule_manual_sleep
+    on_state:
+      then:
+        - script.execute: display_backlight_handle_state
+
+button:
+  - platform: template
+    name: Backlight Sweep Test
+    internal: true
+    disabled_by_default: true
+    entity_category: diagnostic
+    icon: mdi:brightness-percent
+    web_server:
+      sorting_group_id: sg_brightness
+    on_press:
+      then:
+        - script.execute: s3_backlight_sweep_test
+
+# ---------------------------------------------------------------------------
+# Touchscreen — GT911 on the shared I2C bus.
+# ---------------------------------------------------------------------------
+# BSP_LCD_TOUCH_RST and BSP_LCD_TOUCH_INT are both GPIO_NUM_NC: neither has a
+# discrete MCU pin. Waveshare's bsp_display_new() instead drives the reset
+# dance through the expander before it brings up the LCD, with the comment
+# "Shared with LCD reset" on rst_gpio_num, and then polls the controller.
+#
+# ESPHome's gt911 platform performs exactly that sequence in setup(): it drives
+# reset low, forces the interrupt pin to an output and drives it low, releases
+# reset, and then probes. Holding INT low across the rising edge of reset is
+# what latches the GT911's primary I2C address (0x5D) rather than the secondary
+# (0x14) — that is the whole reason Waveshare touches pin 6 at all.
+#
+# setup_priority 800 is above the display's 750 so this single shared reset
+# lands before the ST7701 register init, matching the BSP's order. It must not
+# be lower: the same line resets the panel, so a later pulse would wipe the
+# display's init sequence.
+#
+# The interrupt pin stays an expander output afterwards. That is ESPHome's own
+# documented behaviour for expander-backed GT911 interrupt pins ("IO expander
+# polling mode" in gt911_touchscreen.cpp) and matches
+# devices/waveshare-esp32-s3-touch-lcd-4/, which does the same with its
+# CH32V003. Touch is polled at update_interval, as Waveshare's BSP also does.
+# ---------------------------------------------------------------------------
+touchscreen:
+  - platform: gt911
+    setup_priority: 800
+    id: my_touchscreen
+    i2c_id: board_i2c
+    address: 0x5D
+    display: my_display
+    update_interval: 20ms
+    interrupt_pin:
+      pca9554: io_hub
+      number: 6
+    reset_pin:
+      pca9554: io_hub
+      number: 5
+    on_touch:
+      - script.execute: cover_art_pause_after_touch
+      - script.wait: cover_art_pause_after_touch
+      - script.execute: screensaver_wake
+
+# ---------------------------------------------------------------------------
+# Display — 480x480 ST7701 on a 16-bit RGB565 parallel bus.
+# ---------------------------------------------------------------------------
+# model: CUSTOM because mipi_rgb ships no profile for this board. The closest
+# one, WAVESHARE-4-480X480, is the non-B ESP32-S3-Touch-LCD-4 and has a
+# different pin map; UEDX48480021-MD80ET happens to use some of the same GPIOs
+# but assigns red and blue to opposite ends of the bus.
+#
+# Dimensions are BSP_LCD_H_RES x BSP_LCD_V_RES from include/bsp/display.h.
+#
+# Sync/data pins are BSP_LCD_VSYNC / _HSYNC / _DE / _PCLK and
+# BSP_LCD_DATA0..DATA15. The BSP's data_gpio_nums[] is indexed by RGB565 bit,
+# so D0-D4 are blue, D5-D10 green, D11-D15 red — which is how mipi_rgb wants
+# them grouped. (Cross-checked against the non-B board: its BSP data order maps
+# onto mipi_rgb's existing WAVESHARE-4-480X480 model under exactly this rule.)
+#
+# Timings are ST7701_480_480_PANEL_60HZ_RGB_TIMING() from esp_lcd_st7701, which
+# is what rgb_config.timings is initialised from: 16MHz pclk, hsync 10/10/20
+# pulse/back/front, vsync 10/10/10, and pclk_active_neg false -> pclk_inverted
+# false.
+#
+# bits_per_pixel in the BSP's esp_lcd_panel_dev_config_t is 18
+# (BSP_LCD_BIT_PER_PIXEL), i.e. the panel is told RGB666 over the 16-bit bus,
+# hence pixel_mode: 18bit. rgb_ele_order is LCD_RGB_ELEMENT_ORDER_RGB.
+#
+# No reset_pin here: the panel shares its reset with the touch controller and
+# the touchscreen block above owns it (see the note there).
+#
+# The BSP's init table ends with 0x36 0x00, 0x3A 0x66, 0x21 and 0x29. Those are
+# not repeated below because mipi_rgb emits them itself from color_order,
+# pixel_mode, invert_colors and its own DISPON — duplicating them here would
+# just send each twice.
+#
+# init_sequence is lcd_init_cmds[] from esp32_s3_touch_lcd_4b.c, verbatim.
+# Keeping its leading 0x11 matters: mipi_rgb waits 120ms before writing a
+# SLEEP_OUT, which is what gives the ST7701 its post-reset settling time.
+# ---------------------------------------------------------------------------
+display:
+  - platform: mipi_rgb
+    model: CUSTOM
+    setup_priority: 750
+    id: my_display
+    update_interval: never
+    auto_clear_enabled: false
+    dimensions:
+      width: 480
+      height: 480
+    spi_id: lcd_spi
+    # MODE0 is what ST7701_PANEL_IO_3WIRE_SPI_CONFIG(line_config, 0) selects
+    # (scl_active_edge 0 -> spi_mode 0). data_rate is nominal only: the bus is
+    # bit-banged over I2C and paced by the expander, not by this number.
+    spi_mode: MODE0
+    data_rate: 1MHz
+    cs_pin:
+      pca9554: io_hub
+      number: 0
+    color_order: rgb
+    pixel_mode: 18bit
+    invert_colors: true
+    de_pin: GPIO17
+    pclk_pin: GPIO9
+    hsync_pin:
+      number: GPIO46
+      ignore_strapping_warning: true
+    vsync_pin:
+      number: GPIO3
+      ignore_strapping_warning: true
+    pclk_frequency: 16MHz
+    pclk_inverted: false
+    hsync_pulse_width: 10
+    hsync_back_porch: 10
+    hsync_front_porch: 20
+    vsync_pulse_width: 10
+    vsync_back_porch: 10
+    vsync_front_porch: 10
+    data_pins:
+      blue: [GPIO40, GPIO41, GPIO42, GPIO2, GPIO1]
+      green: [GPIO21, GPIO8, GPIO18, GPIO45, GPIO38, GPIO39]
+      red: [GPIO10, GPIO11, GPIO12, GPIO13, GPIO14]
+    init_sequence:
+      - [0x11]
+      - [0xFF, 0x77, 0x01, 0x00, 0x00, 0x10]
+      - [0xC0, 0x3B, 0x00]
+      - [0xC1, 0x0D, 0x02]
+      - [0xC2, 0x21, 0x08]
+      - [0xCD, 0x08]
+      - [0xB0, 0x00, 0x11, 0x18, 0x0E, 0x11, 0x06, 0x07, 0x08, 0x07, 0x22, 0x04, 0x12, 0x0F, 0xAA, 0x31, 0x18]
+      - [0xB1, 0x00, 0x11, 0x19, 0x0E, 0x12, 0x07, 0x08, 0x08, 0x08, 0x22, 0x04, 0x11, 0x11, 0xA9, 0x32, 0x18]
+      - [0xFF, 0x77, 0x01, 0x00, 0x00, 0x11]
+      - [0xB0, 0x60]
+      - [0xB1, 0x30]
+      - [0xB2, 0x87]
+      - [0xB3, 0x80]
+      - [0xB5, 0x49]
+      - [0xB7, 0x85]
+      - [0xB8, 0x21]
+      - [0xC1, 0x78]
+      - [0xC2, 0x78]
+      - delay 20ms
+      - [0xE0, 0x00, 0x1B, 0x02]
+      - [0xE1, 0x08, 0xA0, 0x00, 0x00, 0x07, 0xA0, 0x00, 0x00, 0x00, 0x44, 0x44]
+      - [0xE2, 0x11, 0x11, 0x44, 0x44, 0xED, 0xA0, 0x00, 0x00, 0xEC, 0xA0, 0x00, 0x00]
+      - [0xE3, 0x00, 0x00, 0x11, 0x11]
+      - [0xE4, 0x44, 0x44]
+      - [0xE5, 0x0A, 0xE9, 0xD8, 0xA0, 0x0C, 0xEB, 0xD8, 0xA0, 0x0E, 0xED, 0xD8, 0xA0, 0x10, 0xEF, 0xD8, 0xA0]
+      - [0xE6, 0x00, 0x00, 0x11, 0x11]
+      - [0xE7, 0x44, 0x44]
+      - [0xE8, 0x09, 0xE8, 0xD8, 0xA0, 0x0B, 0xEA, 0xD8, 0xA0, 0x0D, 0xEC, 0xD8, 0xA0, 0x0F, 0xEE, 0xD8, 0xA0]
+      - [0xEB, 0x02, 0x00, 0xE4, 0xE4, 0x88, 0x00, 0x40]
+      - [0xEC, 0x3C, 0x00]
+      - [0xED, 0xAB, 0x89, 0x76, 0x54, 0x02, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x20, 0x45, 0x67, 0x98, 0xBA]
+      - [0xFF, 0x77, 0x01, 0x00, 0x00, 0x00]
+
+lvgl:
+  id: main_lvgl
+  setup_priority: 700
+  buffer_size: 12%
+  displays: my_display
+  rotation: 180
+  touchscreens:
+    - touchscreen_id: my_touchscreen
+      long_press_time: 3s
+
+script:
+  - id: s3_backlight_sweep_test
+    mode: restart
+    then:
+      - script.execute: screensaver_wake
+      - script.wait: screensaver_wake
+      - script.execute:
+          id: backlight_note_internal_brightness
+          brightness: 1.0
+      - light.turn_on:
+          id: display_backlight
+          brightness: 100%
+          transition_length: 0s
+      - delay: 3s
+      - script.execute:
+          id: backlight_note_internal_brightness
+          brightness: 0.6
+      - light.turn_on:
+          id: display_backlight
+          brightness: 60%
+          transition_length: 0s
+      - delay: 3s
+      - script.execute:
+          id: backlight_note_internal_brightness
+          brightness: 0.3
+      - light.turn_on:
+          id: display_backlight
+          brightness: 30%
+          transition_length: 0s
+      - delay: 3s
+      - script.execute:
+          id: backlight_note_internal_brightness
+          brightness: 0.1
+      - light.turn_on:
+          id: display_backlight
+          brightness: 10%
+          transition_length: 0s
+      - delay: 3s
+      - script.execute:
+          id: backlight_note_internal_brightness
+          brightness: 1.0
+      - light.turn_on:
+          id: display_backlight
+          brightness: 100%
+          transition_length: 0s
+
+  - id: apply_screen_rotation
+    then:
+      - if:
+          condition:
+            lambda: 'return id(screen_rotation_select).current_option() == "90";'
+          then:
+            - lvgl.display.set_rotation: 270
+          else:
+            - if:
+                condition:
+                  lambda: 'return id(screen_rotation_select).current_option() == "180";'
+                then:
+                  - lvgl.display.set_rotation: 0
+                else:
+                  - if:
+                      condition:
+                        lambda: 'return id(screen_rotation_select).current_option() == "270";'
+                      then:
+                        - lvgl.display.set_rotation: 90
+                      else:
+                        - lvgl.display.set_rotation: 180
+
+select:
+  - platform: template
+    name: "${entity_screen_rotation}"
+    internal: true
+    disabled_by_default: true
+    id: screen_rotation_select
+    entity_category: config
+    icon: "mdi:screen-rotation"
+    optimistic: true
+    restore_value: true
+    initial_option: "180"
+    options:
+      - "0"
+      - "90"
+      - "180"
+      - "270"
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: 'return id(screen_rotation_ready);'
+            then:
+              - script.execute: apply_screen_rotation
+              - script.execute: refresh_button_grid
