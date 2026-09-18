@@ -146,7 +146,7 @@ packages:
 
 # --- community hosting overrides ---
 web_server:
-  js_url: https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js?device=${device_slug}&v=${firmware_version}&ui=7e9dc24e2daa
+  js_url: https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js?device=${device_slug}&v=${firmware_version}&ui=1854341a9810
 
 update:
   - id: !extend firmware_update
