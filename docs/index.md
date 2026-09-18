@@ -21,6 +21,14 @@ device in the sidebar.
 
 ## Supported Devices
 
+::: warning Not every device supports every upstream feature
+Some upstream features need more hardware headroom (PSRAM, flash) than a
+given community panel has. Where that's the case, the device is missing that
+feature, not just slower at it — check that device's own page for what's
+unavailable and why. A device with no such note supports the full upstream
+feature set.
+:::
+
 <!--@include: ./parts/device-table.md-->
 
 The live build/verification state for every device is in the

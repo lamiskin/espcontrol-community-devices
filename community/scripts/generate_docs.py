@@ -236,15 +236,24 @@ def verified_credit(d):
 
 
 def capability_gaps_block(d):
-    """Render a warning for each capabilityGaps entry in the catalog
-    fragment — upstream features this device intentionally doesn't carry,
-    and why. Sourced from community/catalog-fragment.json so the reason
-    shown to users can't drift from the reason recorded for CI (see
-    check_capability_docs.py, which requires this entry whenever a device's
-    capacity is below a sibling device's on the same chip family)."""
+    """Render this device's upstream feature-parity status: a warning per
+    capabilityGaps entry in the catalog fragment — upstream features this
+    device intentionally doesn't carry, and why — or, when there are none, an
+    explicit confirmation that it carries the full upstream feature set.
+    Sourced from community/catalog-fragment.json so the reason shown to
+    users can't drift from the reason recorded for CI (see
+    check_capability_docs.py, which requires a capabilityGaps entry whenever
+    a device's capacity is below a sibling device's on the same chip
+    family). Always renders something — silence would read as "nobody
+    checked," not "nothing's missing"."""
     gaps = d["capability_gaps"]
     if not gaps:
-        return ""
+        return (
+            "::: tip Full upstream feature parity\n"
+            "This device supports the full upstream feature set — nothing "
+            "is disabled or unavailable here.\n"
+            ":::\n"
+        )
     blocks = []
     for gap in gaps:
         blocks.append(
