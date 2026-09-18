@@ -91,7 +91,29 @@ Some upstream includes may not apply to your hardware. Common exceptions:
 - **Cover art live updates** — set `cover_art_live_image_updates: "false"` for
   displays that can't decode JPEG in real-time
 
-Document any parity gaps in your PR description.
+If your device includes a different set of `common/` paths than the chip
+family's reference device, `check_include_parity.py` will fail. If the
+difference is intentional (one of the cases above, or similar), record it in
+`devices/<slug>/parity-exceptions.txt` — one `common/` path per line, with a
+comment explaining why. See an existing example under `devices/*/` for the
+format.
+
+**If the exception means this device does less than a sibling device on the
+same chip family** — fewer image slots, a disabled feature, anything a user
+would notice is missing compared to another community device of the same
+platform — also add a `config.capabilityGaps` entry for it in
+`catalog-fragment.json` (step 6): `{"feature": "...", "reason": "..."}`.
+`generate_docs.py` turns that into a warning on the device's public docs
+page, and `check_capability_docs.py` fails CI if a device's capability
+numbers fall behind a sibling's without one. This is how a user browsing the
+device list finds out *before* installing that (for example) Camera Cards
+aren't available on their board, instead of discovering it missing with no
+explanation. Don't skip this step because the gap "seems obvious" from the
+hardware spec — it isn't obvious to someone comparing devices on the docs
+site.
+
+Document any parity gaps in your PR description too, so a reviewer isn't
+left to reconstruct the reasoning from the diff.
 
 ## 6. Write a catalog-fragment entry
 
@@ -104,6 +126,9 @@ object. Copy the structure from the existing reference device and adapt:
 - `config.public` — human-readable name, screen size, resolution, orientation
 - `config.layout` — cols, rows, firmwareGrid
 - `config.web` — web configurator dimensions and spacing
+- `config.capabilityGaps` — only if step 5 applies: `[{"feature": "...",
+  "reason": "..."}]` for anything this device does less of than a sibling
+  device on the same chip family
 
 ## 7. Register the device
 

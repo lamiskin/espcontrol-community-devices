@@ -140,7 +140,7 @@ packages:
       - common/device/screen_button_setup.yaml
       - common/device/screen_clock.yaml
       - common/device/screen_cover_art.yaml
-      - common/device/image_cards_1.yaml
+      - common/device/image_cards_2.yaml
   lvgl: !include device/lvgl.yaml
   sensors: !include device/sensors.yaml
 

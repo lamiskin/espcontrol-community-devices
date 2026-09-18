@@ -23,6 +23,9 @@ This device has been verified on real hardware — it compiles, flashes, and run
 
 Confirmed by @jonnybergdahl ([#134](https://github.com/lamiskin/espcontrol-community-devices/pull/134)) at `community-v0.7.2-upstream.v2.8.6`.
 :::
+::: warning Camera Cards not available
+Quad PSRAM (every other community ESP32-S3 device has octal) leaves no headroom for a second concurrent image-heavy transfer, so this device stays on the single-slot image pool.
+:::
 
 |  |  |
 |:--:|:--:|

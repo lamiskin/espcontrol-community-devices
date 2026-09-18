@@ -182,6 +182,7 @@ def load_devices():
             "buy": public.get("buy", ""),
             "case": public.get("case", ""),
             "extra_features": public.get("extraFeatures", []),
+            "capability_gaps": config.get("capabilityGaps", []),
         })
     devices.sort(key=size_sort_key)
     return devices
@@ -232,6 +233,26 @@ def verified_credit(d):
     pin = ("" if unset(d["verified"])
            else f" at `{d['verified']}`")
     return f"\n\nConfirmed by {d['verified_by']}{pin}."
+
+
+def capability_gaps_block(d):
+    """Render a warning for each capabilityGaps entry in the catalog
+    fragment — upstream features this device intentionally doesn't carry,
+    and why. Sourced from community/catalog-fragment.json so the reason
+    shown to users can't drift from the reason recorded for CI (see
+    check_capability_docs.py, which requires this entry whenever a device's
+    capacity is below a sibling device's on the same chip family)."""
+    gaps = d["capability_gaps"]
+    if not gaps:
+        return ""
+    blocks = []
+    for gap in gaps:
+        blocks.append(
+            f"::: warning {gap['feature']} not available\n"
+            f"{gap['reason']}\n"
+            ":::"
+        )
+    return "\n".join(blocks) + "\n"
 
 
 def device_page(d):
@@ -333,7 +354,7 @@ on the home screen.
 ::: {section_kind} {section_title}
 {section_body}
 :::
-{photo_block(d)}
+{capability_gaps_block(d)}{photo_block(d)}
 ## Specifications
 
 | | |
