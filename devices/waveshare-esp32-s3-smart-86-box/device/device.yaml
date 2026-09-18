@@ -54,7 +54,37 @@ esp32:
       # and LVGL buffers are initialized.
       CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM: "8"
       CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: "y"
-      CONFIG_SPIRAM_XIP_FROM_PSRAM: "y"
+      # RGB bounce-buffer scan-out requires 64-byte data-cache lines. The
+      # default 32-byte lines can desynchronise PSRAM reads from panel DMA and
+      # leave the whole display vertically shifted until the next restart.
+      # (Same fix as devices/guition-esp32-s3-jc8048w550, the other mipi_rgb
+      # device in this repo. Added for community issue #15: an 874ms LVGL
+      # flush on backlight wake left the anti-burn-in "snow" LVGL paints
+      # during DISPLAY_OFF visible on screen well after the backlight came
+      # back on. A desynced cache line is a plausible contributor to a flush
+      # running that slow. Unconfirmed on real hardware — pending retest.)
+      CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
+      # The RGB driver already restarts after a genuine DMA underflow.
+      # Restarting on every VSYNC can instead shift the framebuffer by one
+      # bounce-buffer block.
+      CONFIG_LCD_RGB_RESTART_IN_VSYNC: "n"
+      # The RGB end-of-frame ISR refills the bounce buffer by reading the
+      # frame buffer out of PSRAM, so it must keep running while flash
+      # operations are in progress or the buffer underruns and the panel
+      # visibly flickers. Marking it IRAM-safe is only sound together with
+      # XIP from PSRAM below: that keeps the cache enabled across flash
+      # access, so the ISR's PSRAM read stays valid. Enabling the ISR flag on
+      # its own panics with "Cache disabled but cached memory region
+      # accessed".
+      CONFIG_LCD_RGB_ISR_IRAM_SAFE: "y"
+      # XIP from PSRAM. Needs ~3.4MB (.text 1.92MB + .rodata 1.68MB) of this
+      # board's 8MB PSRAM; esp_psram checks the requirement against total
+      # PSRAM size, so this is only viable on 8MB parts. These two are the
+      # sub-options CONFIG_SPIRAM_XIP_FROM_PSRAM actually depends on —
+      # spelled out explicitly here to match jc8048w550's proven-working
+      # combination, rather than relying on the parent option alone.
+      CONFIG_SPIRAM_FETCH_INSTRUCTIONS: "y"
+      CONFIG_SPIRAM_RODATA: "y"
 
 external_components:
   - source:
