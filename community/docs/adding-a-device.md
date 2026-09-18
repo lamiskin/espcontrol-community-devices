@@ -112,6 +112,15 @@ explanation. Don't skip this step because the gap "seems obvious" from the
 hardware spec — it isn't obvious to someone comparing devices on the docs
 site.
 
+**Leaving `capabilityGaps` empty is a claim, not just silence.** If your
+device has no gaps, `generate_docs.py` puts an explicit "Full upstream
+feature parity" confirmation on its docs page — there's no neutral third
+option where the page just says nothing. Don't leave it empty because you
+didn't check; only leave it empty once you've actually confirmed this
+device carries every upstream feature its sibling devices do (step 2's
+diff against the chip family's reference device is what that confirmation
+should be based on).
+
 Document any parity gaps in your PR description too, so a reviewer isn't
 left to reconstruct the reasoning from the diff.
 
