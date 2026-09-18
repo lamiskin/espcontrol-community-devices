@@ -191,6 +191,27 @@ operation. Attach evidence to your PR showing:
 Compile-only submissions are accepted with **Untested** status — the device
 won't be marked **Working** in STATUS.md until hardware evidence is provided.
 
+**Getting a working UI screenshot before your PR is merged:** the default
+build points the panel's web UI at `js_url`, which loads `webserver/www.js`
+live from GitHub Pages. That site only rebuilds from `main`, so it has no
+entry for your device's profile until your PR merges — flashing the default
+build pre-merge will boot fine but show `Unsupported EspControl device
+profile: <your-slug>` in the browser console instead of a UI. That's
+expected, not a bug in your device config (see community issue #133).
+
+To get a real, working UI for your evidence screenshot, build and flash the
+**factory** variant instead, which embeds the bundle via `js_include` rather
+than fetching it live:
+
+```bash
+python3 community/scripts/assemble.py   # no --skip-web this time
+cd .assembly
+esphome compile builds/<your-slug>.factory.yaml
+```
+
+This embeds a `www.js` built from your own working tree, so it already knows
+about your device, directly into the firmware — no need to wait for merge.
+
 ## 10. Add STATUS.md row
 
 Add a row to `community/STATUS.md`:
