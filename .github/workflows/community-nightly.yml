@@ -241,7 +241,7 @@ jobs:
 
   report:
     runs-on: ubuntu-latest
-    needs: [determine-devices, compile]
+    needs: [determine-devices, compile, builder-smoke]
     if: always()
     permissions:
       contents: write        # push the nightly-status branch
@@ -261,20 +261,41 @@ jobs:
 
           DEVICES=$(python3 -c "import json; print('\n'.join(json.load(open('community/devices.json'))['devices']))")
 
+          # One fetch of this run's jobs, then match each device against it
+          # locally — avoids a gh api call per device (same shape as
+          # community-ref-bump.yml's open-pr job).
+          JOBS_JSON=$(retry gh run view ${{ github.run_id }} --json jobs)
+
           STATUS_CHANGED=false
 
           while IFS= read -r slug; do
             [ -z "$slug" ] && continue
 
-            # Check if this device's compile job succeeded. Scope to the
-            # compile matrix specifically — other per-device jobs (e.g.
-            # builder-smoke) also contain the slug and would otherwise return
-            # multiple conclusions and corrupt this comparison.
-            JOB_RESULT=$(retry gh run view ${{ github.run_id }} --json jobs --jq ".jobs[] | select((.name | startswith(\"compile\")) and (.name | contains(\"$slug\"))) | .conclusion" 2>/dev/null || echo "unknown")
+            # Exact job-name match, not `contains($slug)` — a substring
+            # match made every m5stack-esp32-p4-tab5 result also match
+            # m5stack-esp32-p4-tab5-v1's job, turning one conclusion into a
+            # two-line string that could never equal "success" or "failure"
+            # (see community-ref-bump.yml's open-pr job, which hit this
+            # exact bug first — #152).
+            COMPILE_RESULT=$(echo "$JOBS_JSON" | jq -r --arg name "compile ($slug)" \
+              '.jobs[] | select(.name == $name) | .conclusion')
+            # builder-smoke validates the published install path (catches
+            # GitHub-side/remote-resolution breaks compile's local file://
+            # path can't) — a device whose builder-smoke fails is just as
+            # broken to an end user as one that fails to compile, so it must
+            # feed the same [broken] issue / STATUS.md flip, not go
+            # unreported.
+            SMOKE_RESULT=$(echo "$JOBS_JSON" | jq -r --arg name "builder-smoke ($slug)" \
+              '.jobs[] | select(.name == $name) | .conclusion')
+
+            FAILED=""
+            [ "$COMPILE_RESULT" = "failure" ] && FAILED="${FAILED}compile "
+            [ "$SMOKE_RESULT" = "failure" ] && FAILED="${FAILED}builder-smoke "
+            FAILED="${FAILED% }"
 
             ISSUE_TITLE="[broken] $slug"
 
-            if [ "$JOB_RESULT" = "failure" ]; then
+            if [ -n "$FAILED" ]; then
               # Search for existing open issue with this title
               EXISTING=$(retry gh issue list --state open --search "\"$ISSUE_TITLE\" in:title" --json number --jq '.[0].number' 2>/dev/null || true)
 
@@ -285,7 +306,7 @@ jobs:
                 # whole report job to one API blip.
                 retry gh issue create \
                   --title "$ISSUE_TITLE" \
-                  --body "Nightly compile failed for \`$slug\` on $(date -u +%Y-%m-%d).
+                  --body "Nightly ${FAILED// /, } failed for \`$slug\` on $(date -u +%Y-%m-%d).
 
           Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           Pin: $(cat community/upstream-ref.txt)" \
@@ -294,7 +315,7 @@ jobs:
               else
                 # Comment on existing issue
                 retry gh issue comment "$EXISTING" \
-                  --body "Still broken as of $(date -u +%Y-%m-%d).
+                  --body "Still broken as of $(date -u +%Y-%m-%d) (${FAILED// /, } failing).
 
           Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                 echo "Updated issue #$EXISTING: $ISSUE_TITLE"
@@ -313,14 +334,15 @@ jobs:
               print(f'STATUS.md: $slug -> Broken')
           " && STATUS_CHANGED=true
 
-            elif [ "$JOB_RESULT" = "success" ]; then
-              # Device compiles — check if it was previously broken
+            elif [ "$COMPILE_RESULT" = "success" ] && [ "$SMOKE_RESULT" = "success" ]; then
+              # Device compiles and installs cleanly — check if it was
+              # previously broken
               EXISTING=$(retry gh issue list --state open --search "\"$ISSUE_TITLE\" in:title" --json number --jq '.[0].number' 2>/dev/null || true)
 
               if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
                 # Close the broken issue
                 retry gh issue close "$EXISTING" \
-                  --comment "Device compiles again as of $(date -u +%Y-%m-%d). Restoring status.
+                  --comment "Device compiles and installs again as of $(date -u +%Y-%m-%d). Restoring status.
 
           Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                 echo "Closed issue #$EXISTING: $ISSUE_TITLE"
