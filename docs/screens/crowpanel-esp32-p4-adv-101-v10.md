@@ -21,6 +21,9 @@ Community port contributed via [Issue #133](https://github.com/lamiskin/espcontr
 ::: warning Not yet hardware-verified
 This device compiles and is flashable, but nobody has confirmed it on real hardware yet. It may not work. If you own this panel, [verifying it](/reference/support-policy#hardware-verification) is the most valuable contribution you can make.
 :::
+::: tip Full upstream feature parity
+This device supports the full upstream feature set — nothing is disabled or unavailable here.
+:::
 
 ## Specifications
 
