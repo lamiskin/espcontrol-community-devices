@@ -6,7 +6,7 @@ community/catalog-fragment.json and community/STATUS.md.
 
 | Device | Size | Resolution | Cards | Processor | Status |
 |---|---|---|---|---|---|
-| [Elecrow CrowPanel Advanced 10.1 ESP32-P4 (V1.0)](/screens/crowpanel-esp32-p4-adv-101-v10) | 10.1 inches | 1024 x 600 | 15 | ESP32-P4 | Untested |
+| [Elecrow CrowPanel Advanced 10.1 ESP32-P4 (V1.0)](/screens/crowpanel-esp32-p4-adv-101-v10) | 10.1 inches | 1024 x 600 | 15 | ESP32-P4 | Working |
 | [Guition ESP32-S3-JC3248W535](/screens/guition-esp32-s3-jc3248w535) | 3.5 inches | 480 x 320 | 6 | ESP32-S3 | Working |
 | [Guition JC8048W550](/screens/guition-esp32-s3-jc8048w550) | 5 inches | 800 x 480 | 15 | ESP32-S3 | Working |
 | [M5Stack Tab5](/screens/m5stack-esp32-p4-tab5) | 5 inches | 1280 x 720 | 24 | ESP32-P4 | Working |
