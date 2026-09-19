@@ -18,9 +18,19 @@ on the home screen.
 
 Community port contributed via [Issue #838](https://github.com/jtenniswood/espcontrol/issues/838) by @sbuchbauer.
 
-::: warning Not yet hardware-verified
-This device compiles and is flashable, but nobody has confirmed it on real hardware yet. It may not work. If you own this panel, [verifying it](/reference/support-policy#hardware-verification) is the most valuable contribution you can make.
+::: tip Hardware-verified
+This device has been verified on real hardware — it compiles, flashes, and runs EspControl correctly.
+
+Confirmed by @slampton ([#166](https://github.com/lamiskin/espcontrol-community-devices/pull/166)) at `community-v0.11.0-upstream.v2.10.0`.
 :::
+::: tip Full upstream feature parity
+This device supports the full upstream feature set — nothing is disabled or unavailable here.
+:::
+
+<video controls playsinline preload="metadata" style="max-width: 100%;" src="/images/waveshare-esp32-p4-touch-lcd-10-verified-1.mp4">
+  Your browser doesn't support embedded video —
+  [download it directly](/images/waveshare-esp32-p4-touch-lcd-10-verified-1.mp4) instead.
+</video>
 
 ## Specifications
 

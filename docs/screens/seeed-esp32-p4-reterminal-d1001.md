@@ -23,6 +23,9 @@ This device has been verified on real hardware — it compiles, flashes, and run
 
 Confirmed by @zacs ([#151](https://github.com/lamiskin/espcontrol-community-devices/pull/151)) at `community-v0.9.0-upstream.v2.9.0`.
 :::
+::: tip Full upstream feature parity
+This device supports the full upstream feature set — nothing is disabled or unavailable here.
+:::
 
 |  |
 |:--:|
@@ -37,6 +40,12 @@ Confirmed by @zacs ([#151](https://github.com/lamiskin/espcontrol-community-devi
 | **Orientation** | Landscape |
 | **Processor** | ESP32-P4 |
 | **Card grid** | 5 × 4 (20 cards) |
+
+## Additional hardware
+
+- **Bezel RGB status LED** — exposed to Home Assistant as a `light` entity with pulse and color-specific strobe effects ([PR #154](https://github.com/lamiskin/espcontrol-community-devices/pull/154) by @zacs).
+
+  ![reTerminal D1001 status LED lit](/images/seeed-esp32-p4-reterminal-d1001-led-1.png)
 
 ## Install
 

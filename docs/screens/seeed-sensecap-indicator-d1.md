@@ -23,6 +23,9 @@ This device has been verified on real hardware — it compiles, flashes, and run
 
 Confirmed by @mglev1n ([#62](https://github.com/lamiskin/espcontrol-community-devices/issues/62)) at `community-v0.1.2-upstream.v2.6.3`.
 :::
+::: tip Full upstream feature parity
+This device supports the full upstream feature set — nothing is disabled or unavailable here.
+:::
 
 |  |
 |:--:|

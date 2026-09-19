@@ -2,9 +2,24 @@
   "color": "0052cc",
   "devices": [
     {
+      "slug": "crowpanel-esp32-p4-adv-101-v10",
+      "name": "Elecrow CrowPanel Advanced 10.1 ESP32-P4 (V1.0)",
+      "label": "device:crowpanel-esp32-p4-adv-101-v10"
+    },
+    {
+      "slug": "crowpanel-esp32-p4-adv-101-v12",
+      "name": "Elecrow CrowPanel Advanced 10.1 ESP32-P4 (V1.2)",
+      "label": "device:crowpanel-esp32-p4-adv-101-v12"
+    },
+    {
       "slug": "guition-esp32-s3-jc3248w535",
       "name": "Guition ESP32-S3-JC3248W535",
       "label": "device:guition-esp32-s3-jc3248w535"
+    },
+    {
+      "slug": "guition-esp32-s3-jc8048w550",
+      "name": "Guition JC8048W550",
+      "label": "device:guition-esp32-s3-jc8048w550"
     },
     {
       "slug": "m5stack-esp32-p4-tab5",

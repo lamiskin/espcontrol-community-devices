@@ -11,7 +11,7 @@
 
 substitutions:
   espcontrol_component_url: "https://github.com/jtenniswood/espcontrol"
-  espcontrol_component_ref: "v2.9.1"
+  espcontrol_component_ref: "v2.10.0"
   mdi_font_file: "https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf"
 
 # ---------------------------------------------------------------------------
@@ -252,6 +252,25 @@ output:
   - platform: ledc
     pin: GPIO14
     id: gpio_backlight_pwm
+  # Bezel RGB status LED. Pins follow Seeed's reTerminal D1001 BSP
+  # (R=GPIO22, G=GPIO36, B=GPIO23). The LED is common-anode, so each channel
+  # is active-low: the BSP writes duty = 100 - percent, which inverted: true
+  # reproduces here.
+  - platform: ledc
+    pin: GPIO22
+    id: status_led_r
+    inverted: true
+    frequency: 1000Hz
+  - platform: ledc
+    pin: GPIO36
+    id: status_led_g
+    inverted: true
+    frequency: 1000Hz
+  - platform: ledc
+    pin: GPIO23
+    id: status_led_b
+    inverted: true
+    frequency: 1000Hz
 
 light:
   - platform: monochromatic
@@ -310,6 +329,53 @@ light:
     on_state:
       then:
         - script.execute: display_backlight_handle_state
+  # Bezel RGB status LED on the active-low LEDC outputs above (BSP pin map:
+  # R=GPIO22, G=GPIO36, B=GPIO23). Exposed to Home Assistant for
+  # automations; EspControl takes no local action on it.
+  - platform: rgb
+    name: Status LED
+    id: status_led
+    icon: mdi:led-on
+    red: status_led_r
+    green: status_led_g
+    blue: status_led_b
+    restore_mode: RESTORE_DEFAULT_OFF
+    default_transition_length: 0s
+    effects:
+      - pulse:
+      - strobe:
+          name: Red Flash
+          colors:
+            - state: true
+              brightness: 100%
+              red: 100%
+              green: 0%
+              blue: 0%
+              duration: 500ms
+            - state: false
+              duration: 500ms
+      - strobe:
+          name: Green Flash
+          colors:
+            - state: true
+              brightness: 100%
+              red: 0%
+              green: 100%
+              blue: 0%
+              duration: 500ms
+            - state: false
+              duration: 500ms
+      - strobe:
+          name: Blue Flash
+          colors:
+            - state: true
+              brightness: 100%
+              red: 0%
+              green: 0%
+              blue: 100%
+              duration: 500ms
+            - state: false
+              duration: 500ms
 
 # ---------------------------------------------------------------------------
 # I2C buses

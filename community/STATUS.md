@@ -3,14 +3,17 @@
 | Device | Slug | Status | Last verified | Verified by | Owner | Source |
 |--------|------|--------|---------------|-------------|-------|--------|
 | Guition JC3248W535 3.5" | guition-esp32-s3-jc3248w535 | Working | community-v0.7.4-upstream.v2.9.0-preview.1 | @lamiskin | @lamiskin | [PR #823](https://github.com/jtenniswood/espcontrol/pull/823) |
+| Guition JC8048W550 5" | guition-esp32-s3-jc8048w550 | Working | community-v0.9.1-upstream.v2.9.1 | @jonnybergdahl ([#155](https://github.com/lamiskin/espcontrol-community-devices/pull/155)) | @jonnybergdahl | [PR #155](https://github.com/lamiskin/espcontrol-community-devices/pull/155) |
 | Waveshare ESP32-S3-Touch-LCD-4 4" | waveshare-esp32-s3-touch-lcd-4 | Untested | - | - | @codenamefez | [PR #797](https://github.com/jtenniswood/espcontrol/pull/797) |
 | Tuya T3E 4" | tuya-t3e | Untested | - | - | @txptr | [PR #660](https://github.com/jtenniswood/espcontrol/pull/660) |
 | SenseCAP Indicator D1 4" | seeed-sensecap-indicator-d1 | Working | community-v0.1.2-upstream.v2.6.3 | @mglev1n ([#62](https://github.com/lamiskin/espcontrol-community-devices/issues/62)) | @davidmerrique | [PR #351](https://github.com/jtenniswood/espcontrol/pull/351) |
 | Seeed reTerminal D1001 8" | seeed-esp32-p4-reterminal-d1001 | Working | community-v0.9.0-upstream.v2.9.0 | @zacs ([#151](https://github.com/lamiskin/espcontrol-community-devices/pull/151)) | @zacs | [PR #885](https://github.com/jtenniswood/espcontrol/pull/885) |
-| Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1 10.1" | waveshare-esp32-p4-touch-lcd-10 | Untested | - | - | @sbuchbauer | [Issue #838](https://github.com/jtenniswood/espcontrol/issues/838) |
+| Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1 10.1" | waveshare-esp32-p4-touch-lcd-10 | Working | community-v0.11.0-upstream.v2.10.0 | @slampton ([#166](https://github.com/lamiskin/espcontrol-community-devices/pull/166)) | @sbuchbauer | [Issue #838](https://github.com/jtenniswood/espcontrol/issues/838) |
 | Wireless-Tag WT32-SC01 Plus 3.5" | wireless-tag-wt32-sc01-plus | Working | community-v0.7.2-upstream.v2.8.6 | @jonnybergdahl ([#134](https://github.com/lamiskin/espcontrol-community-devices/pull/134)) | @jonnybergdahl | [PR #194](https://github.com/jtenniswood/espcontrol/pull/194) |
 | M5Stack Tab5 5" | m5stack-esp32-p4-tab5 | Working | community-v0.6.0-upstream.v2.8.4-preview.1 | @direk ([#95](https://github.com/lamiskin/espcontrol-community-devices/issues/95#issuecomment-5521806746)) | @direk | [Issue #95](https://github.com/lamiskin/espcontrol-community-devices/issues/95) |
 | M5Stack Tab5 5" (V1) | m5stack-esp32-p4-tab5-v1 | Untested | - | - | @persuader72 | [PR #136](https://github.com/lamiskin/espcontrol-community-devices/pull/136) |
+| Elecrow CrowPanel Advanced 10.1 (V1.0) | crowpanel-esp32-p4-adv-101-v10 | Working | community-v0.11.0-upstream.v2.10.0 | @schnoog ([#133](https://github.com/lamiskin/espcontrol-community-devices/issues/133#issuecomment-5741655103)) | @schnoog | [Issue #133](https://github.com/lamiskin/espcontrol-community-devices/issues/133) |
+| Elecrow CrowPanel Advanced 10.1 (V1.2) | crowpanel-esp32-p4-adv-101-v12 | Untested | - | - | @schnoog | [Issue #133](https://github.com/lamiskin/espcontrol-community-devices/issues/133#issuecomment-5741655103) |
 | WaveShare ESP32-S3 Smart 86 Box | waveshare-esp32-s3-smart-86-box | Parked | - | - | @salnajjar | [PR #293](https://github.com/jtenniswood/espcontrol/pull/293) |
 
 ## Status meanings

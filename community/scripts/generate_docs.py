@@ -181,6 +181,8 @@ def load_devices():
             "source": row.get("source", ""),
             "buy": public.get("buy", ""),
             "case": public.get("case", ""),
+            "extra_features": public.get("extraFeatures", []),
+            "capability_gaps": config.get("capabilityGaps", []),
         })
     devices.sort(key=size_sort_key)
     return devices
@@ -217,6 +219,36 @@ def photo_block(d):
     return f"\n{header}\n{sep}\n| {cells} |\n"
 
 
+def verification_videos(slug):
+    """Hardware-verification videos, by convention: drop files named
+    docs/public/images/<slug>-verified-*.{mp4,webm} and they render as
+    <video> elements under the device's status callout, after any photos.
+    Same directory and "-verified-" marker as verification_images() — only
+    the extension distinguishes a video from a photo."""
+    base = os.path.join(REPO_ROOT, "docs", "public", "images")
+    files = []
+    for ext in ("mp4", "webm"):
+        files += glob.glob(os.path.join(base, f"{slug}-verified-*.{ext}"))
+    return sorted(os.path.basename(f) for f in files)
+
+
+def video_block(d):
+    """Raw <video> tags for verification videos, or '' if none. VitePress
+    passes raw HTML in markdown through unchanged, so this needs no plugin."""
+    vids = verification_videos(d["slug"])
+    if not vids:
+        return ""
+    tags = "\n".join(
+        f'<video controls playsinline preload="metadata" '
+        f'style="max-width: 100%;" src="/images/{v}">\n'
+        f"  Your browser doesn't support embedded video —\n"
+        f"  [download it directly](/images/{v}) instead.\n"
+        f"</video>"
+        for v in vids
+    )
+    return f"\n{tags}\n"
+
+
 def unset(value):
     """A STATUS.md cell carrying no value: empty or a run of dashes."""
     return not value or set(value) <= {"-"}
@@ -231,6 +263,35 @@ def verified_credit(d):
     pin = ("" if unset(d["verified"])
            else f" at `{d['verified']}`")
     return f"\n\nConfirmed by {d['verified_by']}{pin}."
+
+
+def capability_gaps_block(d):
+    """Render this device's upstream feature-parity status: a warning per
+    capabilityGaps entry in the catalog fragment — upstream features this
+    device intentionally doesn't carry, and why — or, when there are none, an
+    explicit confirmation that it carries the full upstream feature set.
+    Sourced from community/catalog-fragment.json so the reason shown to
+    users can't drift from the reason recorded for CI (see
+    check_capability_docs.py, which requires a capabilityGaps entry whenever
+    a device's capacity is below a sibling device's on the same chip
+    family). Always renders something — silence would read as "nobody
+    checked," not "nothing's missing"."""
+    gaps = d["capability_gaps"]
+    if not gaps:
+        return (
+            "::: tip Full upstream feature parity\n"
+            "This device supports the full upstream feature set — nothing "
+            "is disabled or unavailable here.\n"
+            ":::\n"
+        )
+    blocks = []
+    for gap in gaps:
+        blocks.append(
+            f"::: warning {gap['feature']} not available\n"
+            f"{gap['reason']}\n"
+            ":::"
+        )
+    return "\n".join(blocks) + "\n"
 
 
 def device_page(d):
@@ -307,6 +368,15 @@ A community-made 3D-printable case is available on
 
 """
 
+    extra_features = ""
+    if d["extra_features"]:
+        items = "\n".join(f"- {feature}" for feature in d["extra_features"])
+        extra_features = f"""## Additional hardware
+
+{items}
+
+"""
+
     return f"""---
 title: {short_size(d['size'])} {d['name']}
 description: "Community EspControl build for the {d['name']} — {d['size']} {d['resolution']} {d['orientation'].lower()} touchscreen with {d['slots']} cards, powered by {d['chip']}."
@@ -323,7 +393,7 @@ on the home screen.
 ::: {section_kind} {section_title}
 {section_body}
 :::
-{photo_block(d)}
+{capability_gaps_block(d)}{photo_block(d)}{video_block(d)}
 ## Specifications
 
 | | |
@@ -334,7 +404,7 @@ on the home screen.
 | **Processor** | {d['chip']} |
 | **Card grid** | {d['grid']} ({d['slots']} cards) |
 
-{buy}{case}{install}
+{extra_features}{buy}{case}{install}
 ## ESPHome Manual Setup
 
 If you use ESPHome and prefer to compile firmware yourself:

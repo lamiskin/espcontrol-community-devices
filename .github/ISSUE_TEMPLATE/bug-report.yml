@@ -16,7 +16,10 @@ body:
       label: Which device?
       description: The community device this issue is about.
       options:
+        - Elecrow CrowPanel Advanced 10.1 ESP32-P4 (V1.0)
+        - Elecrow CrowPanel Advanced 10.1 ESP32-P4 (V1.2)
         - Guition ESP32-S3-JC3248W535
+        - Guition JC8048W550
         - M5Stack Tab5
         - M5Stack Tab5 (V1)
         - Seeed reTerminal D1001

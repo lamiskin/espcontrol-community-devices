@@ -30,6 +30,15 @@ need evidence they perform well on real hardware, they are not refused outright
 against upstream at the pinned release, and CI must compile it before merge.
 Hardware evidence is required to mark a device Working.
 
+## Reviewing a device PR
+
+Maintainer-side checklist for triaging an incoming device submission:
+[community/docs/reviewing-a-device-pr.md](../community/docs/reviewing-a-device-pr.md).
+Covers cross-checking the four files a device PR must update together
+(`devices.json`, `catalog-fragment.json`, `STATUS.md`, `DEVICES_POLICY.md`),
+since CI's `policy` check validates each touched file individually but not
+that all four are mutually consistent.
+
 ## Maintaining the upstream pin
 
 Ref bumps are opened automatically by `community-ref-bump.yml`, but a green

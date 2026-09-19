@@ -148,6 +148,18 @@ guition-esp32-s3-jc3248w535:
     - components/**
     - src/**
 
+guition-esp32-s3-jc8048w550:
+  allowed:
+    - devices/guition-esp32-s3-jc8048w550/**
+    - builds/guition-esp32-s3-jc8048w550*.yaml
+  required:
+    - devices/guition-esp32-s3-jc8048w550/esphome.yaml
+    - devices/guition-esp32-s3-jc8048w550/packages.yaml
+    - devices/guition-esp32-s3-jc8048w550/device/device.yaml
+  forbidden:
+    - components/**
+    - src/**
+
 seeed-esp32-p4-reterminal-d1001:
   allowed:
     - devices/seeed-esp32-p4-reterminal-d1001/**
@@ -240,6 +252,30 @@ m5stack-esp32-p4-tab5-v1:
     - devices/m5stack-esp32-p4-tab5-v1/esphome.yaml
     - devices/m5stack-esp32-p4-tab5-v1/packages.yaml
     - devices/m5stack-esp32-p4-tab5-v1/device/device.yaml
+  forbidden:
+    - components/**
+    - src/**
+
+crowpanel-esp32-p4-adv-101-v10:
+  allowed:
+    - devices/crowpanel-esp32-p4-adv-101-v10/**
+    - builds/crowpanel-esp32-p4-adv-101-v10.*yaml
+  required:
+    - devices/crowpanel-esp32-p4-adv-101-v10/esphome.yaml
+    - devices/crowpanel-esp32-p4-adv-101-v10/packages.yaml
+    - devices/crowpanel-esp32-p4-adv-101-v10/device/device.yaml
+  forbidden:
+    - components/**
+    - src/**
+
+crowpanel-esp32-p4-adv-101-v12:
+  allowed:
+    - devices/crowpanel-esp32-p4-adv-101-v12/**
+    - builds/crowpanel-esp32-p4-adv-101-v12.*yaml
+  required:
+    - devices/crowpanel-esp32-p4-adv-101-v12/esphome.yaml
+    - devices/crowpanel-esp32-p4-adv-101-v12/packages.yaml
+    - devices/crowpanel-esp32-p4-adv-101-v12/device/device.yaml
   forbidden:
     - components/**
     - src/**

@@ -62,17 +62,43 @@ per board. Read the advisories at bump time — step 3 below.
    expected. Differences in **which helper is called**, or a script that exists
    upstream and not here, are drift — find the catalog flag that gates it.
 
-3. **Check `device.yaml` structure too.** `diff` the same pair of
+3. **When `check_include_parity.py` fails, decide whether it's drift or a new
+   feature before touching anything.** A failing include diff has two very
+   different causes and they get different responses:
+
+   - **Drift**: upstream renamed or restructured a `common/` file our device
+     should still be using unchanged. Fix: update the include path to match.
+   - **A new capability-gated feature**: upstream's reference device picked
+     up a genuinely new feature (v2.10.0's Camera Cards — a second image
+     slot, gated on `imageSlots` — is the case that prompted this section).
+     Adopting it is real feature work, not a mechanical sync: check
+     `gh api repos/jtenniswood/espcontrol/pulls/<PR>` for the upstream PR
+     that introduced it and read what it actually requires (PSRAM headroom,
+     new UI wiring, catalog fields). Do not swap the include path across all
+     devices just to make the check pass — evaluate **per device**:
+     - Compare the device's hardware to the reference device's (PSRAM
+       mode/size, flash) — a feature the reference device supports isn't
+       automatically safe on a board with less headroom.
+     - For devices where it's safe: adopt it (include swap + any catalog
+       field the feature needs) and regenerate.
+     - For devices where it isn't: add `devices/<slug>/parity-exceptions.txt`
+       (see `adding-a-device.md` step 5) **and** a `config.capabilityGaps`
+       entry in `catalog-fragment.json` explaining why, so it's documented on
+       the device's public docs page — not just silenced in CI.
+       `check_capability_docs.py` fails the build if a device falls behind a
+       sibling on the same chip family without one.
+
+4. **Check `device.yaml` structure too.** `diff` the same pair of
    `device/device.yaml` files. A ref bump only rewrites the pin substitution
    there, so new upstream blocks (like `panel_config:`) never arrive on their
    own.
 
-4. **Read upstream's release notes and its `scripts/check_device_profiles.py`.**
+5. **Read upstream's release notes and its `scripts/check_device_profiles.py`.**
    Upstream encodes intent in its own tests — `test_rotation_refresh_rebuilds_subpages`
    is what established that rotation-capable devices must rebuild subpages.
    A new test there usually means a new expectation of every device.
 
-5. **Run the checks.**
+6. **Run the checks.**
 
    ```bash
    python3 community/scripts/check_pin_consistency.py
@@ -80,11 +106,15 @@ per board. Read the advisories at bump time — step 3 below.
    UPSTREAM_CLONE=.assembly python3 community/scripts/check_wiring_parity.py
    python3 community/scripts/check_generated_blocks.py
    python3 community/scripts/vendor_common.py --source .assembly --check
+   python3 community/scripts/check_capability_docs.py
    ```
 
-6. **Do not merge on a green compile alone.** Compiling proves the YAML is
-   valid, not that the device behaves like upstream's. Steps 2–4 are the ones
-   that catch silent divergence.
+7. **Do not merge on a green compile alone.** Compiling proves the YAML is
+   valid, not that the device behaves like upstream's — and for an adopted
+   feature, not that it's safe on real hardware either. Steps 2–5 catch
+   silent divergence; physical device testing is still required for any
+   device that newly adopted a feature (see the upstream PR's own testing
+   notes for what to check).
 
 ## When a catalog flag needs setting
 
