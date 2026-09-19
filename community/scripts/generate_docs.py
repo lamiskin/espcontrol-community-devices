@@ -24,6 +24,7 @@ import json
 import os
 import re
 import sys
+from urllib.parse import urlparse
 
 REPO_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..")
@@ -37,6 +38,27 @@ SITE_URL = "https://lamiskin.github.io/espcontrol-community-devices"
 # regenerated fails the build rather than leaving the front page stale.
 README_BEGIN = "<!-- BEGIN GENERATED DEVICE LIST -->"
 README_END = "<!-- END GENERATED DEVICE LIST -->"
+
+# Host -> display name for "Where to buy" links. Matched against the buy
+# URL's hostname with a leading "www." stripped.
+VENDOR_NAMES = {
+    "aliexpress.com": "AliExpress",
+    "elecrow.com": "Elecrow",
+    "seeedstudio.com": "Seeed Studio",
+    "m5stack.com": "M5Stack",
+    "waveshare.com": "Waveshare",
+}
+
+
+def buy_link_text(url):
+    """Render a "Where to buy" link, deriving the vendor name from the URL's host."""
+    host = urlparse(url).hostname or ""
+    if host.startswith("www."):
+        host = host[4:]
+    vendor = VENDOR_NAMES.get(host)
+    if vendor:
+        return f"Available on [{vendor}]({url})."
+    return f"Available [from the vendor]({url})."
 
 CHIP_NAMES = {"esp32-s3": "ESP32-S3", "esp32-p4": "ESP32-P4"}
 
@@ -160,6 +182,7 @@ def load_devices():
             "buy": public.get("buy", ""),
             "case": public.get("case", ""),
             "extra_features": public.get("extraFeatures", []),
+            "capability_gaps": config.get("capabilityGaps", []),
         })
     devices.sort(key=size_sort_key)
     return devices
@@ -210,6 +233,35 @@ def verified_credit(d):
     pin = ("" if unset(d["verified"])
            else f" at `{d['verified']}`")
     return f"\n\nConfirmed by {d['verified_by']}{pin}."
+
+
+def capability_gaps_block(d):
+    """Render this device's upstream feature-parity status: a warning per
+    capabilityGaps entry in the catalog fragment — upstream features this
+    device intentionally doesn't carry, and why — or, when there are none, an
+    explicit confirmation that it carries the full upstream feature set.
+    Sourced from community/catalog-fragment.json so the reason shown to
+    users can't drift from the reason recorded for CI (see
+    check_capability_docs.py, which requires a capabilityGaps entry whenever
+    a device's capacity is below a sibling device's on the same chip
+    family). Always renders something — silence would read as "nobody
+    checked," not "nothing's missing"."""
+    gaps = d["capability_gaps"]
+    if not gaps:
+        return (
+            "::: tip Full upstream feature parity\n"
+            "This device supports the full upstream feature set — nothing "
+            "is disabled or unavailable here.\n"
+            ":::\n"
+        )
+    blocks = []
+    for gap in gaps:
+        blocks.append(
+            f"::: warning {gap['feature']} not available\n"
+            f"{gap['reason']}\n"
+            ":::"
+        )
+    return "\n".join(blocks) + "\n"
 
 
 def device_page(d):
@@ -273,7 +325,7 @@ status note above.
     if d["buy"]:
         buy = f"""## Where to buy
 
-Available on [AliExpress]({d['buy']}).
+{buy_link_text(d['buy'])}
 
 """
 
@@ -311,7 +363,7 @@ on the home screen.
 ::: {section_kind} {section_title}
 {section_body}
 :::
-{photo_block(d)}
+{capability_gaps_block(d)}{photo_block(d)}
 ## Specifications
 
 | | |

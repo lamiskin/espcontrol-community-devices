@@ -91,7 +91,38 @@ Some upstream includes may not apply to your hardware. Common exceptions:
 - **Cover art live updates** — set `cover_art_live_image_updates: "false"` for
   displays that can't decode JPEG in real-time
 
-Document any parity gaps in your PR description.
+If your device includes a different set of `common/` paths than the chip
+family's reference device, `check_include_parity.py` will fail. If the
+difference is intentional (one of the cases above, or similar), record it in
+`devices/<slug>/parity-exceptions.txt` — one `common/` path per line, with a
+comment explaining why. See an existing example under `devices/*/` for the
+format.
+
+**If the exception means this device does less than a sibling device on the
+same chip family** — fewer image slots, a disabled feature, anything a user
+would notice is missing compared to another community device of the same
+platform — also add a `config.capabilityGaps` entry for it in
+`catalog-fragment.json` (step 6): `{"feature": "...", "reason": "..."}`.
+`generate_docs.py` turns that into a warning on the device's public docs
+page, and `check_capability_docs.py` fails CI if a device's capability
+numbers fall behind a sibling's without one. This is how a user browsing the
+device list finds out *before* installing that (for example) Camera Cards
+aren't available on their board, instead of discovering it missing with no
+explanation. Don't skip this step because the gap "seems obvious" from the
+hardware spec — it isn't obvious to someone comparing devices on the docs
+site.
+
+**Leaving `capabilityGaps` empty is a claim, not just silence.** If your
+device has no gaps, `generate_docs.py` puts an explicit "Full upstream
+feature parity" confirmation on its docs page — there's no neutral third
+option where the page just says nothing. Don't leave it empty because you
+didn't check; only leave it empty once you've actually confirmed this
+device carries every upstream feature its sibling devices do (step 2's
+diff against the chip family's reference device is what that confirmation
+should be based on).
+
+Document any parity gaps in your PR description too, so a reviewer isn't
+left to reconstruct the reasoning from the diff.
 
 ## 6. Write a catalog-fragment entry
 
@@ -104,10 +135,18 @@ object. Copy the structure from the existing reference device and adapt:
 - `config.public` — human-readable name, screen size, resolution, orientation
 - `config.layout` — cols, rows, firmwareGrid
 - `config.web` — web configurator dimensions and spacing
+- `config.capabilityGaps` — only if step 5 applies: `[{"feature": "...",
+  "reason": "..."}]` for anything this device does less of than a sibling
+  device on the same chip family
 
-## 7. Register the slug in devices.json
+## 7. Register the device
 
-Add your slug to the `"devices"` array in `community/devices.json`:
+A device isn't fully wired up just by having a directory and a catalog
+entry — several more files have to reference the same slug before assembly,
+CI, or the docs site will treat it as real.
+
+Add your slug to the `"devices"` array in `community/devices.json`, keeping
+the array **alphabetically sorted**:
 
 ```json
 {"devices": ["...", "your-device-slug", "..."]}
@@ -121,6 +160,39 @@ a catalog entry whose `fonts.yaml` (and every other device file) is never
 overlaid — the validator then reports "unknown font id" for every id in a
 perfectly correct `fonts.yaml`, because the file was never read. If you hit
 that error, this file is the first place to check.
+
+Also add:
+
+- `builds/<slug>.yaml` and `builds/<slug>.factory.yaml` — dev/CI and
+  factory-image build profiles. ESP32-P4 devices also need
+  `builds/<slug>.recovery.yaml`, which repairs the onboard ESP32-C6 WiFi
+  co-processor.
+- An entry for your device in `community/device-labels.json` — but don't
+  hand-edit it, it's generated (see below).
+
+`community/scripts/check_status_consistency.py` enforces that every slug in
+`devices.json` has a matching STATUS.md row, device directory, build
+profiles, catalog-fragment entry, and DEVICES_POLICY.md block, and that
+`devices.json` stays sorted:
+
+```bash
+python3 community/scripts/check_status_consistency.py
+```
+
+Then regenerate the derived docs and issue-label files so they pick up the
+new device:
+
+```bash
+python3 community/scripts/generate_docs.py
+python3 community/scripts/generate_issue_labels.py
+```
+
+The first regenerates the per-device docs pages, the home-page device table,
+and the docs sidebar from `catalog-fragment.json` + `STATUS.md`. The second
+regenerates `community/device-labels.json` and the bug-report issue template
+from `devices.json` + `catalog-fragment.json` — this is what actually
+populates `device-labels.json`. CI runs both with `--check` and fails the
+build if the regenerated output wasn't committed.
 
 ## 8. Local compile test
 
@@ -152,6 +224,27 @@ operation. Attach evidence to your PR showing:
 
 Compile-only submissions are accepted with **Untested** status — the device
 won't be marked **Working** in STATUS.md until hardware evidence is provided.
+
+**Getting a working UI screenshot before your PR is merged:** the default
+build points the panel's web UI at `js_url`, which loads `webserver/www.js`
+live from GitHub Pages. That site only rebuilds from `main`, so it has no
+entry for your device's profile until your PR merges — flashing the default
+build pre-merge will boot fine but show `Unsupported EspControl device
+profile: <your-slug>` in the browser console instead of a UI. That's
+expected, not a bug in your device config (see community issue #133).
+
+To get a real, working UI for your evidence screenshot, build and flash the
+**factory** variant instead, which embeds the bundle via `js_include` rather
+than fetching it live:
+
+```bash
+python3 community/scripts/assemble.py   # no --skip-web this time
+cd .assembly
+esphome compile builds/<your-slug>.factory.yaml
+```
+
+This embeds a `www.js` built from your own working tree, so it already knows
+about your device, directly into the firmware — no need to wait for merge.
 
 ## 10. Add STATUS.md row
 
