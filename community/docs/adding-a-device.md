@@ -206,6 +206,13 @@ python3 community/scripts/assemble.py --skip-web
 This clones upstream, overlays your device, merges the catalog, runs generators
 and validators. A successful run means CI will also pass.
 
+You will see `Validator warning: 'python3 scripts/check_device_profiles.py'
+exited with code 1` in the output — that is expected and non-fatal (see
+[`upstream-ref-bump.md`'s Gotchas](upstream-ref-bump.md#gotchas)). It asserts
+upstream's own hardcoded device-slug fixture, which can never account for
+community devices; `assemble.py` treats it as advisory for exactly this
+reason. Don't chase it.
+
 For faster iteration on just ESPHome compilation (after initial assembly):
 
 ```bash
@@ -240,6 +247,14 @@ than fetching it live:
 ```bash
 python3 community/scripts/assemble.py   # no --skip-web this time
 cd .assembly
+# Every builds/*.yaml and builds/*.factory.yaml points its espcontrol
+# component source at file:///config with ref: HEAD — a placeholder for the
+# Home Assistant ESPHome dashboard's local /config mount, not a real path.
+# Compiling directly with the CLI needs it rewritten first (this is exactly
+# what community-ci.yml's compile job does before it invokes esphome), or
+# `esphome compile` fails with "fatal: '/config' does not appear to be a
+# git repository" (see community issue #133).
+sed -i "s|file:///config|file://$(pwd)|g" builds/<your-slug>.factory.yaml
 esphome compile builds/<your-slug>.factory.yaml
 ```
 
