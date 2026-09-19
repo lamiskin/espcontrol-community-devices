@@ -84,17 +84,28 @@ jobs:
           # Get changed files
           CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }})
 
-          # Extract device slugs from changed paths
-          SLUGS=$(echo "$CHANGED" | grep -oP '^devices/\K[^/]+' | sort -u || true)
-
-          # Also check builds/ changes
-          BUILD_SLUGS=$(echo "$CHANGED" | grep -oP '^builds/\K[^.]+' | sed 's/\.factory$//' | sort -u || true)
-
-          # Combine and deduplicate
-          ALL_SLUGS=$(echo -e "$SLUGS\n$BUILD_SLUGS" | sort -u | grep -v '^$' || true)
-
           # Filter to only slugs registered in devices.json
           REGISTERED=$(python3 -c "import json; print('\n'.join(json.load(open('community/devices.json'))['devices']))")
+
+          # Changes to shared build inputs affect every device's compiled
+          # output, not just devices with a devices/ or builds/ path in the
+          # diff (e.g. an assemble.py fix, or a common/ vendored include).
+          # Fall back to the full fleet instead of silently compiling zero
+          # devices for a PR that can break all of them.
+          SHARED_RE='^(common/|community/devices\.json$|community/catalog-fragment\.json$|community/upstream-ref\.txt$|community/upstream-sha\.txt$|community/scripts/assemble\.py$|community/scripts/vendor_common\.py$|\.github/workflows/community-ci\.yml$|\.github/scripts/retry\.sh$)'
+          if echo "$CHANGED" | grep -qP "$SHARED_RE"; then
+            echo "Shared build input touched — compiling all registered devices"
+            ALL_SLUGS="$REGISTERED"
+          else
+            # Extract device slugs from changed paths
+            SLUGS=$(echo "$CHANGED" | grep -oP '^devices/\K[^/]+' | sort -u || true)
+
+            # Also check builds/ changes
+            BUILD_SLUGS=$(echo "$CHANGED" | grep -oP '^builds/\K[^.]+' | sed 's/\.factory$//' | sort -u || true)
+
+            # Combine and deduplicate
+            ALL_SLUGS=$(echo -e "$SLUGS\n$BUILD_SLUGS" | sort -u | grep -v '^$' || true)
+          fi
 
           DEVICES=()
           while IFS= read -r slug; do
