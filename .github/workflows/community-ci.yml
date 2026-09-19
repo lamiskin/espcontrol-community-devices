@@ -46,12 +46,19 @@ jobs:
           python3 community/scripts/ui_stamp.py --self-test
           bash .github/scripts/retry.sh --self-test
           bash .github/scripts/publish_release.sh --self-test
-      # A hardware-verification photo is taken at someone's home with
-      # location services on. Publishing its GPS tags would expose a
-      # contributor's address, permanently and in git history.
+      # A hardware-verification photo or video is taken at someone's home
+      # with location services on. Publishing its location metadata would
+      # expose a contributor's address, permanently and in git history.
+      # ffmpeg is not preinstalled on this runner image (confirmed the hard
+      # way: check_image_privacy.py's video scan failed with "ffprobe ...
+      # is required" the first time a verification video was tracked) —
+      # install it explicitly rather than assume it, same as Pillow below.
       - name: Image privacy (no location metadata)
         run: |
+          source .github/scripts/retry.sh
           pip install --quiet Pillow
+          retry sudo apt-get update -qq
+          retry sudo apt-get install -y ffmpeg
           python3 community/scripts/check_image_privacy.py
 
       - name: Status consistency

@@ -219,6 +219,36 @@ def photo_block(d):
     return f"\n{header}\n{sep}\n| {cells} |\n"
 
 
+def verification_videos(slug):
+    """Hardware-verification videos, by convention: drop files named
+    docs/public/images/<slug>-verified-*.{mp4,webm} and they render as
+    <video> elements under the device's status callout, after any photos.
+    Same directory and "-verified-" marker as verification_images() — only
+    the extension distinguishes a video from a photo."""
+    base = os.path.join(REPO_ROOT, "docs", "public", "images")
+    files = []
+    for ext in ("mp4", "webm"):
+        files += glob.glob(os.path.join(base, f"{slug}-verified-*.{ext}"))
+    return sorted(os.path.basename(f) for f in files)
+
+
+def video_block(d):
+    """Raw <video> tags for verification videos, or '' if none. VitePress
+    passes raw HTML in markdown through unchanged, so this needs no plugin."""
+    vids = verification_videos(d["slug"])
+    if not vids:
+        return ""
+    tags = "\n".join(
+        f'<video controls playsinline preload="metadata" '
+        f'style="max-width: 100%;" src="/images/{v}">\n'
+        f"  Your browser doesn't support embedded video —\n"
+        f"  [download it directly](/images/{v}) instead.\n"
+        f"</video>"
+        for v in vids
+    )
+    return f"\n{tags}\n"
+
+
 def unset(value):
     """A STATUS.md cell carrying no value: empty or a run of dashes."""
     return not value or set(value) <= {"-"}
@@ -363,7 +393,7 @@ on the home screen.
 ::: {section_kind} {section_title}
 {section_body}
 :::
-{capability_gaps_block(d)}{photo_block(d)}
+{capability_gaps_block(d)}{photo_block(d)}{video_block(d)}
 ## Specifications
 
 | | |
