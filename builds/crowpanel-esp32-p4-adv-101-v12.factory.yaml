@@ -1,0 +1,47 @@
+# =============================================================================
+# FACTORY BUILD - Elecrow CrowPanel Advanced 10.1" ESP32-P4 (V1.2)
+# =============================================================================
+# Factory image: www.js bundled inline for first-boot web UI access.
+# =============================================================================
+
+substitutions:
+  name: "espcontrol-cp-adv101-v12"
+  friendly_name: "CrowPanel Advanced 10.1 V1.2 (Community)"
+  firmware_version: "0.0.0"
+  espcontrol_component_url: "file:///config"
+  espcontrol_component_ref: "HEAD"
+
+packages:
+  core: !include ../devices/crowpanel-esp32-p4-adv-101-v12/packages.yaml
+
+esphome:
+  name_add_mac_suffix: true
+  project:
+    name: lamiskin.espcontrol-community
+    version: "${firmware_version}"
+
+dashboard_import:
+  package_import_url: github://lamiskin/espcontrol-community-devices/devices/crowpanel-esp32-p4-adv-101-v12/esphome.yaml@main
+
+web_server:
+  port: 80
+  version: 3
+  js_url: ""
+  js_include: "../community-pages/webserver/www.js"
+
+wifi:
+  ap:
+    ssid: "${name}"
+
+captive_portal:
+
+# Keyless API encryption, inlined from upstream's common/addon/
+# api_encryption_dynamic.yaml (jtenniswood/espcontrol#1738). The device takes
+# its first provisioning connection in plaintext, then Home Assistant supplies a
+# per-device Noise key it persists — so no shared key is baked into a binary we
+# hand out. Inlined rather than included because vendor_common.py only scans
+# devices/ for common/ includes, so a build-profile include would never be
+# vendored. Upstream keeps dev/local build profiles plaintext, which is why
+# builds/crowpanel-esp32-p4-adv-101-v12.yaml does not carry this.
+api:
+  encryption: {}

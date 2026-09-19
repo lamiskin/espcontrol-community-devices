@@ -268,5 +268,17 @@ crowpanel-esp32-p4-adv-101-v10:
     - components/**
     - src/**
 
+crowpanel-esp32-p4-adv-101-v12:
+  allowed:
+    - devices/crowpanel-esp32-p4-adv-101-v12/**
+    - builds/crowpanel-esp32-p4-adv-101-v12.*yaml
+  required:
+    - devices/crowpanel-esp32-p4-adv-101-v12/esphome.yaml
+    - devices/crowpanel-esp32-p4-adv-101-v12/packages.yaml
+    - devices/crowpanel-esp32-p4-adv-101-v12/device/device.yaml
+  forbidden:
+    - components/**
+    - src/**
+
 # --- end policy ---
 ```

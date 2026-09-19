@@ -4,6 +4,10 @@
     "link": "/screens/crowpanel-esp32-p4-adv-101-v10"
   },
   {
+    "text": "Elecrow CrowPanel Advanced 10.1 ESP32-P4 (V1.2)",
+    "link": "/screens/crowpanel-esp32-p4-adv-101-v12"
+  },
+  {
     "text": "Guition ESP32-S3-JC3248W535",
     "link": "/screens/guition-esp32-s3-jc3248w535"
   },

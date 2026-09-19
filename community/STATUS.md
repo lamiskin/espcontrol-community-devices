@@ -13,6 +13,7 @@
 | M5Stack Tab5 5" | m5stack-esp32-p4-tab5 | Working | community-v0.6.0-upstream.v2.8.4-preview.1 | @direk ([#95](https://github.com/lamiskin/espcontrol-community-devices/issues/95#issuecomment-5521806746)) | @direk | [Issue #95](https://github.com/lamiskin/espcontrol-community-devices/issues/95) |
 | M5Stack Tab5 5" (V1) | m5stack-esp32-p4-tab5-v1 | Untested | - | - | @persuader72 | [PR #136](https://github.com/lamiskin/espcontrol-community-devices/pull/136) |
 | Elecrow CrowPanel Advanced 10.1 (V1.0) | crowpanel-esp32-p4-adv-101-v10 | Working | community-v0.11.0-upstream.v2.10.0 | @schnoog ([#133](https://github.com/lamiskin/espcontrol-community-devices/issues/133#issuecomment-5741655103)) | @schnoog | [Issue #133](https://github.com/lamiskin/espcontrol-community-devices/issues/133) |
+| Elecrow CrowPanel Advanced 10.1 (V1.2) | crowpanel-esp32-p4-adv-101-v12 | Untested | - | - | @schnoog | [Issue #133](https://github.com/lamiskin/espcontrol-community-devices/issues/133#issuecomment-5741655103) |
 | WaveShare ESP32-S3 Smart 86 Box | waveshare-esp32-s3-smart-86-box | Parked | - | - | @salnajjar | [PR #293](https://github.com/jtenniswood/espcontrol/pull/293) |
 
 ## Status meanings
