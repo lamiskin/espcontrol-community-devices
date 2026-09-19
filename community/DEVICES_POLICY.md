@@ -208,6 +208,18 @@ waveshare-esp32-s3-touch-lcd-4:
     - components/**
     - src/**
 
+waveshare-esp32-s3-smart-86-box:
+  allowed:
+    - devices/waveshare-esp32-s3-smart-86-box/**
+    - builds/waveshare-esp32-s3-smart-86-box*.yaml
+  required:
+    - devices/waveshare-esp32-s3-smart-86-box/esphome.yaml
+    - devices/waveshare-esp32-s3-smart-86-box/packages.yaml
+    - devices/waveshare-esp32-s3-smart-86-box/device/device.yaml
+  forbidden:
+    - components/**
+    - src/**
+
 waveshare-esp32-p4-touch-lcd-10:
   allowed:
     - devices/waveshare-esp32-p4-touch-lcd-10/**
