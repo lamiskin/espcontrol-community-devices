@@ -320,7 +320,6 @@ i2c:
 touchscreen:
   - platform: gt911
     id: my_touchscreen
-    interrupt_pin: GPIO21
     setup_priority: -200
     transform:
       swap_xy: false
