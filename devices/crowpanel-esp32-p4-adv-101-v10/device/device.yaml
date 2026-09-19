@@ -427,3 +427,98 @@ select:
             then:
               - script.execute: apply_screen_rotation
               - script.execute: refresh_button_grid
+
+# ---------------------------------------------------------------------------
+# Audio - PDM microphone + external I2S speaker amp
+# ---------------------------------------------------------------------------
+# Pins contributed and hardware-confirmed by @schnoog (community issue #133)
+# on his own CrowPanel unit — these are specific to this board, not carried
+# over from another device unverified (this repo has been bitten by exactly
+# that before: an earlier revision of @schnoog's own fork carried reTerminal
+# D1001 audio pins with only the header comment changed).
+#
+# Two separate I2S peripherals (mic in, speaker out), same shape as the P4
+# reTerminal D1001's device/audio.yaml + device/microphone.yaml: clocks live
+# on the i2s_audio bus below, data pins live on the microphone/speaker
+# platform entries. No onboard codec to configure over I2C here (unlike the
+# reTerminal's ES8311) — the NS4168 speaker amp and the PDM mic both take
+# I2S directly.
+# ---------------------------------------------------------------------------
+i2s_audio:
+  # I2S bus for the PDM microphone (clock only; data is on i2s_din_pin below)
+  - id: i2s_mic
+    i2s_lrclk_pin: GPIO24
+  # I2S bus for the external speaker amplifier
+  - id: i2s_spk
+    i2s_lrclk_pin: GPIO21
+    i2s_bclk_pin: GPIO22
+
+microphone:
+  # PDM digital microphone
+  - platform: i2s_audio
+    id: pdm_mic
+    i2s_audio_id: i2s_mic
+    i2s_din_pin: GPIO26
+    adc_type: external
+    pdm: true
+
+# ---------------------------------------------------------------------------
+# Speaker pipeline: media + announcement resamplers -> mixer -> speaker,
+# mirroring the reTerminal D1001's device/audio.yaml. announcement_mixing_input
+# and media_mixing_input are not free-form names — the vendored espcontrol
+# component's media_player wiring expects these exact ids.
+# ---------------------------------------------------------------------------
+speaker:
+  - platform: i2s_audio
+    id: my_speaker
+    i2s_audio_id: i2s_spk
+    i2s_dout_pin: GPIO23
+    dac_type: external
+
+  - platform: mixer
+    id: mixing_speaker
+    output_speaker: my_speaker
+    source_speakers:
+      - id: announcement_mixing_input
+        timeout: never
+      - id: media_mixing_input
+        timeout: never
+
+  - platform: resampler
+    id: announcement_resampling_speaker
+    output_speaker: announcement_mixing_input
+    sample_rate: 48000
+    bits_per_sample: 16
+
+  - platform: resampler
+    id: media_resampling_speaker
+    output_speaker: media_mixing_input
+    sample_rate: 48000
+    bits_per_sample: 16
+
+# ---------------------------------------------------------------------------
+# Media player — lets Home Assistant cast TTS announcements and media to the
+# panel. Not part of @schnoog's confirmed snippet (which stopped at the
+# speaker pipeline above); added so that pipeline is actually reachable,
+# following the reTerminal D1001's media_player shape. Pending hardware
+# confirmation like the rest of this block.
+# ---------------------------------------------------------------------------
+media_player:
+  - platform: speaker
+    id: onboard_media_player
+    name: Speaker
+    icon: mdi:speaker
+    buffer_size: 1000000
+    task_stack_in_psram: true
+    volume_min: 0.0
+    volume_max: 0.85
+    volume_initial: 0.5
+    volume_increment: 0.05
+    announcement_pipeline:
+      speaker: announcement_resampling_speaker
+      format: FLAC
+      sample_rate: 48000
+    media_pipeline:
+      speaker: media_resampling_speaker
+      format: NONE
+      sample_rate: 48000

@@ -35,6 +35,10 @@ This device supports the full upstream feature set — nothing is disabled or un
 | **Processor** | ESP32-P4 |
 | **Card grid** | 5 × 3 (15 cards) |
 
+## Additional hardware
+
+- **Speaker + microphone** — PDM mic and an external I2S speaker amp, so Home Assistant can cast TTS announcements and media to the panel. Pins contributed and hardware-confirmed by @schnoog ([issue #133](https://github.com/lamiskin/espcontrol-community-devices/issues/133)); the media-player wiring built on top of his confirmed microphone/speaker config is not independently verified yet.
+
 ## Install
 
 Connect the display to your computer with a **USB-C data cable**, then click

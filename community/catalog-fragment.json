@@ -1717,7 +1717,10 @@
           "docsPath": "/screens/crowpanel-adv-101-v10",
           "screenSize": "10.1 inches",
           "resolution": "1024 x 600",
-          "orientation": "Landscape"
+          "orientation": "Landscape",
+          "extraFeatures": [
+            "**Speaker + microphone** \u2014 PDM mic and an external I2S speaker amp, so Home Assistant can cast TTS announcements and media to the panel. Pins contributed and hardware-confirmed by @schnoog ([issue #133](https://github.com/lamiskin/espcontrol-community-devices/issues/133)); the media-player wiring built on top of his confirmed microphone/speaker config is not independently verified yet."
+          ]
         },
         "layout": {
           "cols": 5,
