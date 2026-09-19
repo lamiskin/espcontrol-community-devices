@@ -17,24 +17,38 @@ until a user hits it in the builder. (See issue #48: a config using
 `artwork_image: priority:` against a pre-2.6.0 component fails only on this
 path.)
 
-This script reproduces the builder path and runs `esphome config`
-(validate-only — the compile matrix already covers firmware compilation):
+This script reproduces the builder path:
 
   1. Generate a wrapper config that mirrors the shipped esphome.yaml but pulls
      devices/<slug>/packages.yaml from a chosen git ref of THIS repo.
-  2. Run `esphome config` over it, so ESPHome performs the real clone + ref
-     fetch + package graph + external-component resolution + schema validation.
+  2. Run `esphome config` (default) or `esphome compile` (--compile) over it,
+     so ESPHome performs the real clone + ref fetch + package graph +
+     external-component resolution + schema validation — and, with
+     --compile, an actual firmware build against that resolved graph.
+
+`esphome config` alone is validate-only: it catches a resolution or schema
+break (see issue #48: a config using `artwork_image: priority:` against a
+pre-2.6.0 component fails only on this path) but not a break that only
+surfaces once the resolved graph is actually compiled — codegen from a
+lambda or template ESPHome doesn't type-check until compile time, or a
+component version mismatch `esphome config` doesn't exercise. The per-device
+compile job in CI doesn't cover that either: it rewrites `file:///config` to
+a local assembly and compiles builds/<slug>.yaml, which is the same content
+but reached by an `!include` off the local checkout, never through git
+clone + ref fetch the way a real builder resolves it. --compile is the only
+mode that does both: real resolution *and* an actual build.
 
 To validate the exact commit under review — not whatever sits on the default
 branch — the wrapper points at a local git URL (file://<repo-root>) at the
 given ref by default. ESPHome runs the identical resolution it would over
 https; only the transport for *this* repo differs, and the upstream component
 still resolves remotely at the real pin. Pass --repo-url to test the published
-GitHub URL instead (used by the non-blocking nightly variant).
+GitHub URL instead (used by the nightly variant).
 
 Usage:
     python3 community/scripts/builder_smoke.py --slug tuya-t3e
     python3 community/scripts/builder_smoke.py --all
+    python3 community/scripts/builder_smoke.py --slug tuya-t3e --compile
     python3 community/scripts/builder_smoke.py --slug tuya-t3e \\
         --repo-url https://github.com/lamiskin/espcontrol-community-devices --ref main
     python3 community/scripts/builder_smoke.py --self-test
@@ -112,12 +126,16 @@ def _default_repo_url(repo_root):
     return "file://" + os.path.abspath(repo_root)
 
 
-def run_smoke(slug, repo_url, ref, esphome_bin="esphome", keep=False):
+def run_smoke(
+    slug, repo_url, ref, esphome_bin="esphome", keep=False, do_compile=False, workdir=None
+):
     """
-    Run `esphome config` over the builder-path wrapper for ``slug``.
+    Run `esphome config` (or, with do_compile=True, `esphome compile`) over
+    the builder-path wrapper for ``slug``.
 
-    Returns the esphome exit code (0 = valid). Writes the harness to a temp
-    dir so ESPHome's .esphome cache and generated files never touch the repo.
+    Returns the esphome exit code (0 = valid/success). Writes the harness to
+    a temp dir (or ``workdir``, if given) so ESPHome's .esphome cache and
+    generated files never touch the repo.
     """
     pkg_rel = os.path.join("devices", slug, "packages.yaml")
     # Only meaningful for the local (file://) case; a nonexistent package path
@@ -128,21 +146,33 @@ def run_smoke(slug, repo_url, ref, esphome_bin="esphome", keep=False):
             print(f"[{slug}] missing {pkg_rel} in {repo_url}", file=sys.stderr)
             return 2
 
-    workdir = tempfile.mkdtemp(prefix=f"builder-smoke-{slug}-")
+    # A caller doing repeated --compile runs (e.g. nightly, once a day)
+    # wants a stable path so PlatformIO/ESPHome's own incremental build
+    # cache under it can be persisted across runs by the caller (a fresh
+    # tempdir every run defeats that — there's nothing stable to cache).
+    # --keep is meaningless together with a caller-supplied --workdir: the
+    # caller owns that directory's lifetime either way.
+    if workdir:
+        os.makedirs(workdir, exist_ok=True)
+        keep = True  # caller owns this directory's lifetime, not us
+    else:
+        workdir = tempfile.mkdtemp(prefix=f"builder-smoke-{slug}-")
     wrapper = os.path.join(workdir, f"{slug}.esphome.yaml")
     with open(os.path.join(workdir, "secrets.yaml"), "w") as f:
         f.write(SECRETS_YAML)
     with open(wrapper, "w") as f:
         f.write(render_wrapper(slug, repo_url, ref))
 
-    print(f"[{slug}] esphome config via {repo_url}@{ref}", flush=True)
-    proc = subprocess.run([esphome_bin, "config", wrapper], cwd=workdir)
+    command = "compile" if do_compile else "config"
+    print(f"[{slug}] esphome {command} via {repo_url}@{ref}", flush=True)
+    proc = subprocess.run([esphome_bin, command, wrapper], cwd=workdir)
     if proc.returncode == 0:
-        print(f"[{slug}] OK — configuration is valid")
+        print(f"[{slug}] OK — {'compiled' if do_compile else 'configuration is valid'}")
     else:
-        print(f"[{slug}] FAILED — esphome config exit {proc.returncode}")
+        print(f"[{slug}] FAILED — esphome {command} exit {proc.returncode}")
     if not keep:
-        # Best-effort cleanup; the temp dir is disposable either way.
+        # Best-effort cleanup; the temp dir is disposable either way. A
+        # caller-supplied --workdir is left alone (its caller may cache it).
         import shutil
 
         shutil.rmtree(workdir, ignore_errors=True)
@@ -209,6 +239,19 @@ def main():
     ap.add_argument("--ref", default="HEAD", help="git ref of the package source")
     ap.add_argument("--esphome-bin", default="esphome", help="esphome executable")
     ap.add_argument("--keep", action="store_true", help="keep the temp harness dir")
+    ap.add_argument(
+        "--compile",
+        action="store_true",
+        help="run `esphome compile` instead of `esphome config` — a real "
+        "firmware build over the resolved builder-path graph, not just "
+        "schema validation",
+    )
+    ap.add_argument(
+        "--workdir",
+        help="fixed harness directory instead of a fresh temp dir — lets a "
+        "caller persist ESPHome's per-project build cache across repeated "
+        "--compile runs (e.g. nightly)",
+    )
     ap.add_argument("--self-test", action="store_true", help="run internal self-test")
     args = ap.parse_args()
 
@@ -226,7 +269,18 @@ def main():
 
     failures = []
     for slug in slugs:
-        if run_smoke(slug, repo_url, args.ref, args.esphome_bin, args.keep) != 0:
+        if (
+            run_smoke(
+                slug,
+                repo_url,
+                args.ref,
+                args.esphome_bin,
+                args.keep,
+                do_compile=args.compile,
+                workdir=args.workdir,
+            )
+            != 0
+        ):
             failures.append(slug)
 
     if failures:
