@@ -51,7 +51,7 @@ jobs:
 
   # Single upstream-availability check, run once before the 8-device
   # matrix rather than left to fail independently inside each leg. A
-  # per-device compile/builder-smoke failure below gets reported as that
+  # per-device compile/builder-compile failure below gets reported as that
   # device being broken — a [broken] issue and a STATUS.md flip — which is
   # right when the device's own config is actually at fault, but wrong
   # when upstream itself is unreachable (a deleted/repointed release tag,
@@ -82,7 +82,7 @@ jobs:
           ENV_URL="https://raw.githubusercontent.com/jtenniswood/espcontrol/${REF}/.github/esphome.env"
           ISSUE_TITLE="[infra] upstream pin unreachable"
 
-          # Same fetch+parse-separately shape as builder-smoke below: piping
+          # Same fetch+parse-separately shape as builder-compile below: piping
           # curl straight into grep would hide a fetch failure behind
           # grep's exit status.
           if ESPHOME_ENV=$(retry curl -sSfL --max-time 60 "$ENV_URL") \
@@ -105,7 +105,7 @@ jobs:
           Pin: \`$DISPLAY_REF\` ($REF)
           URL: $ENV_URL
 
-          This means upstream's tag likely moved, was deleted, or GitHub had a transient issue — it is **not** a sign that any community device config is broken. Compile and builder-smoke were skipped this run; STATUS.md and the per-device \`[broken]\` issues were left untouched. Likely fix: wait for Community Ref Bump to pick up a newer upstream release, or re-run this workflow once upstream is reachable again.
+          This means upstream's tag likely moved, was deleted, or GitHub had a transient issue — it is **not** a sign that any community device config is broken. Compile and builder-compile were skipped this run; STATUS.md and the per-device \`[broken]\` issues were left untouched. Likely fix: wait for Community Ref Bump to pick up a newer upstream release, or re-run this workflow once upstream is reachable again.
 
           Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
@@ -188,14 +188,17 @@ jobs:
           rm -rf builds/.esphome/build
           RETRY_ATTEMPTS=3 retry esphome compile builds/${{ matrix.device }}.factory.yaml
 
-  # Validate the supported install path against the *published* repo URL, so
-  # nightly also catches broken remote wiring / GitHub-side resolution that
-  # the PR-time local (file://) check can't. Validate-only; see
-  # community/scripts/builder_smoke.py and Community CI's builder-smoke job.
-  builder-smoke:
+  # Compile the supported install path against the *published* repo URL, so
+  # nightly also catches broken remote wiring / GitHub-side resolution — and
+  # a compile-time-only break in the resolved graph — that neither the PR-time
+  # local (file://) compile job nor `esphome config` alone can. See
+  # community/scripts/builder_smoke.py and Community CI's builder-smoke job
+  # (which stays validate-only: PR time is too frequent for a second full
+  # compile of every touched device).
+  builder-compile:
     runs-on: ubuntu-latest
     needs: [determine-devices, verify-upstream-pin]
-    timeout-minutes: 45
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -204,6 +207,10 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref || github.ref }}
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+          df -h
       - name: Setup Python
         uses: actions/setup-python@v7.0.0
         with:
@@ -230,14 +237,31 @@ jobs:
           fi
           echo "Installing esphome==$VER (upstream pin $REF)"
           retry pip install "esphome==$VER"
-      - name: Validate published builder path
-        # esphome config clones this repo from GitHub to resolve the package.
+      - name: Cache PlatformIO
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.platformio
+            /tmp/builder-compile/.esphome
+          key: pio-builder-compile-${{ matrix.device }}-${{ hashFiles('community/upstream-ref.txt') }}
+          restore-keys: pio-builder-compile-${{ matrix.device }}-
+      - name: Compile via published builder path
+        # esphome compile clones this repo from GitHub to resolve the
+        # package (real ref fetch + package graph + external-component
+        # resolution), then actually builds firmware from that resolved
+        # graph — the one thing neither the compile job (local !include, no
+        # git resolution) nor Community CI's builder-smoke (`esphome
+        # config`, no build) exercises on its own. A fixed --workdir lets
+        # the cache step above persist ESPHome's incremental build output
+        # across nightly runs.
         run: |
           source .github/scripts/retry.sh
-          retry python3 community/scripts/builder_smoke.py \
+          RETRY_ATTEMPTS=3 retry python3 community/scripts/builder_smoke.py \
             --slug "${{ matrix.device }}" \
             --repo-url "${{ github.server_url }}/${{ github.repository }}" \
-            --ref "${{ inputs.ref || 'main' }}"
+            --ref "${{ inputs.ref || 'main' }}" \
+            --compile \
+            --workdir /tmp/builder-compile
 
   report:
     runs-on: ubuntu-latest
@@ -268,8 +292,8 @@ jobs:
 
             # Check if this device's compile job succeeded. Scope to the
             # compile matrix specifically — other per-device jobs (e.g.
-            # builder-smoke) also contain the slug and would otherwise return
-            # multiple conclusions and corrupt this comparison.
+            # builder-compile) also contain the slug and would otherwise
+            # return multiple conclusions and corrupt this comparison.
             JOB_RESULT=$(retry gh run view ${{ github.run_id }} --json jobs --jq ".jobs[] | select((.name | startswith(\"compile\")) and (.name | contains(\"$slug\"))) | .conclusion" 2>/dev/null || echo "unknown")
 
             ISSUE_TITLE="[broken] $slug"
