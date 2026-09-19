@@ -1,0 +1,13 @@
+# Parity exceptions for wireless-tag-wt32-sc01-plus
+#
+# Upstream v2.10.0 (jtenniswood/espcontrol#1781) added a two-slot image-card
+# pool (common/device/image_cards_2.yaml) to the esp32-s3 reference device so
+# a Camera Card and a Media Cover Art card can run concurrently. This board
+# has quad PSRAM (not octal like every other community esp32-s3 device and
+# the upstream reference board) — see devices/wireless-tag-wt32-sc01-plus/
+# device/device.yaml, which already documents that this board's quad PSRAM
+# has no room to execute .text/.rodata from PSRAM. A second concurrent
+# image-heavy transfer is not safe to add on top of that headroom, so this
+# device intentionally stays on the single-slot pool.
+common/device/image_cards_2.yaml   # missing: no PSRAM headroom for a 2nd concurrent image slot (quad PSRAM board)
+common/device/image_cards_1.yaml   # extra: this device stays on the single-slot pool

@@ -9,7 +9,7 @@
       "config": {
         "slots": 6,
         "capabilities": {
-          "imageSlots": 1
+          "imageSlots": 2
         },
         "public": {
           "name": "Guition ESP32-S3-JC3248W535",
@@ -41,8 +41,7 @@
           "dragMode": "displace",
           "dragAnimation": true,
           "disabledCardTypes": [
-            "weather_forecast",
-            "image"
+            "weather_forecast"
           ],
           "screen": {
             "width": "55%",
@@ -178,7 +177,7 @@
       "config": {
         "slots": 15,
         "capabilities": {
-          "imageSlots": 1
+          "imageSlots": 2
         },
         "public": {
           "name": "Guition JC8048W550",
@@ -208,8 +207,7 @@
           "dragMode": "displace",
           "dragAnimation": true,
           "disabledCardTypes": [
-            "weather_forecast",
-            "image"
+            "weather_forecast"
           ],
           "screen": {
             "width": "70%",
@@ -346,7 +344,7 @@
       "config": {
         "slots": 9,
         "capabilities": {
-          "imageSlots": 1
+          "imageSlots": 2
         },
         "public": {
           "name": "Seeed SenseCAP Indicator D1",
@@ -376,8 +374,7 @@
           "dragMode": "displace",
           "dragAnimation": true,
           "disabledCardTypes": [
-            "weather_forecast",
-            "image"
+            "weather_forecast"
           ],
           "screen": {
             "width": "55%",
@@ -513,7 +510,7 @@
       "config": {
         "slots": 9,
         "capabilities": {
-          "imageSlots": 1
+          "imageSlots": 2
         },
         "public": {
           "name": "Tuya T3E Smart Panel",
@@ -543,8 +540,7 @@
           "dragMode": "displace",
           "dragAnimation": true,
           "disabledCardTypes": [
-            "weather_forecast",
-            "image"
+            "weather_forecast"
           ],
           "screen": {
             "width": "55%",
@@ -852,7 +848,7 @@
       "config": {
         "slots": 9,
         "capabilities": {
-          "imageSlots": 1
+          "imageSlots": 2
         },
         "public": {
           "name": "Waveshare ESP32-S3-Touch-LCD-4",
@@ -882,8 +878,7 @@
           "dragMode": "displace",
           "dragAnimation": true,
           "disabledCardTypes": [
-            "weather_forecast",
-            "image"
+            "weather_forecast"
           ],
           "screen": {
             "width": "55%",
@@ -1031,7 +1026,7 @@
           "resolution": "1280 x 800",
           "orientation": "Landscape",
           "extraFeatures": [
-            "**Bezel RGB status LED** — exposed to Home Assistant as a `light` entity with pulse and color-specific strobe effects ([PR #154](https://github.com/lamiskin/espcontrol-community-devices/pull/154) by @zacs).\n\n  ![reTerminal D1001 status LED lit](/images/seeed-esp32-p4-reterminal-d1001-led-1.png)"
+            "**Bezel RGB status LED** \u2014 exposed to Home Assistant as a `light` entity with pulse and color-specific strobe effects ([PR #154](https://github.com/lamiskin/espcontrol-community-devices/pull/154) by @zacs).\n\n  ![reTerminal D1001 status LED lit](/images/seeed-esp32-p4-reterminal-d1001-led-1.png)"
           ]
         },
         "layout": {
@@ -1196,6 +1191,12 @@
         "capabilities": {
           "imageSlots": 1
         },
+        "capabilityGaps": [
+          {
+            "feature": "Camera Cards",
+            "reason": "Quad PSRAM (every other community ESP32-S3 device has octal) leaves no headroom for a second concurrent image-heavy transfer, so this device stays on the single-slot image pool."
+          }
+        ],
         "public": {
           "name": "Wireless-Tag WT32-SC01 Plus",
           "docsPath": "/screens/wt32-sc01-plus",

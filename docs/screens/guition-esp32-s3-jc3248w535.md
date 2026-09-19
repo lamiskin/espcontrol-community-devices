@@ -23,6 +23,9 @@ This device has been verified on real hardware — it compiles, flashes, and run
 
 Confirmed by @lamiskin at `community-v0.7.4-upstream.v2.9.0-preview.1`.
 :::
+::: tip Full upstream feature parity
+This device supports the full upstream feature set — nothing is disabled or unavailable here.
+:::
 
 |  |  |
 |:--:|:--:|
