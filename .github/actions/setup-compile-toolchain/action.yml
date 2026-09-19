@@ -1,0 +1,69 @@
+name: Setup compile toolchain
+description: >
+  Frees disk space, assembles the upstream+community tree, and installs
+  ESPHome plus a PlatformIO cache for one device's compile. Shared by
+  community-ci.yml, community-nightly.yml, community-ref-bump.yml and
+  community-release.yml, which all compiled the same ~20-line block
+  independently — a toolchain fix (e.g. a Python bump, a disk-space fix)
+  used to need hand-applying in all four and was easy to land in three and
+  forget in the fourth.
+
+inputs:
+  device:
+    description: matrix.device — used only to key the PlatformIO cache.
+    required: true
+  cache-key-prefix:
+    description: >
+      Prefix for the PlatformIO cache key. community-ci.yml and
+      community-release.yml deliberately share the default "pio" prefix so a
+      release build can start warm from a PR that already compiled this
+      device recently; nightly and ref-bump use their own prefixes so a
+      broken cache from one can't poison the others.
+    required: false
+    default: pio
+  assemble-args:
+    description: >
+      Extra arguments to community/scripts/assemble.py. Defaults to
+      --skip-web, which every caller except nightly and release wants —
+      those two need the real web bundle built (no --skip-web) because they
+      compile a factory image that embeds it.
+    required: false
+    default: "--skip-web"
+  python-version:
+    required: false
+    default: "3.12"
+
+runs:
+  using: composite
+  steps:
+    - name: Free disk space
+      shell: bash
+      run: |
+        sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+        df -h
+
+    - name: Assemble
+      shell: bash
+      run: |
+        source .github/scripts/retry.sh
+        retry python3 community/scripts/assemble.py ${{ inputs.assemble-args }}
+
+    - name: Setup Python
+      uses: actions/setup-python@v7.0.0
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install ESPHome
+      shell: bash
+      run: |
+        source .github/scripts/retry.sh
+        retry pip install esphome==$(grep ESPHOME_VERSION .assembly/.github/esphome.env | cut -d= -f2)
+
+    - name: Cache PlatformIO
+      uses: actions/cache@v6
+      with:
+        path: |
+          ~/.platformio
+          .assembly/.esphome
+        key: ${{ inputs.cache-key-prefix }}-${{ inputs.device }}-${{ hashFiles('community/upstream-ref.txt') }}
+        restore-keys: ${{ inputs.cache-key-prefix }}-${{ inputs.device }}-

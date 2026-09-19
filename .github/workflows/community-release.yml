@@ -92,36 +92,16 @@ jobs:
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
-      - name: Free disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
-          df -h
-
-      - name: Assemble
-        run: |
-          source .github/scripts/retry.sh
-          retry python3 community/scripts/assemble.py
-
-      - name: Setup Python
-        uses: actions/setup-python@v7.0.0
+      - name: Setup compile toolchain
+        # assemble-args: "" (full assemble, no --skip-web) — the factory
+        # compile below embeds the real web bundle. cache-key-prefix left
+        # at the default "pio", deliberately shared with community-ci.yml's
+        # compile matrix, so a release build can start warm from a PR that
+        # already compiled this device recently.
+        uses: ./.github/actions/setup-compile-toolchain
         with:
-          python-version: '3.12'
-
-      - name: Install ESPHome
-        run: |
-          source .github/scripts/retry.sh
-          retry pip install esphome==$(grep ESPHOME_VERSION .assembly/.github/esphome.env | cut -d= -f2)
-
-      # Same key as community-ci.yml's compile matrix, so a release build can
-      # start warm from a PR that already compiled this device recently.
-      - name: Cache PlatformIO
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.platformio
-            .assembly/.esphome
-          key: pio-${{ matrix.device }}-${{ hashFiles('community/upstream-ref.txt') }}
-          restore-keys: pio-${{ matrix.device }}-
+          device: ${{ matrix.device }}
+          assemble-args: ""
 
       - name: Compile and collect firmware
         run: |

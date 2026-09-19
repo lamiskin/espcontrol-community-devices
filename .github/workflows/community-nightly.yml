@@ -129,37 +129,19 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref || github.ref }}
-      - name: Free disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
-          df -h
-      - name: Assemble
-        # Clones upstream; clone_upstream() wipes .assembly/ first, so a
+      - name: Setup compile toolchain
+        # assemble-args: "" — clone_upstream() wipes .assembly/ first, so a
         # retry after a half-finished clone starts clean. Builds the real
         # web bundle (no --skip-web): this is the only place besides an
         # actual release tag that runs postprocess_www.py and produces
         # community-pages/webserver/www.js, which the factory compile step
         # below needs. Catching a bundle-path or URL-rewrite break here
         # costs a nightly red X instead of a failed release.
-        run: |
-          source .github/scripts/retry.sh
-          retry python3 community/scripts/assemble.py
-      - name: Setup Python
-        uses: actions/setup-python@v7.0.0
+        uses: ./.github/actions/setup-compile-toolchain
         with:
-          python-version: '3.12'
-      - name: Install ESPHome
-        run: |
-          source .github/scripts/retry.sh
-          retry pip install esphome==$(grep ESPHOME_VERSION .assembly/.github/esphome.env | cut -d= -f2)
-      - name: Cache PlatformIO
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.platformio
-            .assembly/.esphome
-          key: pio-nightly-${{ matrix.device }}-${{ hashFiles('community/upstream-ref.txt') }}
-          restore-keys: pio-nightly-${{ matrix.device }}-
+          device: ${{ matrix.device }}
+          cache-key-prefix: pio-nightly
+          assemble-args: ""
       - name: Compile
         id: compile
         # A compile is not just a build: it git-clones the pinned upstream and

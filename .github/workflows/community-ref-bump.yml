@@ -202,29 +202,11 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ref-bump/${{ needs.check-upstream.outputs.new_ref }}
-      - name: Free disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
-      - name: Assemble
-        run: |
-          source .github/scripts/retry.sh
-          retry python3 community/scripts/assemble.py --skip-web
-      - name: Setup Python
-        uses: actions/setup-python@v7.0.0
+      - name: Setup compile toolchain
+        uses: ./.github/actions/setup-compile-toolchain
         with:
-          python-version: '3.12'
-      - name: Install ESPHome
-        run: |
-          source .github/scripts/retry.sh
-          retry pip install esphome==$(grep ESPHOME_VERSION .assembly/.github/esphome.env | cut -d= -f2)
-      - name: Cache PlatformIO
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.platformio
-            .assembly/.esphome
-          key: pio-refbump-${{ matrix.device }}-${{ hashFiles('community/upstream-ref.txt') }}
-          restore-keys: pio-refbump-${{ matrix.device }}-
+          device: ${{ matrix.device }}
+          cache-key-prefix: pio-refbump
       - name: Compile
         run: |
           source .github/scripts/retry.sh
