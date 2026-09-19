@@ -208,9 +208,17 @@ jobs:
     steps:
       - name: Summarize compile matrix
         run: |
+          DETERMINE_RESULT="${{ needs.determine-devices.result }}"
           HAS="${{ needs.determine-devices.outputs.has_devices }}"
           RESULT="${{ needs.compile.result }}"
-          echo "has_devices=$HAS compile=$RESULT"
+          echo "determine-devices=$DETERMINE_RESULT has_devices=$HAS compile=$RESULT"
+          # A crashed determine-devices (e.g. malformed devices.json) skips
+          # compile and leaves has_devices unset ("" != "true"), which used
+          # to fall through to "OK" below — this required check reported
+          # green while nothing had actually been validated.
+          if [ "$DETERMINE_RESULT" != "success" ]; then
+            echo "determine-devices did not succeed"; exit 1
+          fi
           if [ "$HAS" = "true" ] && [ "$RESULT" != "success" ]; then
             echo "Compile matrix did not succeed"; exit 1
           fi
@@ -276,9 +284,15 @@ jobs:
     steps:
       - name: Summarize builder-smoke matrix
         run: |
+          DETERMINE_RESULT="${{ needs.determine-devices.result }}"
           HAS="${{ needs.determine-devices.outputs.has_devices }}"
           RESULT="${{ needs.builder-smoke.result }}"
-          echo "has_devices=$HAS builder-smoke=$RESULT"
+          echo "determine-devices=$DETERMINE_RESULT has_devices=$HAS builder-smoke=$RESULT"
+          # See compile-result: a crashed determine-devices must not read as
+          # a passing check just because has_devices never became "true".
+          if [ "$DETERMINE_RESULT" != "success" ]; then
+            echo "determine-devices did not succeed"; exit 1
+          fi
           if [ "$HAS" = "true" ] && [ "$RESULT" != "success" ]; then
             echo "Builder-path validation did not succeed"; exit 1
           fi
