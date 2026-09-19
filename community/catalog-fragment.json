@@ -2233,7 +2233,7 @@
       "config": {
         "slots": 9,
         "capabilities": {
-          "imageSlots": 1
+          "imageSlots": 2
         },
         "public": {
           "name": "Waveshare ESP32-S3 Smart 86 Box",

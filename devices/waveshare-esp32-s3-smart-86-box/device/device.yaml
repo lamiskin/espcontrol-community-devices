@@ -30,7 +30,7 @@
 
 substitutions:
   espcontrol_component_url: "https://github.com/jtenniswood/espcontrol"
-  espcontrol_component_ref: "v2.9.1"
+  espcontrol_component_ref: "v2.10.0"
   mdi_font_file: "https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf"
 
 # ---------------------------------------------------------------------------
@@ -309,12 +309,17 @@ spi:
 # Backlight — BSP_LCD_BACKLIGHT, a direct MCU pin, NOT an expander pin.
 # ---------------------------------------------------------------------------
 # bsp_display_brightness_init() drives it from LEDC at 5kHz / 10-bit with duty
-# 0 meaning off, so it is active high and needs no inversion.
+# 0 meaning off, which read from the BSP source as active-high. Wrong on real
+# hardware (community issue #15: 100% brightness goes blank, 0% is brightest)
+# — the circuit is actually active-low, same as the LCD-4 sibling's expander-
+# driven backlight (devices/waveshare-esp32-s3-touch-lcd-4/device/device.yaml).
+# inverted: true reproduces what the BSP's own duty math does for it there.
 # ---------------------------------------------------------------------------
 output:
   - platform: ledc
     pin: GPIO4
     id: gpio_backlight_pwm
+    inverted: true
     frequency: 5000Hz
     min_power: 0.01
     zero_means_zero: true
