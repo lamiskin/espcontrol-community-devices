@@ -37,6 +37,7 @@ jobs:
           python3 community/scripts/check_esp32_hosted_psram.py --self-test
           python3 community/scripts/download_stats.py --self-test
           python3 community/scripts/check_status_consistency.py --self-test
+          python3 community/scripts/check_device_docs_naming.py --self-test
           python3 community/scripts/check_capability_docs.py --self-test
           python3 community/scripts/check_generated_blocks.py --self-test
           python3 community/scripts/postprocess_www.py --self-test
@@ -63,6 +64,8 @@ jobs:
 
       - name: Status consistency
         run: python3 community/scripts/check_status_consistency.py
+      - name: Device docs file naming
+        run: python3 community/scripts/check_device_docs_naming.py
       - name: Capability gap documentation
         run: python3 community/scripts/check_capability_docs.py
       - name: OTA buffer override present
