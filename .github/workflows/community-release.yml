@@ -71,7 +71,7 @@ jobs:
           echo "recovery_devices=$RECOVERY_JSON" >> $GITHUB_OUTPUT
           echo "C6 recovery builds: $RECOVERY_JSON"
 
-  # One job per device (mirrors community-ci.yml's compile matrix) instead
+  # One job per device (mirrors community-pr-ci.yml's compile matrix) instead
   # of one job compiling all 8 in a loop: wall clock becomes the slowest
   # single device (~5-8 min) rather than their sum (~40 min), at the cost of
   # each device paying its own toolchain setup instead of sharing one warm
@@ -95,7 +95,7 @@ jobs:
       - name: Setup compile toolchain
         # assemble-args: "" (full assemble, no --skip-web) — the factory
         # compile below embeds the real web bundle. cache-key-prefix left
-        # at the default "pio", deliberately shared with community-ci.yml's
+        # at the default "pio", deliberately shared with community-pr-ci.yml's
         # compile matrix, so a release build can start warm from a PR that
         # already compiled this device recently.
         uses: ./.github/actions/setup-compile-toolchain

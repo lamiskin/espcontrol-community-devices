@@ -1,6 +1,6 @@
 # Espcontrol Community Supported Devices
 
-[![CI](https://github.com/lamiskin/espcontrol-community-devices/actions/workflows/community-ci.yml/badge.svg)](https://github.com/lamiskin/espcontrol-community-devices/actions/workflows/community-ci.yml)
+[![CI](https://github.com/lamiskin/espcontrol-community-devices/actions/workflows/community-pr-ci.yml/badge.svg)](https://github.com/lamiskin/espcontrol-community-devices/actions/workflows/community-pr-ci.yml)
 [![Nightly](https://github.com/lamiskin/espcontrol-community-devices/actions/workflows/community-nightly.yml/badge.svg)](https://github.com/lamiskin/espcontrol-community-devices/actions/workflows/community-nightly.yml)
 [![Latest release](https://img.shields.io/github/v/release/lamiskin/espcontrol-community-devices?label=release)](https://github.com/lamiskin/espcontrol-community-devices/releases/latest)
 [![Docs & installer](https://img.shields.io/badge/docs-installer-0052cc)](https://lamiskin.github.io/espcontrol-community-devices/)

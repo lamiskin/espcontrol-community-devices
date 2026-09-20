@@ -390,6 +390,6 @@ jobs:
             retry gh pr create --base main --head "$BRANCH" \
               --title "chore: nightly status update $(date -u +%Y-%m-%d)" \
               --body "Automated STATUS.md flips from the nightly compile run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            retry gh workflow run community-ci.yml --ref "$BRANCH"
+            retry gh workflow run community-pr-ci.yml --ref "$BRANCH"
             retry gh pr merge "$BRANCH" --auto --merge --delete-branch
           fi
