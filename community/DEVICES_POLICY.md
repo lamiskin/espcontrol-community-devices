@@ -280,5 +280,17 @@ crowpanel-esp32-p4-adv-101-v12:
     - components/**
     - src/**
 
+waveshare-esp32-p4-touch-lcd-7b:
+  allowed:
+    - devices/waveshare-esp32-p4-touch-lcd-7b/**
+    - builds/waveshare-esp32-p4-touch-lcd-7b*.yaml
+  required:
+    - devices/waveshare-esp32-p4-touch-lcd-7b/esphome.yaml
+    - devices/waveshare-esp32-p4-touch-lcd-7b/packages.yaml
+    - devices/waveshare-esp32-p4-touch-lcd-7b/device/device.yaml
+  forbidden:
+    - components/**
+    - src/**
+
 # --- end policy ---
 ```

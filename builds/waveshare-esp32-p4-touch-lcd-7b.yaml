@@ -1,0 +1,31 @@
+# =============================================================================
+# BUILD PROFILE - Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (7" landscape ESP32-P4)
+# =============================================================================
+# CI/local build entry point for the 1024x600 landscape ESP32-P4 panel.
+# Loads the web UI from GitHub Pages so CI can skip building www.js.
+# =============================================================================
+
+substitutions:
+  name: "espcontrol-ws-p4-7b"
+  friendly_name: "Waveshare P4 Touch LCD 7B (Community)"
+  espcontrol_component_url: "file:///config"
+  espcontrol_component_ref: "HEAD"
+
+esphome:
+  name_add_mac_suffix: true
+
+packages:
+  espcontrol: !include ../devices/waveshare-esp32-p4-touch-lcd-7b/packages.yaml
+
+wifi:
+  # Compile-only station credentials for CI/local builds. User-imported
+  # deployed configs supply their real WiFi credentials in device YAML.
+  ssid: "ESPControl"
+  password: "espcontrol"
+  ap:
+    ssid: "${name}"
+
+captive_portal:
+
+web_server:
+  js_url: "https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js"
