@@ -18,8 +18,9 @@
 # unconfirmed V1.2 swap of IO53/IO54 with IO27/IO28 — neither pin is used
 # anywhere in this device, so it would be a no-op here even if real).
 #
-# **Untested** — @schnoog had just received this board when he reported the
-# SDIO wiring; unlike V1.0, nobody has confirmed this file boots yet.
+# **Confirmed working** — @schnoog ran the same test cycle on this board as
+# on V1.0 (boot, touch, survives a full power cycle), all successful
+# (issue #133, https://github.com/lamiskin/espcontrol-community-devices/issues/133#issuecomment-5743162457).
 # =============================================================================
 
 substitutions:
@@ -177,9 +178,8 @@ esp32_hosted:
   clk_pin: GPIO18
   # 4-wire SDIO, reported by @schnoog for his "V1.2" board (issue #133) —
   # reset/cmd/clk pins are unchanged from V1.0, only the D0-D3 assignment
-  # differs (and widens from V1.0's confirmed 1-bit link). Not yet
-  # hardware-confirmed to actually boot with this file — see the header
-  # comment above.
+  # differs (and widens from V1.0's confirmed 1-bit link). Confirmed to
+  # boot with this file — see the header comment above.
   bus_width: 4
   d0_pin: GPIO17
   d1_pin: GPIO16
