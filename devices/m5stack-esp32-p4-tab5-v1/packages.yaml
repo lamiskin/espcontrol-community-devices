@@ -9,7 +9,7 @@
 substitutions:
   cover_art_placeholder_file: "https://raw.githubusercontent.com/jtenniswood/espcontrol/main/common/assets/cover_art_placeholder.svg"
   device_slug: "m5stack-esp32-p4-tab5-v1"
-  firmware_manifest_slug: "m5stack-esp32-p4-tab5"
+  firmware_manifest_slug: "m5stack-esp32-p4-tab5-v1"
   firmware_version: "dev"
   screen_width: "1280"
   screen_height: "720"
