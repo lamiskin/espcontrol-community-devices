@@ -24,7 +24,7 @@ packages:
   factory: !include waveshare-esp32-p4-touch-lcd-7b.factory.yaml
   c6_recovery:
     url: https://github.com/jtenniswood/espcontrol
-    ref: v2.10.0
+    ref: v2.11.0
     refresh: 1d
     files:
       - common/device/esp32_c6_recovery.yaml

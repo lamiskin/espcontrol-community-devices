@@ -11,6 +11,10 @@ substitutions:
   device_slug: "seeed-sensecap-indicator-d1"
   firmware_manifest_slug: "seeed-sensecap-indicator-d1"
   firmware_version: "dev"
+  # Kept hidden from the UI: this board's 4MB flash chip is at 95.2% usage
+  # (3932160-byte partition) even with the code compiled in — no margin to
+  # advertise a feature that's this close to the OTA size limit.
+  screensaver_camera_supported: "false"
   screen_width: "480"
   screen_height: "480"
   content_width: "380"
@@ -85,21 +89,21 @@ substitutions:
 packages:
   upstream_a:
     url: https://github.com/jtenniswood/espcontrol
-    ref: v2.10.0
+    ref: v2.11.0
     refresh: 1d
     files:
       - common/config/entity_names.yaml
   device: !include device/device.yaml
   upstream_b:
     url: https://github.com/jtenniswood/espcontrol
-    ref: v2.10.0
+    ref: v2.11.0
     refresh: 1d
     files:
       - common/assets/icons.yaml
   fonts_device: !include device/fonts.yaml
   upstream_c:
     url: https://github.com/jtenniswood/espcontrol
-    ref: v2.10.0
+    ref: v2.11.0
     refresh: 1d
     files:
       - common/theme/button.yaml
@@ -140,13 +144,14 @@ packages:
       - common/device/screen_button_setup.yaml
       - common/device/screen_clock.yaml
       - common/device/screen_cover_art.yaml
+      - common/device/screen_camera_screensaver.yaml
       - common/device/image_cards_2.yaml
   lvgl: !include device/lvgl.yaml
   sensors: !include device/sensors.yaml
 
 # --- community hosting overrides ---
 web_server:
-  js_url: https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js?device=${device_slug}&v=${firmware_version}&ui=f2a4296c2fe0
+  js_url: https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js?device=${device_slug}&v=${firmware_version}&ui=180344116162
 
 update:
   - id: !extend firmware_update
