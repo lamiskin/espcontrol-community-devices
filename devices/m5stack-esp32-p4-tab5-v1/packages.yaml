@@ -11,6 +11,7 @@ substitutions:
   device_slug: "m5stack-esp32-p4-tab5-v1"
   firmware_manifest_slug: "m5stack-esp32-p4-tab5-v1"
   firmware_version: "dev"
+  screensaver_camera_supported: "false"
   screen_width: "1280"
   screen_height: "720"
   content_width: "760"
@@ -180,6 +181,7 @@ packages:
       - common/device/screen_button_setup.yaml
       - common/device/screen_clock.yaml
       - common/device/screen_cover_art.yaml
+      - common/device/screen_camera_screensaver_disabled.yaml
       - common/device/image_cards_6.yaml
   lvgl: !include device/lvgl.yaml
   sensors: !include device/sensors.yaml
