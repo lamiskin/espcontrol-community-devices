@@ -11,6 +11,9 @@ substitutions:
   device_slug: "seeed-sensecap-indicator-d1"
   firmware_manifest_slug: "seeed-sensecap-indicator-d1"
   firmware_version: "dev"
+  # Kept hidden from the UI: this board's 4MB flash chip is at 95.2% usage
+  # (3932160-byte partition) even with the code compiled in — no margin to
+  # advertise a feature that's this close to the OTA size limit.
   screensaver_camera_supported: "false"
   screen_width: "480"
   screen_height: "480"

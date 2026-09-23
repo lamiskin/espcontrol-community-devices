@@ -11,6 +11,10 @@ substitutions:
   device_slug: "wireless-tag-wt32-sc01-plus"
   firmware_manifest_slug: "wireless-tag-wt32-sc01-plus"
   firmware_version: "dev"
+  # Kept hidden from the UI: this board's quad PSRAM already has no headroom
+  # for a 2nd concurrent image buffer (see parity-exceptions.txt for the
+  # image_cards precedent) — same constraint applies to the camera
+  # screensaver's artwork_image decode buffer.
   screensaver_camera_supported: "false"
   screen_width: "480"
   screen_height: "320"

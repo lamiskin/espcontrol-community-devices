@@ -11,7 +11,7 @@ substitutions:
   device_slug: "m5stack-esp32-p4-tab5"
   firmware_manifest_slug: "m5stack-esp32-p4-tab5"
   firmware_version: "dev"
-  screensaver_camera_supported: "false"
+  screensaver_camera_supported: "true"
   screen_width: "1280"
   screen_height: "720"
   content_width: "760"

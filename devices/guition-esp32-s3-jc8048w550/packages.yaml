@@ -11,7 +11,7 @@ substitutions:
   device_slug: "guition-esp32-s3-jc8048w550"
   firmware_manifest_slug: "guition-esp32-s3-jc8048w550"
   firmware_version: "dev"
-  screensaver_camera_supported: "false"
+  screensaver_camera_supported: "true"
   screen_width: "800"
   screen_height: "480"
   content_width: "620"
