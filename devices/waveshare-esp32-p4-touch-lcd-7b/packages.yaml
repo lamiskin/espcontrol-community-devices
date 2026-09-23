@@ -94,7 +94,7 @@ esphome:
 packages:
   upstream_a:
     url: https://github.com/jtenniswood/espcontrol
-    ref: v2.10.0
+    ref: v2.11.0
     refresh: 1d
     files:
       - common/config/entity_names.yaml
@@ -102,7 +102,7 @@ packages:
   network_coprocessor: !include device/network_coprocessor.yaml
   upstream_b:
     url: https://github.com/jtenniswood/espcontrol
-    ref: v2.10.0
+    ref: v2.11.0
     refresh: 1d
     files:
       - common/device/esp32_c6_firmware_update${esp32_c6_firmware_update_package_suffix}.yaml
@@ -110,7 +110,7 @@ packages:
   fonts_device: !include device/fonts.yaml
   upstream_c:
     url: https://github.com/jtenniswood/espcontrol
-    ref: v2.10.0
+    ref: v2.11.0
     refresh: 1d
     files:
       - common/theme/button.yaml
@@ -172,7 +172,7 @@ packages:
 
 # --- community hosting overrides ---
 web_server:
-  js_url: https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js?device=${device_slug}&v=${firmware_version}&ui=f2a4296c2fe0
+  js_url: https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js?device=${device_slug}&v=${firmware_version}&ui=180344116162
 
 update:
   - id: !extend firmware_update
