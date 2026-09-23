@@ -11,3 +11,19 @@
 # device intentionally stays on the single-slot pool.
 common/device/image_cards_2.yaml   # missing: no PSRAM headroom for a 2nd concurrent image slot (quad PSRAM board)
 common/device/image_cards_1.yaml   # extra: this device stays on the single-slot pool
+
+# Upstream v2.11.0 added an optional full-screen camera screensaver:
+# common/device/screen_camera_screensaver.yaml (real feature) vs.
+# common/device/screen_camera_screensaver_disabled.yaml (a no-op stub — same
+# script/global IDs, empty bodies) for devices that don't support it. Every
+# upstream reference device pulls in the real file with
+# screensaver_camera_supported: "true".
+#
+# No community device has been verified against camera-screensaver hardware
+# behavior yet, and the real file adds an artwork_image decoder plus an HA
+# camera subscription — not free on top of this board's already-tight quad
+# PSRAM headroom noted above. This device intentionally stays on the
+# disabled stub (screensaver_camera_supported: "false") until someone
+# verifies the real feature on hardware.
+common/device/screen_camera_screensaver.yaml   # missing: disabled stub used instead, not verified on hardware
+common/device/screen_camera_screensaver_disabled.yaml   # extra: intentional no-op stub for this device
