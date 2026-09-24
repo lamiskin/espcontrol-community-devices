@@ -15,7 +15,7 @@
 | M5Stack Tab5 5" (V1) | m5stack-esp32-p4-tab5-v1 | Untested | - | - | @persuader72 | [PR #136](https://github.com/lamiskin/espcontrol-community-devices/pull/136) |
 | Elecrow CrowPanel Advanced 10.1 (V1.0) | crowpanel-esp32-p4-adv-101-v10 | Working | community-v0.11.0-upstream.v2.10.0 | @schnoog ([#133](https://github.com/lamiskin/espcontrol-community-devices/issues/133#issuecomment-5741655103)) | @schnoog | [Issue #133](https://github.com/lamiskin/espcontrol-community-devices/issues/133) |
 | Elecrow CrowPanel Advanced 10.1 (V1.2) | crowpanel-esp32-p4-adv-101-v12 | Working | community-v0.11.0-upstream.v2.10.0 | @schnoog ([#133](https://github.com/lamiskin/espcontrol-community-devices/issues/133#issuecomment-5743162457)) | @schnoog | [Issue #133](https://github.com/lamiskin/espcontrol-community-devices/issues/133) |
-| WaveShare ESP32-S3 Smart 86 Box | waveshare-esp32-s3-smart-86-box | Parked | - | - | @salnajjar | [PR #293](https://github.com/jtenniswood/espcontrol/pull/293) |
+| Waveshare ESP32-S3 Smart 86 Box 4" | waveshare-esp32-s3-smart-86-box | Untested | - | - | @MrWishbone | [PR #293](https://github.com/jtenniswood/espcontrol/pull/293), [Issue #15](https://github.com/lamiskin/espcontrol-community-devices/issues/15) |
 
 ## Status meanings
 
@@ -31,6 +31,6 @@
 - **Verified by** — who confirmed it on real hardware, with a link to their evidence (issue or PR comment). This is often *not* the porter: the **Owner** column credits whoever contributed the config, and the two are only the same when the porter owns the panel. Both appear on the device's docs page.
 - **Source** — the upstream PR or issue the port came from.
 
-### Parked device notes
+### Notes
 
-- **WaveShare ESP32-S3 Smart 86 Box** — the original config from upstream [PR #293](https://github.com/jtenniswood/espcontrol/pull/293) is unrecoverable: the author's fork was deleted and the PR head rewritten before deletion, leaving no diff, and no config was pasted in the thread. The upstream maintainer explicitly welcomed a community version in that thread. Re-submission by a hardware owner is invited — tracked in [issue #15](https://github.com/lamiskin/espcontrol-community-devices/issues/15).
+- **Waveshare ESP32-S3 Smart 86 Box** — salnajjar's original config from upstream [PR #293](https://github.com/jtenniswood/espcontrol/pull/293) is unrecoverable (the author's fork was deleted and the PR head rewritten before deletion, leaving no diff, and no config was pasted in the thread), so the device sat **Parked** until it was re-ported from scratch against Waveshare's own ESP-IDF board support package. The 86 Box is Waveshare's enclosed build of the ESP32-S3-Touch-LCD-4**B**, which despite the name shares neither its I/O expander nor its pin map with `waveshare-esp32-s3-touch-lcd-4`. Tracked in [issue #15](https://github.com/lamiskin/espcontrol-community-devices/issues/15); awaiting hardware verification by @MrWishbone.
