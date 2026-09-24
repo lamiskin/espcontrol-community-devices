@@ -11,6 +11,11 @@ substitutions:
   device_slug: "waveshare-esp32-s3-smart-86-box"
   firmware_manifest_slug: "waveshare-esp32-s3-smart-86-box"
   firmware_version: "dev"
+  # Kept hidden from the UI: this device is itself untested on hardware
+  # (see community/STATUS.md), so it gets no new user-facing feature until
+  # someone verifies the base port. Real compile cost is unaffected either
+  # way - see the other devices' packages.yaml history for why.
+  screensaver_camera_supported: "false"
   screen_width: "480"
   screen_height: "480"
   content_width: "380"
@@ -85,21 +90,21 @@ substitutions:
 packages:
   upstream_a:
     url: https://github.com/jtenniswood/espcontrol
-    ref: v2.10.0
+    ref: v2.11.0
     refresh: 1d
     files:
       - common/config/entity_names.yaml
   device: !include device/device.yaml
   upstream_b:
     url: https://github.com/jtenniswood/espcontrol
-    ref: v2.10.0
+    ref: v2.11.0
     refresh: 1d
     files:
       - common/assets/icons.yaml
   fonts_device: !include device/fonts.yaml
   upstream_c:
     url: https://github.com/jtenniswood/espcontrol
-    ref: v2.10.0
+    ref: v2.11.0
     refresh: 1d
     files:
       - common/theme/button.yaml
@@ -140,13 +145,14 @@ packages:
       - common/device/screen_button_setup.yaml
       - common/device/screen_clock.yaml
       - common/device/screen_cover_art.yaml
+      - common/device/screen_camera_screensaver.yaml
       - common/device/image_cards_2.yaml
   lvgl: !include device/lvgl.yaml
   sensors: !include device/sensors.yaml
 
 # --- community hosting overrides ---
 web_server:
-  js_url: https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js?device=${device_slug}&v=${firmware_version}&ui=320bcaaaaf95
+  js_url: https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js?device=${device_slug}&v=${firmware_version}&ui=f322d38237a1
 
 update:
   - id: !extend firmware_update
