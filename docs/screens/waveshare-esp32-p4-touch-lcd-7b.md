@@ -18,10 +18,8 @@ on the home screen.
 
 Community port contributed via [7B device branch](https://github.com/bassrock/espcontrol-community-devices/tree/device/waveshare-esp32-p4-touch-lcd-7b) by @bassrock.
 
-::: tip Hardware-verified
-This device has been verified on real hardware — it compiles, flashes, and runs EspControl correctly.
-
-Confirmed by @bassrock at `community-v0.11.0-upstream.v2.10.0`.
+::: danger Currently broken
+This device does not compile against the current pinned upstream version and has been pulled from the installer. Already-flashed panels keep working but will not receive updates until it is fixed.
 :::
 ::: tip Full upstream feature parity
 This device supports the full upstream feature set — nothing is disabled or unavailable here.
@@ -43,29 +41,8 @@ This device supports the full upstream feature set — nothing is disabled or un
 
 ## Install
 
-Connect the display to your computer with a **USB-C data cable**, then click
-the button below (Chrome or Edge on desktop).
-
-<EspInstallButton slug="waveshare-esp32-p4-touch-lcd-7b" />
-
-For WiFi setup and Home Assistant pairing the flow is identical to official
-EspControl — follow the [Install guide](/getting-started/install).
-
-### Repairing the ESP32-C6 WiFi processor
-
-If this panel repeatedly disconnects, never completes its first WiFi setup,
-disappears from Home Assistant after a restart, or reports a C6 firmware
-manifest timeout in its USB log, use the recovery image instead. It
-reinstalls the firmware above **and** repairs the ESP32-C6 WiFi processor
-from a known-good firmware image, entirely over USB — it does not need a
-working network connection.
-
-::: warning This reinstalls the firmware
-Export your configuration from **Settings > Backup** first if the panel is
-still accessible.
-:::
-
-<EspInstallButton slug="waveshare-esp32-p4-touch-lcd-7b" variant="recovery" />
+Installation is unavailable while this device is not building — see the
+status note above.
 
 ## ESPHome Manual Setup
 
