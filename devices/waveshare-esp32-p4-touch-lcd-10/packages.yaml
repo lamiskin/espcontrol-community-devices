@@ -86,14 +86,14 @@ substitutions:
 packages:
   upstream_a:
     url: https://github.com/jtenniswood/espcontrol
-    ref: v2.11.0
+    ref: v2.11.2
     refresh: 1d
     files:
       - common/config/entity_names.yaml
   device: !include device/device.yaml
   upstream_b:
     url: https://github.com/jtenniswood/espcontrol
-    ref: v2.11.0
+    ref: v2.11.2
     refresh: 1d
     files:
       - common/device/esp32_c6_firmware_update.yaml
@@ -101,7 +101,7 @@ packages:
   fonts_device: !include device/fonts.yaml
   upstream_c:
     url: https://github.com/jtenniswood/espcontrol
-    ref: v2.11.0
+    ref: v2.11.2
     refresh: 1d
     files:
       - common/theme/button.yaml
@@ -153,6 +153,8 @@ packages:
         vars: { num: "20" }
       # END GENERATED BUTTON PACKAGES
       - common/addon/connectivity.yaml
+      - common/device/api_remote_actions.yaml
+      - common/device/api_open_modal.yaml
       - common/device/api_navigate.yaml
       - common/addon/time.yaml
       - common/addon/backlight.yaml
@@ -174,7 +176,7 @@ packages:
 
 # --- community hosting overrides ---
 web_server:
-  js_url: https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js?device=${device_slug}&v=${firmware_version}&ui=180344116162
+  js_url: https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js?device=${device_slug}&v=${firmware_version}&ui=d7ac1f346e87
 
 update:
   - id: !extend firmware_update
