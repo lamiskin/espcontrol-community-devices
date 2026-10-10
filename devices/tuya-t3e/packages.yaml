@@ -128,6 +128,9 @@ packages:
         vars: { num: "9" }
       # END GENERATED BUTTON PACKAGES
       - common/addon/connectivity.yaml
+      - common/device/api_remote_actions.yaml
+      - common/device/api_open_modal.yaml
+      - common/device/api_navigate.yaml
       - common/addon/time.yaml
       - common/addon/backlight.yaml
       - common/addon/backlight_schedule.yaml
@@ -148,7 +151,7 @@ packages:
 
 # --- community hosting overrides ---
 web_server:
-  js_url: https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js?device=${device_slug}&v=${firmware_version}&ui=536121305e71
+  js_url: https://lamiskin.github.io/espcontrol-community-devices/webserver/www.js?device=${device_slug}&v=${firmware_version}&ui=149ba29a8005
 
 update:
   - id: !extend firmware_update
