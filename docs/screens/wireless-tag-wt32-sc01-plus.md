@@ -18,10 +18,8 @@ on the home screen.
 
 Community port contributed via [PR #194](https://github.com/jtenniswood/espcontrol/pull/194) by @jonnybergdahl.
 
-::: tip Hardware-verified
-This device has been verified on real hardware — it compiles, flashes, and runs EspControl correctly.
-
-Confirmed by @jonnybergdahl ([#134](https://github.com/lamiskin/espcontrol-community-devices/pull/134)) at `community-v0.7.2-upstream.v2.8.6`.
+::: danger Currently broken
+This device does not compile against the current pinned upstream version and has been pulled from the installer. Already-flashed panels keep working but will not receive updates until it is fixed.
 :::
 ::: warning Camera Cards not available
 Quad PSRAM (every other community ESP32-S3 device has octal) leaves no headroom for a second concurrent image-heavy transfer, so this device stays on the single-slot image pool.
@@ -43,13 +41,8 @@ Quad PSRAM (every other community ESP32-S3 device has octal) leaves no headroom 
 
 ## Install
 
-Connect the display to your computer with a **USB-C data cable**, then click
-the button below (Chrome or Edge on desktop).
-
-<EspInstallButton slug="wireless-tag-wt32-sc01-plus" />
-
-For WiFi setup and Home Assistant pairing the flow is identical to official
-EspControl — follow the [Install guide](/getting-started/install).
+Installation is unavailable while this device is not building — see the
+status note above.
 
 ## ESPHome Manual Setup
 
