@@ -219,14 +219,23 @@ jobs:
           fi
           echo "Installing esphome==$VER (upstream pin $REF)"
           retry pip install "esphome==$VER"
+      - name: Get runner image version
+        id: img
+        run: echo "version=${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
       - name: Cache PlatformIO
         uses: actions/cache@v6
+        # The cached /tmp/builder-compile/.esphome holds CMake caches with
+        # absolute tool paths (ninja, python) baked in. When the runner image
+        # changed under a stale cache, ESP-IDF's bootloader sub-build failed
+        # with "Running '.../bin/ninja --version' failed: no such file" on
+        # every device from 2026-10-06. Keying on the image version (and a
+        # manual v2 bump) means a toolchain move gets a cold build instead.
         with:
           path: |
             ~/.platformio
             /tmp/builder-compile/.esphome
-          key: pio-builder-compile-${{ matrix.device }}-${{ hashFiles('community/upstream-ref.txt') }}
-          restore-keys: pio-builder-compile-${{ matrix.device }}-
+          key: pio-builder-compile-v2-${{ matrix.device }}-${{ steps.img.outputs.version }}-${{ hashFiles('community/upstream-ref.txt') }}
+          restore-keys: pio-builder-compile-v2-${{ matrix.device }}-${{ steps.img.outputs.version }}-
       - name: Compile via published builder path
         # esphome compile clones this repo from GitHub to resolve the
         # package (real ref fetch + package graph + external-component
