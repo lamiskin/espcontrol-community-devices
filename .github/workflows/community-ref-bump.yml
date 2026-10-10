@@ -45,7 +45,24 @@ jobs:
           LATEST=$(retry gh api repos/jtenniswood/espcontrol/releases/latest --jq .tag_name)
           echo "Latest upstream: $LATEST, current pin: $CURRENT"
 
+          # A bump branch already on the remote means a previous run (or a
+          # human) already started this bump and its PR is awaiting review.
+          # Re-running would fail the push as non-fast-forward every day
+          # until the PR merges (v2.11.2: 2026-10-08 onward), so skip it.
+          BUMP_EXISTS=false
           if [ "$LATEST" != "$CURRENT" ]; then
+            rc=0
+            git ls-remote --exit-code --heads origin "ref-bump/$LATEST" >/dev/null || rc=$?
+            if [ "$rc" -eq 0 ]; then
+              BUMP_EXISTS=true
+              echo "::notice::ref-bump/$LATEST already exists on the remote; skipping until its PR is merged or the branch is deleted."
+            elif [ "$rc" -ne 2 ]; then
+              echo "::error::git ls-remote failed (exit $rc)" >&2
+              exit 1
+            fi
+          fi
+
+          if [ "$LATEST" != "$CURRENT" ] && [ "$BUMP_EXISTS" = "false" ]; then
             echo "new_ref=$LATEST" >> $GITHUB_OUTPUT
             echo "needs_bump=true" >> $GITHUB_OUTPUT
 
