@@ -116,6 +116,42 @@ per board. Read the advisories at bump time — step 3 below.
    device that newly adopted a feature (see the upstream PR's own testing
    notes for what to check).
 
+## Testing a preview on one device
+
+To download and OTA-upload a device-specific preview directly, use the
+device's exact catalog slug and IP. The `/update` endpoint is the ESPHome
+web-server OTA handler inherited by the composed firmware; the multipart field
+is `file`:
+
+```bash
+TAG=community-v0.13.1-upstream.v2.11.2-preview.1
+DEVICE=guition-esp32-s3-jc3248w535  # replace with the panel's exact slug
+DEVICE_IP=YOUR_DEVICE_IP             # replace with the panel's LAN IP
+PAGES_BASE=YOUR_GITHUB_PAGES_BASE_URL
+BIN="$(mktemp)"
+trap 'rm -f "$BIN"' EXIT
+
+curl --fail --location --output "$BIN" \
+  "${PAGES_BASE}/firmware/${DEVICE}/history/${TAG}/${DEVICE}.ota.bin"
+curl --fail --form "file=@${BIN}" \
+  "http://${DEVICE_IP}/update"
+```
+
+This is a plain-HTTP upload to one device. Only use it on a trusted LAN, and
+only when the currently installed firmware exposes `/update`.
+
+For discovery and a confirmation-gated update to the latest published release
+(including previews), the repository helper accepts just the target IP:
+
+```bash
+python3 community/scripts/update_device.py --dry-run YOUR_DEVICE_IP
+python3 community/scripts/update_device.py YOUR_DEVICE_IP
+```
+
+The helper resolves the model from ESPHome's DNS-SD import URL, checks the
+release manifest and OTA checksum, warns when the newest release is a preview,
+asks before uploading, and verifies the device version after reboot.
+
 ## When a catalog flag needs setting
 
 Set it in `community/catalog-fragment.json` under the device's
