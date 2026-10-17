@@ -3,11 +3,11 @@
   "files": {
     "common/assets/climate_card_icon_glyphs.yaml": "fd6ec17a38110a92fb70e7ad299196265aea416bb7f161d72a0e447543d0d151",
     "common/assets/hebrew_glyphs.yaml": "1819b779a2166a244ec76ff7b683925b5eccb69515c261d20d095601812f931d",
-    "common/assets/icon_glyphs.yaml": "64b41fd159c279280ef97d2ba5c1579937a6b775f2398db9112ebf4bb7183058",
+    "common/assets/icon_glyphs.yaml": "5f83f8901b3410e2c1c0ac229e7429706b2b1eb20faf31c9118f05224d5d33a2",
     "common/assets/network_status_glyphs.yaml": "f30590438ced72ec630d8c8b5fa29268b1ebce0080cb2a4da069bd822d258959",
     "common/assets/text_glyphs.yaml": "ca38e257350d54b1b6d1c7c7e39656b1fea51de40de6a8daefc95b4801360b60",
     "common/device/button_widget.yaml": "72b340c36107c6717526f83dbb6e8c7674c29fddcb611c5323f8bad5ce88d882",
     "common/device/core_infra.yaml": "28b1a898be1addc9388d73238f57ba8236f753ab1073d34f0c80028cfab7b4d9"
   },
-  "pin": "v2.12.1"
+  "pin": "v2.13.0"
 }
