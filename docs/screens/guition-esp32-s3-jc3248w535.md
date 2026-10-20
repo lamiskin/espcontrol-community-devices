@@ -23,8 +23,8 @@ This device has been verified on real hardware — it compiles, flashes, and run
 
 Confirmed by @lamiskin at `community-v0.7.4-upstream.v2.9.0-preview.1`.
 :::
-::: tip Full upstream feature parity
-This device supports the full upstream feature set — nothing is disabled or unavailable here.
+::: warning Camera screensaver not available
+Upstream offers the camera screensaver in the web configurator only on its ESP32-P4 boards and the Guition ESP32-S3 4848S040. This ESP32-S3 panel is not one of them, so Camera is not available as a screensaver mode here.
 :::
 
 |  |  |

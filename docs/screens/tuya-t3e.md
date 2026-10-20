@@ -21,8 +21,8 @@ Community port contributed via [PR #660](https://github.com/jtenniswood/espcontr
 ::: warning Not yet hardware-verified
 This device compiles and is flashable, but nobody has confirmed it on real hardware yet. It may not work. If you own this panel, [verifying it](/reference/support-policy#hardware-verification) is the most valuable contribution you can make.
 :::
-::: tip Full upstream feature parity
-This device supports the full upstream feature set — nothing is disabled or unavailable here.
+::: warning Camera screensaver not available
+Upstream offers the camera screensaver in the web configurator only on its ESP32-P4 boards and the Guition ESP32-S3 4848S040. This ESP32-S3 panel is not one of them, so Camera is not available as a screensaver mode here.
 :::
 
 ## Specifications

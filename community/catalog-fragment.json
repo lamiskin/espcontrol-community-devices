@@ -164,7 +164,13 @@
             },
             "apiNavigateAction": true
           }
-        }
+        },
+        "capabilityGaps": [
+          {
+            "feature": "Camera screensaver",
+            "reason": "Upstream offers the camera screensaver in the web configurator only on its ESP32-P4 boards and the Guition ESP32-S3 4848S040. This ESP32-S3 panel is not one of them, so Camera is not available as a screensaver mode here."
+          }
+        ]
       }
     },
     "guition-esp32-s3-jc8048w550": {
@@ -330,7 +336,13 @@
             },
             "apiNavigateAction": true
           }
-        }
+        },
+        "capabilityGaps": [
+          {
+            "feature": "Camera screensaver",
+            "reason": "Upstream offers the camera screensaver in the web configurator only on its ESP32-P4 boards and the Guition ESP32-S3 4848S040. This ESP32-S3 panel is not one of them, so Camera is not available as a screensaver mode here."
+          }
+        ]
       }
     },
     "seeed-sensecap-indicator-d1": {
@@ -673,7 +685,13 @@
             },
             "apiNavigateAction": true
           }
-        }
+        },
+        "capabilityGaps": [
+          {
+            "feature": "Camera screensaver",
+            "reason": "Upstream offers the camera screensaver in the web configurator only on its ESP32-P4 boards and the Guition ESP32-S3 4848S040. This ESP32-S3 panel is not one of them, so Camera is not available as a screensaver mode here."
+          }
+        ]
       }
     },
     "waveshare-esp32-p4-touch-lcd-10": {
@@ -1012,7 +1030,13 @@
             },
             "apiNavigateAction": true
           }
-        }
+        },
+        "capabilityGaps": [
+          {
+            "feature": "Camera screensaver",
+            "reason": "Upstream offers the camera screensaver in the web configurator only on its ESP32-P4 boards and the Guition ESP32-S3 4848S040. This ESP32-S3 panel is not one of them, so Camera is not available as a screensaver mode here."
+          }
+        ]
       }
     },
     "seeed-esp32-p4-reterminal-d1001": {
