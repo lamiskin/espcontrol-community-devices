@@ -53,12 +53,14 @@ import json
 import os
 import shutil
 import sys
+from urllib.parse import urlparse
 
 REPO_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..")
 )
 
 PREFIX = "[stage_firmware]"
+PAGES_URL = "https://lamiskin.github.io/espcontrol-community-devices"
 
 
 def error(msg):
@@ -128,12 +130,9 @@ def plan(registered, retired, available, today):
         if slug in available:
             actions.append({"slug": slug, "source": slug, "handover": None})
         else:
-            # A device added since the last release has no binaries yet. The
-            # docs/installer deploy must still go out, so this is not fatal.
-            warnings.append(
+            errors.append(
                 f"'{slug}' is registered but this release has no "
-                f"{slug}-manifest.json — its feed will not be published until "
-                f"the next release builds it")
+                f"{slug}-manifest.json — refusing to deploy broken installers")
 
     for slug, entry in sorted(retired.items()):
         if slug in registered:
@@ -215,15 +214,22 @@ def stage(actions, assets_dir, dest_dir):
         os.makedirs(out_dir, exist_ok=True)
         out = os.path.join(out_dir, "manifest.json")
 
-        if action["handover"] is None:
-            shutil.copyfile(src, out)
-            print(f"{PREFIX} staged {slug}/manifest.json")
-            continue
-
         with open(src, encoding="utf-8") as f:
-            successor_manifest = json.load(f)
-        manifest = build_handover_manifest(
-            successor_manifest, slug, action["handover"])
+            source_manifest = json.load(f)
+        manifest = (source_manifest if action["handover"] is None else
+                    build_handover_manifest(source_manifest, slug,
+                                            action["handover"]))
+        # Installer binaries are hosted on Pages for ESP Web Tools CORS. This
+        # means these browser installs no longer increment GitHub asset counts.
+        for build in manifest.get("builds", []):
+            for part in build.get("parts", []):
+                filename = os.path.basename(urlparse(part["path"]).path)
+                binary = os.path.join(assets_dir, filename)
+                if not os.path.isfile(binary):
+                    raise FileNotFoundError(
+                        f"required installer image missing: {binary}")
+                shutil.copyfile(binary, os.path.join(out_dir, filename))
+                part["path"] = f"{PAGES_URL}/firmware/{slug}/{filename}"
         with open(out, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
             f.write("\n")
@@ -313,20 +319,20 @@ def self_test():
             check("retired slug staged from its own stale asset",
                   action["source"] == "alpha" and action["handover"])
 
-    # A registered device with no asset yet (added since the last release)
-    # warns but must not block the deploy.
+    # A registered device with no artifact must block deployment rather than
+    # publish a site whose installer manifest is missing.
     actions, warnings, errors = plan(
         registered, {}, {"alpha"}, today)
-    check("missing asset for a registered device was fatal", not errors)
-    check("missing asset for a registered device did not warn",
-          any("beta" in w for w in warnings))
+    check("missing asset for a registered device was not fatal", bool(errors))
+    check("missing asset error did not name beta",
+          any("beta" in e for e in errors))
     check("device without an asset was staged",
           all(a["slug"] != "beta" for a in actions))
 
     # Past publish_until the feed retires for real.
     expired = {"old-alpha": dict(retired["old-alpha"],
                                  publish_until="2026-07-24")}
-    actions, _, errors = plan(registered, expired, {"alpha", "old-alpha"},
+    actions, _, errors = plan(registered, expired, {"alpha", "beta", "old-alpha"},
                               today)
     check("expired handover errored", not errors)
     check("expired handover still staged",
@@ -371,6 +377,8 @@ def self_test():
         "name": "Alpha Panel",
         "version": "v1.2.3",
         "builds": [{"chipFamily": "ESP32-S3",
+                    "parts": [{"path": "https://example.invalid/alpha.factory.bin",
+                               "offset": 0}],
                     "ota": {"path": "https://x/alpha.ota.bin", "md5": "abc"}}],
     }
     handover = build_handover_manifest(
@@ -400,6 +408,9 @@ def self_test():
         for slug in ("alpha", "beta", "old-alpha", "ghost"):
             with open(os.path.join(assets, f"{slug}-manifest.json"), "w") as f:
                 json.dump(dict(successor_manifest, name=slug), f)
+        # Installer parts in the fixture point to alpha.factory.bin.
+        with open(os.path.join(assets, "alpha.factory.bin"), "wb") as f:
+            f.write(b"installer image")
 
         dest = os.path.join(tmp, "firmware")
         rc = run(assets, dest, tag="t", repo_root=root, today=today)
@@ -413,6 +424,23 @@ def self_test():
         with open(os.path.join(dest, "beta", "manifest.json")) as f:
             check("live device manifest was rewritten",
                   json.load(f)["name"] == "beta")
+
+        # A referenced image missing from the release must fail before its
+        # manifest is published to the destination.
+        missing_assets = os.path.join(tmp, "missing-assets")
+        os.makedirs(missing_assets)
+        shutil.copyfile(os.path.join(assets, "alpha-manifest.json"),
+                        os.path.join(missing_assets, "alpha-manifest.json"))
+        missing_dest = os.path.join(tmp, "missing-firmware")
+        try:
+            stage([{"slug": "alpha", "source": "alpha", "handover": None}],
+                  missing_assets, missing_dest)
+            failures.append("missing installer image did not fail staging")
+        except FileNotFoundError as exc:
+            check("missing installer image error was unclear",
+                  "alpha.factory.bin" in str(exc))
+        check("broken manifest was published despite missing image",
+              not os.path.exists(os.path.join(missing_dest, "alpha", "manifest.json")))
 
         # An empty asset dir (no release, or a release carrying no manifests)
         # deploys a firmware-less site rather than failing, matching the

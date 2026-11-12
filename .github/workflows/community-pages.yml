@@ -3,8 +3,7 @@ name: Community Pages
 # Single owner of the GitHub Pages deployment. Rebuilds the ENTIRE site on
 # every run:
 #   - the VitePress docs site (device pages generated from STATUS + catalog)
-#   - firmware manifests: downloaded from the latest GitHub Release (the .bin
-#     binaries are served directly from the release assets, not re-hosted here)
+#   - firmware manifests and ESP Web Tools images, staged from the latest release
 #   - firmware version index: versions.json per device, assembled from the
 #     manifests of the last few releases (the panel's rollback list)
 #   - webserver/www.js: built from the assembled tree at the current pin
@@ -107,18 +106,16 @@ jobs:
             exit 1
           fi
           echo "Latest release: $TAG"
-          # Manifests are staged onto Pages here; the .bin files stay on the
-          # release assets (their download_count is the per-device metric)
-          # EXCEPT for a couple of ota.bin files mirrored further down for
-          # the CORS fix (issue #104) — narrow and deliberate, not a return
-          # to re-hosting everything, which is what broke Pages during an
-          # outage.
+          # Manifests and factory images are staged onto Pages so ESP Web Tools
+          # can fetch them without GitHub Release CORS restrictions. Release
+          # assets remain intact and continue serving native OTA/update clients.
           # --clobber so a retry after a partial download (e.g. a transient
           # HTTP 504 mid-fetch) overwrites the manifests already pulled
           # instead of failing with "already exists" — without it no retry
           # can recover once the first attempt lands any file.
           if ! retry gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
               --pattern "*-manifest.json" \
+              --pattern "*.factory.bin" \
               --dir release-assets --clobber; then
             echo "ERROR: release asset download failed after retries" >&2
             exit 1
@@ -135,8 +132,8 @@ jobs:
             --tag "$TAG"
 
           # P4 devices' C6 recovery manifest (issue #98), when this release
-          # built one — best effort, never fails the deploy (see the
-          # script's own docstring).
+          # built one. Recovery is optional per device, but a published
+          # recovery manifest with its image missing fails staging.
           python3 community/scripts/stage_recovery_manifests.py \
             --assets release-assets \
             --dest community-pages/firmware

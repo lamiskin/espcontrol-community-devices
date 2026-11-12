@@ -23,12 +23,14 @@ import json
 import os
 import shutil
 import sys
+from urllib.parse import urlparse
 
 REPO_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..")
 )
 
 PREFIX = "[stage_recovery_manifests]"
+PAGES_URL = "https://lamiskin.github.io/espcontrol-community-devices"
 
 
 def warn(msg):
@@ -60,7 +62,20 @@ def stage(registered, assets_dir, dest_dir):
             continue
         out_dir = os.path.join(dest_dir, slug)
         os.makedirs(out_dir, exist_ok=True)
-        shutil.copyfile(src, os.path.join(out_dir, "recovery-manifest.json"))
+        with open(src, encoding="utf-8") as f:
+            manifest = json.load(f)
+        for build in manifest.get("builds", []):
+            for part in build.get("parts", []):
+                filename = os.path.basename(urlparse(part["path"]).path)
+                binary = os.path.join(assets_dir, filename)
+                if not os.path.isfile(binary):
+                    raise FileNotFoundError(
+                        f"required recovery image missing: {binary}")
+                shutil.copyfile(binary, os.path.join(out_dir, filename))
+                part["path"] = f"{PAGES_URL}/firmware/{slug}/{filename}"
+        with open(os.path.join(out_dir, "recovery-manifest.json"), "w", encoding="utf-8") as f:
+            json.dump(manifest, f, indent=2)
+            f.write("\n")
         staged.append(slug)
         print(f"{PREFIX} staged {slug}/recovery-manifest.json")
     return staged
@@ -101,9 +116,13 @@ def self_test():
         # p4-alpha built a recovery manifest; s3-beta (not P4) never does;
         # a stray asset for a slug not in devices.json must be ignored.
         with open(os.path.join(assets, "p4-alpha-recovery-manifest.json"), "w") as f:
-            json.dump({"name": "P4 Alpha — C6 Recovery", "version": "v1"}, f)
+            json.dump({"name": "P4 Alpha — C6 Recovery", "version": "v1",
+                       "builds": [{"parts": [{"path": "https://example.invalid/p4-alpha.recovery.factory.bin",
+                                               "offset": 0}]}]}, f)
         with open(os.path.join(assets, "ghost-recovery-manifest.json"), "w") as f:
             json.dump({"name": "Ghost — C6 Recovery"}, f)
+        with open(os.path.join(assets, "p4-alpha.recovery.factory.bin"), "wb") as f:
+            f.write(b"recovery image")
 
         dest = os.path.join(tmp, "firmware")
         staged = run(assets, dest, repo_root=root)
@@ -120,6 +139,25 @@ def self_test():
             with open(out_path) as f:
                 written = json.load(f)
             check("staged content wrong", written["version"] == "v1")
+            check("recovery part was not rewritten to Pages",
+                  written["builds"][0]["parts"][0]["path"] ==
+                  f"{PAGES_URL}/firmware/p4-alpha/p4-alpha.recovery.factory.bin")
+
+        missing_assets = os.path.join(tmp, "missing-recovery-assets")
+        os.makedirs(missing_assets)
+        shutil.copyfile(
+            os.path.join(assets, "p4-alpha-recovery-manifest.json"),
+            os.path.join(missing_assets, "p4-alpha-recovery-manifest.json"))
+        missing_dest = os.path.join(tmp, "missing-recovery-firmware")
+        try:
+            stage(["p4-alpha"], missing_assets, missing_dest)
+            failures.append("missing referenced recovery image did not fail")
+        except FileNotFoundError as exc:
+            check("missing recovery image error was unclear",
+                  "p4-alpha.recovery.factory.bin" in str(exc))
+        check("broken recovery manifest was published despite missing image",
+              not os.path.exists(os.path.join(
+                  missing_dest, "p4-alpha", "recovery-manifest.json")))
 
         # No assets at all (e.g. a release with no recovery-eligible
         # devices) must not error.
