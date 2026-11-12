@@ -85,6 +85,7 @@ needed on this unit).
 @G6EJD reported a second V1 unit running with no issues — battery operation
 included — on
 [PR #136](https://github.com/lamiskin/espcontrol-community-devices/pull/136#issuecomment-6820156267)
-(2026-11-12). That promoted the repo status to **Working**; the recorded pin is
-the stable release current at the time (`community-v0.16.0-upstream.v2.14.0`),
-not a version the reporter named.
+(2026-11-12), and confirmed it was running
+`community-v0.16.0-upstream.v2.14.0`
+([comment](https://github.com/lamiskin/espcontrol-community-devices/pull/136#issuecomment-6822586152)).
+That promoted the repo status to **Working** at exactly that pin.
