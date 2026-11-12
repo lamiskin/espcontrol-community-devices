@@ -18,8 +18,10 @@ on the home screen.
 
 Community port contributed via [PR #136](https://github.com/lamiskin/espcontrol-community-devices/pull/136) by @persuader72.
 
-::: warning Not yet hardware-verified
-This device compiles and is flashable, but nobody has confirmed it on real hardware yet. It may not work. If you own this panel, [verifying it](/reference/support-policy#hardware-verification) is the most valuable contribution you can make.
+::: tip Hardware-verified
+This device has been verified on real hardware — it compiles, flashes, and runs EspControl correctly.
+
+Confirmed by @G6EJD ([#136](https://github.com/lamiskin/espcontrol-community-devices/pull/136#issuecomment-6820156267)) at `community-v0.16.0-upstream.v2.14.0`.
 :::
 ::: tip Full upstream feature parity
 This device supports the full upstream feature set — nothing is disabled or unavailable here.

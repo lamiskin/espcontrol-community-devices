@@ -80,5 +80,11 @@ not one of the V2 variants above.
 [PR #136](https://github.com/lamiskin/espcontrol-community-devices/pull/136)).
 GT911 touch was checked in all four corners after the 270° landscape rotation
 and tracks correctly with the existing `calibration` (no explicit `transform`
-needed on this unit). Repo status can be promoted once a release pin that
-ships this device is confirmed.
+needed on this unit).
+
+@G6EJD reported a second V1 unit running with no issues — battery operation
+included — on
+[PR #136](https://github.com/lamiskin/espcontrol-community-devices/pull/136#issuecomment-6820156267)
+(2026-11-12). That promoted the repo status to **Working**; the recorded pin is
+the stable release current at the time (`community-v0.16.0-upstream.v2.14.0`),
+not a version the reporter named.
