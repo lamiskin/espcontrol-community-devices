@@ -6,10 +6,12 @@
 # Camera and the code is not built.
 # packages.yaml includes upstream's no-op stub (screen_camera_screensaver_
 # disabled.yaml) instead of the full file, but upstream's shared display code
-# still names two things only the full file defines. Define just those here,
-# as inert placeholders, so the config validates without the screensaver's
-# state, scripts, lvgl objects or full-screen image.
+# still names symbols only the full file defines. Define just those here, as
+# inert placeholders, so the config validates without the screensaver's state,
+# scripts, lvgl objects or full-screen image.
 #
+#   camera_screensaver_apply_dimming                v2.14 display.yaml calls
+#                                                     this unconditionally
 #   camera_screensaver_transition_generation   read/written in backlight.yaml
 #   camera_screensaver_downloaded_image        cancel_update() in display.yaml
 #                                              and screen_cover_art.yaml,
@@ -23,8 +25,14 @@
 # download runs, which never happens on this board.
 #
 # REMOVE THIS FILE, and the camera_stub include in packages.yaml, once upstream's
-# screen_camera_screensaver_disabled.yaml defines these two ids itself. Until
-# then a duplicate-id error at ref-bump time is the cue to delete it.
+# screen_camera_screensaver_disabled.yaml provides these symbols itself. Until
+# then a duplicate-id error at ref-bump time is the cue to remove the matching
+# placeholder.
+script:
+  - id: camera_screensaver_apply_dimming
+    mode: restart
+    then: []
+
 globals:
   - id: camera_screensaver_transition_generation
     type: uint32_t
