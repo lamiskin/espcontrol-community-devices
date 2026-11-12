@@ -35,7 +35,7 @@ The community build running on a hardware-verified Guition JC3248W535:
 | [Guition ESP32-S3-JC3248W535](https://lamiskin.github.io/espcontrol-community-devices/screens/guition-esp32-s3-jc3248w535) | 3.5 inches | 480 x 320 | 6 | ESP32-S3 | Working |
 | [Guition JC8048W550](https://lamiskin.github.io/espcontrol-community-devices/screens/guition-esp32-s3-jc8048w550) | 5 inches | 800 x 480 | 15 | ESP32-S3 | Untested |
 | [M5Stack Tab5](https://lamiskin.github.io/espcontrol-community-devices/screens/m5stack-esp32-p4-tab5) | 5 inches | 1280 x 720 | 24 | ESP32-P4 | Working |
-| [M5Stack Tab5 (V1)](https://lamiskin.github.io/espcontrol-community-devices/screens/m5stack-esp32-p4-tab5-v1) | 5 inches | 1280 x 720 | 24 | ESP32-P4 | Untested |
+| [M5Stack Tab5 (V1)](https://lamiskin.github.io/espcontrol-community-devices/screens/m5stack-esp32-p4-tab5-v1) | 5 inches | 1280 x 720 | 24 | ESP32-P4 | Working |
 | [Seeed reTerminal D1001](https://lamiskin.github.io/espcontrol-community-devices/screens/seeed-esp32-p4-reterminal-d1001) | 8 inches | 1280 x 800 | 20 | ESP32-P4 | Working |
 | [Seeed SenseCAP Indicator D1](https://lamiskin.github.io/espcontrol-community-devices/screens/seeed-sensecap-indicator-d1) | 4 inches | 480 x 480 | 9 | ESP32-S3 | Working |
 | [Tuya T3E Smart Panel](https://lamiskin.github.io/espcontrol-community-devices/screens/tuya-t3e) | 4 inches | 480 x 480 | 9 | ESP32-S3 | Untested |
