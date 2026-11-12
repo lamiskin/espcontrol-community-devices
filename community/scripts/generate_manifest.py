@@ -33,9 +33,10 @@ VARIANT_MAP = {
     "esp32p4": "ESP32-P4",
 }
 
-# Firmware binaries are served directly from the GitHub Release assets (not
-# re-hosted on Pages) so GitHub's per-asset download_count becomes a real
-# per-device, per-version, install-vs-OTA metric.
+# Release manifests initially point to GitHub Release assets. The Pages
+# deployment stages the factory images and rewrites `builds[].parts[].path`
+# for browser CORS; `ota.path` stays on Releases for device updates. Thus web
+# installer factory downloads no longer increment GitHub's asset download_count.
 REPO_URL = "https://github.com/lamiskin/espcontrol-community-devices"
 
 
@@ -107,11 +108,9 @@ def chip_family(slug, repo_root=None):
 def build_manifest(slug, version, tag, ota_md5, repo_root=None):
     name = device_name(slug, repo_root)
     family = chip_family(slug, repo_root)
-    # Absolute download URLs for this tag's release assets. Must be the stable
-    # github.com/.../releases/download/... form — it 302-redirects to a
-    # short-lived signed CDN URL that is minted per request, so it cannot be
-    # pre-resolved into the manifest. Clients (ESP Web Tools, the device's
-    # http_request OTA) follow the redirect live.
+    # Keep the release-asset URL here: Pages staging rewrites the `parts` URL
+    # for ESP Web Tools, while the OTA client continues following the GitHub
+    # redirect live. The signed CDN URL is short-lived and cannot be pre-resolved.
     dl = f"{REPO_URL}/releases/download/{tag}"
     return {
         "name": name,
