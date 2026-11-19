@@ -9,5 +9,5 @@
     "common/device/button_widget.yaml": "72b340c36107c6717526f83dbb6e8c7674c29fddcb611c5323f8bad5ce88d882",
     "common/device/core_infra.yaml": "28b1a898be1addc9388d73238f57ba8236f753ab1073d34f0c80028cfab7b4d9"
   },
-  "pin": "v2.14.0"
+  "pin": "v2.15.0"
 }
