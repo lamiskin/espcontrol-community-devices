@@ -136,9 +136,10 @@ def clone_upstream(pin):
             # `git show <tag>:<path>` against this clone, expecting the
             # tag name itself to resolve as a git ref — true when cloning
             # by --branch, not when fetching a bare SHA. Recreate it
-            # locally from the commit we just checked out, so that still
-            # works without needing the tag to exist on the remote.
-            run(["git", "tag", pin], cwd=ASSEMBLY_DIR)
+            # locally from the pinned SHA, so that still works if the tag
+            # vanished upstream. The clone may already contain it (possibly
+            # repointed), so replace it only in this disposable local clone.
+            run(["git", "tag", "--force", pin, fetch_ref], cwd=ASSEMBLY_DIR)
     else:
         # For tags/branches: clone directly at that ref
         run(["git", "clone", "--depth", "1", "--branch", fetch_ref, UPSTREAM_REPO, ASSEMBLY_DIR])
@@ -1012,6 +1013,54 @@ def self_test_offline():
 
     if not strict_failed:
         failures.append("--strict did not fail the run when a generator died")
+
+    # 7. A clone may already contain the release tag. Keep both HEAD and
+    #    the local parity-tooling tag on the immutable SHA, even if upstream
+    #    has since repointed the tag. Exercise real Git without the network.
+    from unittest import mock
+
+    with tempfile.TemporaryDirectory(prefix="assemble_clone_test_") as tmp:
+        upstream = os.path.join(tmp, "upstream")
+        os.mkdir(upstream)
+
+        def git(*args):
+            return subprocess.run(
+                ["git", *args], cwd=upstream, check=True,
+                capture_output=True, text=True).stdout.strip()
+
+        git("init", "--initial-branch=main")
+        git("config", "user.name", "Assembly Test")
+        git("config", "user.email", "assembly@example.invalid")
+        git("config", "commit.gpgsign", "false")
+        git("config", "tag.gpgsign", "false")
+        git("commit", "--allow-empty", "-m", "Pinned commit")
+        old_sha = git("rev-parse", "HEAD")
+        git("commit", "--allow-empty", "-m", "Later commit")
+        head_sha = git("rev-parse", "HEAD")
+        pin = "v2.15.0"
+        for case in ("missing", "existing", "annotated", "repointed"):
+            if case == "annotated":
+                git("tag", "--annotate", pin, "-m", "Release")
+            elif case != "missing":
+                git("tag", pin)
+            expected_sha = old_sha if case == "repointed" else head_sha
+            clone = os.path.join(tmp, case)
+            with mock.patch.dict(globals(), {
+                "UPSTREAM_REPO": "file://" + upstream,
+                "ASSEMBLY_DIR": clone,
+            }), mock.patch(__name__ + ".read_resolved_sha", return_value=expected_sha):
+                try:
+                    clone_upstream(pin)
+                    for ref in ("HEAD", f"refs/tags/{pin}^{{commit}}"):
+                        actual = subprocess.run(
+                            ["git", "rev-parse", ref], cwd=clone, check=True,
+                            capture_output=True, text=True).stdout.strip()
+                        if actual != expected_sha:
+                            failures.append(f"{case}: {ref} is not the pinned SHA")
+                except SystemExit:
+                    failures.append(f"{case}: cloning the pinned SHA failed")
+            if case != "missing":
+                git("tag", "--delete", pin)
 
     if failures:
         for msg in failures:
