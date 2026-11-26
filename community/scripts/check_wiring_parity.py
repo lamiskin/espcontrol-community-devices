@@ -202,7 +202,7 @@ def check_device(slug, entry, sensors_text, reference_text):
 DEVICE_YAML_EXPECTED_DIFFS = frozenset({
     "scl", "sda", "switch", "button", "sensor", "binary_sensor", "number",
     "build_flags", "max_connections", "cpu_frequency", "setup_priority",
-    "api", "i2c", "uart", "spi", "light", "output", "mdi_font_file",
+    "api", "i2c", "uart", "spi", "light", "output",
 })
 
 
