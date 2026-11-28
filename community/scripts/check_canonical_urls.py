@@ -14,8 +14,11 @@ receiving updates. This is not hypothetical: the 7B port shipped its
 esphome.yaml pointing at a personal fork, leaving the browser installer on the
 canonical release while manual installs stayed on a months-old pin.
 
-The check scans every tracked text file, so a fork reference cannot reappear
-in a device config, build profile, status table or docs page.
+The check reads every non-binary file in the tree (anything that decodes as
+UTF-8), skipping generated build trees and test fixtures, so a fork reference
+cannot reappear in a device config, build profile, status table or docs page.
+There is no suffix allowlist: a new text format is covered without changing
+this script.
 
 Usage:
     python3 community/scripts/check_canonical_urls.py
@@ -44,7 +47,10 @@ URL_CHECKS = (
     (
         "GitHub",
         re.compile(
-            r"(?:https?://(?:www\.)?github\.com/|git@github\.com:|github://)"
+            r"(?:https?://(?:www\.)?github\.com/"
+            r"|(?:git\+)?ssh://(?:[^@/\s]+@)?github\.com(?::\d+)?/"
+            r"|git@github\.com:"
+            r"|github://)"
             + _OWNER
             + "/"
             + re.escape(REPO_NAME)
@@ -76,34 +82,47 @@ URL_CHECKS = (
     ),
 )
 
-# Only these files can carry a URL users act on. Binary assets and generated
-# build trees are skipped: fonts and images legitimately contain arbitrary
-# bytes, and scanning them would make this check slow and noisy.
-TEXT_SUFFIXES = {
-    ".cfg",
-    ".css",
-    ".csv",
-    ".html",
-    ".ini",
-    ".js",
-    ".json",
-    ".jsx",
-    ".md",
-    ".markdown",
-    ".mjs",
-    ".py",
-    ".sh",
-    ".svg",
-    ".toml",
-    ".ts",
-    ".tsx",
-    ".txt",
-    ".vue",
-    ".xml",
-    ".yaml",
-    ".yml",
+# Media, fonts, archives and compiled objects are binary. Everything else is
+# read as UTF-8 and skipped when it does not decode, so new text formats
+# (.mts, LICENSE, Makefile, ...) are covered without an allowlist entry.
+BINARY_SUFFIXES = {
+    ".7z",
+    ".avi",
+    ".bin",
+    ".bmp",
+    ".bz2",
+    ".eot",
+    ".exe",
+    ".gif",
+    ".gz",
+    ".ico",
+    ".jpeg",
+    ".jpg",
+    ".m4a",
+    ".mkv",
+    ".mov",
+    ".mp3",
+    ".mp4",
+    ".o",
+    ".ogg",
+    ".otf",
+    ".pdf",
+    ".png",
+    ".pyc",
+    ".so",
+    ".tar",
+    ".tgz",
+    ".tif",
+    ".tiff",
+    ".ttf",
+    ".wav",
+    ".webm",
+    ".webp",
+    ".woff",
+    ".woff2",
+    ".xz",
+    ".zip",
 }
-TEXT_NAMES = {"Dockerfile", "Makefile"}
 SKIP_DIRS = {
     ".git",
     ".assembly",
@@ -130,8 +149,7 @@ def iter_text_files(root):
             # part of the shipped config or docs.
             if name.startswith("test_"):
                 continue
-            suffix = os.path.splitext(name)[1].lower()
-            if suffix not in TEXT_SUFFIXES and name not in TEXT_NAMES:
+            if os.path.splitext(name)[1].lower() in BINARY_SUFFIXES:
                 continue
             path = os.path.join(dirpath, name)
             if os.path.isfile(path):
@@ -254,6 +272,13 @@ def self_test():
             "| OK | [PR #1](https://github.com/lamiskin/"
             "espcontrol-community-devices/pull/1) |\n",
         )
+        write(
+            "docs/.vitepress/config.mts",
+            "const site = 'https://lamiskin.github.io/"
+            "espcontrol-community-devices/'\n"
+            "const clone = 'ssh://git@github.com/lamiskin/"
+            "espcontrol-community-devices.git'\n",
+        )
         # A different project with a similar name must not be mistaken for a
         # fork of this repository.
         write(
@@ -297,13 +322,26 @@ def self_test():
             f"https://raw.githubusercontent.com/{fork_owner}/"
             "espcontrol-community-devices/main/devices/bad/esphome.yaml\n"
             f"git@github.com:{fork_owner}/"
+            "espcontrol-community-devices.git\n"
+            f"ssh://git@github.com/{fork_owner}/"
             "espcontrol-community-devices.git\n",
+        )
+        # .mts and extensionless text files must not escape the scan.
+        write(
+            "docs/bad.mts",
+            f"const site = 'https://{fork_owner}.github.io/"
+            "espcontrol-community-devices/'\n",
+        )
+        write(
+            "NOTICE",
+            f"https://github.com/{fork_owner}/"
+            "espcontrol-community-devices\n",
         )
 
         violations = check_tree(tmp)
-        if len(violations) != 5:
+        if len(violations) != 8:
             failures.append(
-                f"expected 5 fork violations, got {len(violations)}: "
+                f"expected 8 fork violations, got {len(violations)}: "
                 f"{violations}"
             )
         with contextlib.redirect_stdout(io.StringIO()):
