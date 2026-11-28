@@ -83,18 +83,18 @@ PRE_INSTALL_NOTES = {
     "waveshare-esp32-p4-touch-lcd-7b": (
         "::: warning ESP32-P4 pre-v3 silicon only\n"
         "This image targets ESP32-P4 pre-v3 (`chip revision: v1.x`); it will "
-        "not boot rev3 (v3.1 or newer) hardware. If you are not sure which "
+        "not boot rev3 (v3.0 or newer) hardware. If you are not sure which "
         "you have, check `esptool --chip esp32p4 chip-id` before flashing. "
-        "Rev3 boards use the [rev3 7B build](/screens/waveshare-p4-touch-lcd-7b-rev3). "
+        "Rev3 boards use the [rev3 7B build](/screens/waveshare-esp32-p4-touch-lcd-7b-rev3). "
         "Do not use `--force`; the bootloader will keep rejecting the mismatch.\n"
         ":::\n\n"
     ),
     "waveshare-esp32-p4-touch-lcd-7b-rev3": (
         "::: warning ESP32-P4 rev3 silicon only\n"
-        "This image targets ESP32-P4 rev3.x (`chip revision: v3.1` or newer); "
+        "This image targets ESP32-P4 rev3.x (`chip revision: v3.0` or newer); "
         "it will not boot a pre-v3 (v1.x) board. If you are not sure which "
         "you have, check `esptool --chip esp32p4 chip-id` before flashing. "
-        "Pre-v3 boards use the [pre-v3 7B build](/screens/waveshare-p4-touch-lcd-7b). "
+        "Pre-v3 boards use the [pre-v3 7B build](/screens/waveshare-esp32-p4-touch-lcd-7b). "
         "Do not use `--force`; the bootloader will keep rejecting the mismatch.\n"
         ":::\n\n"
     ),
@@ -118,7 +118,7 @@ SILICON_CREDITS = {
 P4_REVISION_WARNING = (
     "::: warning ESP32-P4 silicon revision\n"
     "Some ESP32-P4 boards ship with pre-v3 (`chip revision: v1.x`) or rev3 "
-    "(`v3.1` or newer) silicon, and the firmware families are not "
+    "(`v3.0` or newer) silicon, and the firmware families are not "
     "interchangeable. This community build is pre-v3 only: on a rev3 board "
     "it will reset-loop at boot. Check "
     "`python -m esptool --chip esp32p4 chip-id` before flashing. See "

@@ -44,7 +44,7 @@ This device supports the full upstream feature set — nothing is disabled or un
 ## Install
 
 ::: warning ESP32-P4 pre-v3 silicon only
-This image targets ESP32-P4 pre-v3 (`chip revision: v1.x`); it will not boot rev3 (v3.1 or newer) hardware. If you are not sure which you have, check `esptool --chip esp32p4 chip-id` before flashing. Rev3 boards use the [rev3 7B build](/screens/waveshare-p4-touch-lcd-7b-rev3). Do not use `--force`; the bootloader will keep rejecting the mismatch.
+This image targets ESP32-P4 pre-v3 (`chip revision: v1.x`); it will not boot rev3 (v3.0 or newer) hardware. If you are not sure which you have, check `esptool --chip esp32p4 chip-id` before flashing. Rev3 boards use the [rev3 7B build](/screens/waveshare-esp32-p4-touch-lcd-7b-rev3). Do not use `--force`; the bootloader will keep rejecting the mismatch.
 :::
 
 Connect the display to your computer with a **USB-C data cable**, then click

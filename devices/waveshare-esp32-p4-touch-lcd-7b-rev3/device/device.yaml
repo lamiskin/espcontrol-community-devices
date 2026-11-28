@@ -1,5 +1,5 @@
 # =============================================================================
-# DEVICE - Waveshare ESP32-P4-WIFI6-Touch-LCD-7B hardware definition (rev3)
+# DEVICE - Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (rev3) hardware definition
 # =============================================================================
 # Pin assignments, peripherals, and platform config for the 7" 1024x600 panel
 # with ESP32-P4 rev3.x silicon. The pre-v3 variant lives in
@@ -24,9 +24,9 @@ esp32:
   variant: esp32p4
   flash_size: 32MB
   cpu_frequency: 360MHZ
-  # Production rev3.x silicon. Waveshare now ships the same board with either
-  # pre-v3 (v1.x) or rev3 (v3.x) P4; a pre-v3 image cannot boot rev3 and a
-  # rev3 image cannot boot pre-v3. The pre-v3 variant keeps this true.
+  # Production rev3 (v3.0+) silicon. Waveshare now ships the same board with
+  # either pre-v3 (v1.x) or rev3 (v3.0+) P4; a pre-v3 image cannot boot rev3
+  # and a rev3 image cannot boot pre-v3. The pre-v3 variant keeps this true.
   engineering_sample: false
   framework:
     type: esp-idf
@@ -42,6 +42,11 @@ esp32:
       disable_vfs_support_select: false
       disable_vfs_support_dir: false
     sdkconfig_options:
+      # Waveshare's rev3 boards are the v3.0-and-later family. ESP-IDF's
+      # default minimum is v3.1, which would reject a v3.0 part; pin the
+      # family floor instead. The user option takes precedence over the
+      # generated default.
+      CONFIG_ESP32P4_REV_MIN_300: "y"
       CONFIG_SDMMC_HOST_DEFAULT: "y"
       # Eight API clients add five sockets above ESPHome's three-client
       # baseline. Reserve those five explicitly on top of the generated

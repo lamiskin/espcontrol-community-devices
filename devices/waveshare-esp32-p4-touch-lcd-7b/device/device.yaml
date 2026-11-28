@@ -1,5 +1,5 @@
 # =============================================================================
-# DEVICE - Waveshare ESP32-P4-WIFI6-Touch-LCD-7B hardware definition (pre-v3)
+# DEVICE - Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (pre-v3) hardware definition
 # =============================================================================
 # Pin assignments, peripherals, and platform config for the 7" 1024x600 panel
 # with ESP32-P4 pre-v3 (v1.x) silicon. The rev3 variant lives in
@@ -25,7 +25,7 @@ esp32:
   flash_size: 32MB
   cpu_frequency: 360MHZ
   # Pre-v3 (v1.x) silicon. Waveshare now ships this board with either pre-v3
-  # or rev3 (v3.1+) P4; a pre-v3 image cannot boot rev3 and vice versa. The
+  # or rev3 (v3.0+) P4; a pre-v3 image cannot boot rev3 and vice versa. The
   # rev3 variant lives in devices/waveshare-esp32-p4-touch-lcd-7b-rev3.
   engineering_sample: true
   framework:

@@ -28,14 +28,14 @@ All values are taken from the vendor BSP at
 ## Silicon revisions
 
 Waveshare ships this board with two incompatible ESP32-P4 silicon families:
-pre-v3 (`chip revision: v1.x`) and rev3 (`v3.1` or newer). A firmware image
+pre-v3 (`chip revision: v1.x`) and rev3 (`v3.0` or newer). A firmware image
 built for one family cannot boot the other. This directory is the **pre-v3**
 variant and keeps `engineering_sample: true`; the rev3 variant and its install
 entry are in `devices/waveshare-esp32-p4-touch-lcd-7b-rev3`.
 
 Check the first serial line at 115200 (`boot: chip revision: vX.Y`) or run
 `python -m esptool --chip esp32p4 -p <port> chip-id` before flashing. A rev3
-board (`v3.1` or newer) must use the rev3 variant; a pre-v3 board must use this
+board (`v3.0` or newer) must use the rev3 variant; a pre-v3 board must use this
 image. Do not use `--force` to bypass the bootloader's revision check.
 
 ## Notes for this port

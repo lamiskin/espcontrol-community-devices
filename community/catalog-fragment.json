@@ -1740,7 +1740,7 @@
         },
         "public": {
           "name": "Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (pre-v3)",
-          "docsPath": "/screens/waveshare-p4-touch-lcd-7b",
+          "docsPath": "/screens/waveshare-esp32-p4-touch-lcd-7b",
           "screenSize": "7 inches",
           "resolution": "1024 x 600",
           "orientation": "Landscape"
@@ -1916,7 +1916,7 @@
         },
         "public": {
           "name": "Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (rev3)",
-          "docsPath": "/screens/waveshare-p4-touch-lcd-7b-rev3",
+          "docsPath": "/screens/waveshare-esp32-p4-touch-lcd-7b-rev3",
           "screenSize": "7 inches",
           "resolution": "1024 x 600",
           "orientation": "Landscape"

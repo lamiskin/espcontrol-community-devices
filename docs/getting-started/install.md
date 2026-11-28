@@ -21,7 +21,7 @@ never be flashed onto them.
 :::
 
 ::: tip ESP32-P4 boards: check the chip revision
-ESP32-P4 boards ship with pre-v3 (`v1.x`) or rev3 (`v3.1` or newer) silicon,
+ESP32-P4 boards ship with pre-v3 (`v1.x`) or rev3 (`v3.0` or newer) silicon,
 and the two firmware families are not interchangeable. The 7B has a separate
 build for each. See
 [ESP32-P4 chip revision](/getting-started/troubleshooting#esp32-p4-chip-revision)
