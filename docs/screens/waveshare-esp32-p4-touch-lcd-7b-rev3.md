@@ -16,8 +16,6 @@ The **Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (rev3)** is a 7-inch landscape
 touchscreen powered by **ESP32-P4**, with room for **15 cards**
 on the home screen.
 
-Community port contributed via - by @lamiskin.
-
 ::: warning Not yet hardware-verified
 This device compiles and is flashable, but nobody has confirmed it on real hardware yet. It may not work. If you own this panel, [verifying it](/reference/support-policy#hardware-verification) is the most valuable contribution you can make.
 :::
@@ -38,7 +36,7 @@ This device supports the full upstream feature set — nothing is disabled or un
 ## Install
 
 ::: warning ESP32-P4 rev3 silicon only
-This image targets ESP32-P4 rev3.x (`chip revision: v3.1` or newer); it will not boot a pre-v3 (v1.x) board. If you are not sure which you have, check `esptool --chip esp32p4 chip-id` before flashing. Pre-v3 boards use the [pre-v3 7B build](/screens/waveshare-p4-touch-lcd-7b).
+This image targets ESP32-P4 rev3.x (`chip revision: v3.1` or newer); it will not boot a pre-v3 (v1.x) board. If you are not sure which you have, check `esptool --chip esp32p4 chip-id` before flashing. Pre-v3 boards use the [pre-v3 7B build](/screens/waveshare-p4-touch-lcd-7b). Do not use `--force`; the bootloader will keep rejecting the mismatch.
 :::
 
 Connect the display to your computer with a **USB-C data cable**, then click

@@ -1,7 +1,9 @@
 # =============================================================================
-# ESPHOME ENTRY POINT - Waveshare ESP32-P4-WIFI6-Touch-LCD-7B
+# ESPHOME ENTRY POINT - Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (pre-v3)
 # =============================================================================
-# User-facing config file. Set your device name and WiFi credentials here.
+# User-facing config file for boards with ESP32-P4 pre-v3 (v1.x) silicon. The
+# rev3 variant lives in devices/waveshare-esp32-p4-touch-lcd-7b-rev3 and will
+# not boot pre-v3 hardware. Set your device name and WiFi credentials here.
 # The remote package reference pulls in the full device configuration from
 # GitHub so the device stays up-to-date automatically.
 #

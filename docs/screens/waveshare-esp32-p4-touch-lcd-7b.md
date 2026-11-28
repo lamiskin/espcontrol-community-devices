@@ -1,6 +1,6 @@
 ---
-title: 7-inch Waveshare ESP32-P4-WIFI6-Touch-LCD-7B
-description: "Community EspControl build for the Waveshare ESP32-P4-WIFI6-Touch-LCD-7B — 7 inches 1024 x 600 landscape touchscreen with 15 cards, powered by ESP32-P4."
+title: 7-inch Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (pre-v3)
+description: "Community EspControl build for the Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (pre-v3) — 7 inches 1024 x 600 landscape touchscreen with 15 cards, powered by ESP32-P4."
 ---
 <!-- =============================================================================
 GENERATED — do not edit by hand.
@@ -10,9 +10,9 @@ community/catalog-fragment.json and community/STATUS.md.
 
 <!--@include: ../parts/warning.md-->
 
-# 7-inch Waveshare ESP32-P4-WIFI6-Touch-LCD-7B
+# 7-inch Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (pre-v3)
 
-The **Waveshare ESP32-P4-WIFI6-Touch-LCD-7B** is a 7-inch landscape
+The **Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (pre-v3)** is a 7-inch landscape
 touchscreen powered by **ESP32-P4**, with room for **15 cards**
 on the home screen.
 
@@ -21,7 +21,7 @@ Community port contributed via [PR #171](https://github.com/lamiskin/espcontrol-
 ::: tip Hardware-verified
 This device has been verified on real hardware — it compiles, flashes, and runs EspControl correctly.
 
-Confirmed by @bassrock at `community-v0.11.0-upstream.v2.10.0`.
+Confirmed by @bassrock on pre-v3 silicon at `community-v0.11.0-upstream.v2.10.0`.
 :::
 ::: tip Full upstream feature parity
 This device supports the full upstream feature set — nothing is disabled or unavailable here.
@@ -29,7 +29,7 @@ This device supports the full upstream feature set — nothing is disabled or un
 
 |  |
 |:--:|
-| ![Waveshare ESP32-P4-WIFI6-Touch-LCD-7B running EspControl](/images/waveshare-esp32-p4-touch-lcd-7b-verified-1.jpg) |
+| ![Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (pre-v3) running EspControl](/images/waveshare-esp32-p4-touch-lcd-7b-verified-1.jpg) |
 
 ## Specifications
 
@@ -42,6 +42,10 @@ This device supports the full upstream feature set — nothing is disabled or un
 | **Card grid** | 5 × 3 (15 cards) |
 
 ## Install
+
+::: warning ESP32-P4 pre-v3 silicon only
+This image targets ESP32-P4 pre-v3 (`chip revision: v1.x`); it will not boot rev3 (v3.1 or newer) hardware. If you are not sure which you have, check `esptool --chip esp32p4 chip-id` before flashing. Rev3 boards use the [rev3 7B build](/screens/waveshare-p4-touch-lcd-7b-rev3). Do not use `--force`; the bootloader will keep rejecting the mismatch.
+:::
 
 Connect the display to your computer with a **USB-C data cable**, then click
 the button below (Chrome or Edge on desktop).

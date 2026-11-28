@@ -20,6 +20,14 @@ instead — official panels are never published here, and community builds must
 never be flashed onto them.
 :::
 
+::: tip ESP32-P4 boards: check the chip revision
+ESP32-P4 boards ship with pre-v3 (`v1.x`) or rev3 (`v3.1` or newer) silicon,
+and the two firmware families are not interchangeable. The 7B has a separate
+build for each. See
+[ESP32-P4 chip revision](/getting-started/troubleshooting#esp32-p4-chip-revision)
+before choosing an image.
+:::
+
 ## 1. Flash from the browser
 
 1. Open your device's page from the sidebar and check its status — **Working**

@@ -1,4 +1,4 @@
-# Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (7")
+# Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (7", ESP32-P4 pre-v3)
 
 7-inch 1024x600 IPS touchscreen panel running EspControl for Home Assistant. A
 fixed 3x5 grid of 15 configurable buttons controls lights, switches, fans and
@@ -12,7 +12,7 @@ web page — no YAML editing.
 
 | | |
 |---|---|
-| SoC | ESP32-P4 (dual RISC-V @360MHz) + ESP32-C6 hosted WiFi 6 over SDIO |
+| SoC | ESP32-P4 pre-v3 (dual RISC-V @360MHz) + ESP32-C6 hosted WiFi 6 over SDIO |
 | Memory | 32MB in-package PSRAM, 32MB external NOR flash |
 | Display | EK79007, 1024x600 IPS, 2-lane MIPI-DSI, 52MHz pclk, 1Gbps/lane |
 | Touch | GT911 capacitive, 5-point, I2C 0x5D — **no INT, no RST wired** |
@@ -24,6 +24,19 @@ web page — no YAML editing.
 All values are taken from the vendor BSP at
 [waveshareteam/ESP32-P4-WIFI6-Touch-LCD-7B](https://github.com/waveshareteam/ESP32-P4-WIFI6-Touch-LCD-7B),
 `examples/arduino/libraries/displays/displays_config.h`.
+
+## Silicon revisions
+
+Waveshare ships this board with two incompatible ESP32-P4 silicon families:
+pre-v3 (`chip revision: v1.x`) and rev3 (`v3.1` or newer). A firmware image
+built for one family cannot boot the other. This directory is the **pre-v3**
+variant and keeps `engineering_sample: true`; the rev3 variant and its install
+entry are in `devices/waveshare-esp32-p4-touch-lcd-7b-rev3`.
+
+Check the first serial line at 115200 (`boot: chip revision: vX.Y`) or run
+`python -m esptool --chip esp32p4 -p <port> chip-id` before flashing. A rev3
+board (`v3.1` or newer) must use the rev3 variant; a pre-v3 board must use this
+image. Do not use `--force` to bypass the bootloader's revision check.
 
 ## Notes for this port
 
@@ -43,9 +56,13 @@ All values are taken from the vendor BSP at
 
 ## Status
 
-**Working** — confirmed on real hardware by @bassrock at
+**Working on pre-v3 hardware** — confirmed on pre-v3 silicon by @bassrock at
 `community-v0.11.0-upstream.v2.10.0` (ESPHome 2026.9.0, espcontrol v2.10.0):
 boots, touch works, and the card grid renders live Home Assistant data.
+
+The rev3 variant is a separate build and is currently **Untested**; see
+[issue #239](https://github.com/lamiskin/espcontrol-community-devices/issues/239)
+for the report that identified the two silicon families.
 
 ## Quick links
 
