@@ -16,7 +16,7 @@ The **Waveshare ESP32-P4-WIFI6-Touch-LCD-7B** is a 7-inch landscape
 touchscreen powered by **ESP32-P4**, with room for **15 cards**
 on the home screen.
 
-Community port contributed via [7B device branch](https://github.com/bassrock/espcontrol-community-devices/tree/device/waveshare-esp32-p4-touch-lcd-7b) by @bassrock.
+Community port contributed via [PR #171](https://github.com/lamiskin/espcontrol-community-devices/pull/171) by @bassrock.
 
 ::: tip Hardware-verified
 This device has been verified on real hardware — it compiles, flashes, and runs EspControl correctly.

@@ -30,6 +30,9 @@ jobs:
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
+      - name: Canonical repository URLs
+        run: python3 community/scripts/check_canonical_urls.py
+
       - name: Determine version
         id: version
         run: |
