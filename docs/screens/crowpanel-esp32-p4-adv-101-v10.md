@@ -43,6 +43,10 @@ This device supports the full upstream feature set — nothing is disabled or un
 
 ## Install
 
+::: warning ESP32-P4 silicon revision
+Some ESP32-P4 boards ship with pre-v3 (`chip revision: v1.x`) or rev3 (`v3.1` or newer) silicon, and the firmware families are not interchangeable. This community build is pre-v3 only: on a rev3 board it will reset-loop at boot. Check `python -m esptool --chip esp32p4 chip-id` before flashing. See [ESP32-P4 chip revision](/getting-started/troubleshooting#esp32-p4-chip-revision).
+:::
+
 Connect the display to your computer with a **USB-C data cable**, then click
 the button below (Chrome or Edge on desktop).
 

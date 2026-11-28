@@ -113,6 +113,19 @@ SILICON_CREDITS = {
     "waveshare-esp32-p4-touch-lcd-7b": " on pre-v3 silicon",
 }
 
+# Every other ESP32-P4 device still publishes a pre-v3 image. The 7B pair has
+# its own reciprocal notes above; this warning covers the rest of the fleet.
+P4_REVISION_WARNING = (
+    "::: warning ESP32-P4 silicon revision\n"
+    "Some ESP32-P4 boards ship with pre-v3 (`chip revision: v1.x`) or rev3 "
+    "(`v3.1` or newer) silicon, and the firmware families are not "
+    "interchangeable. This community build is pre-v3 only: on a rev3 board "
+    "it will reset-loop at boot. Check "
+    "`python -m esptool --chip esp32p4 chip-id` before flashing. See "
+    "[ESP32-P4 chip revision](/getting-started/troubleshooting#esp32-p4-chip-revision).\n"
+    ":::\n\n"
+)
+
 STATUS_SECTIONS = {
     "Working": (
         "tip",
@@ -334,6 +347,8 @@ def device_page(d):
         note = INSTALL_NOTES.get(d["slug"], "")
         note_block = "\n" + note if note else ""
         pre_install_note = PRE_INSTALL_NOTES.get(d["slug"], "")
+        if not pre_install_note and d["chip"] == "ESP32-P4":
+            pre_install_note = P4_REVISION_WARNING
         recovery_block = ""
         if d["chip"] == "ESP32-P4":
             # P4 panels use a separate ESP32-C6 chip for WiFi. If it
