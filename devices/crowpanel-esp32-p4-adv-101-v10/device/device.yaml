@@ -19,8 +19,8 @@
 
 substitutions:
   espcontrol_component_url: "https://github.com/jtenniswood/espcontrol"
-  espcontrol_component_ref: "v2.15.0"
-  mdi_font_file: "https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf"
+  espcontrol_component_ref: "v2.16.1"
+  icon_font_file: "https://raw.githubusercontent.com/jtenniswood/espcontrol/${espcontrol_component_ref}/common/assets/fonts/espcontrol-icons.ttf"
 
 # ---------------------------------------------------------------------------
 # ESP32-P4 platform (16MB flash, ESP-IDF framework)
@@ -169,7 +169,11 @@ esp32_hosted:
   reset_pin: GPIO32
   cmd_pin: GPIO19
   clk_pin: GPIO18
-  # The SDIO link runs 1-bit wide here, so d1_pin-d3_pin are deliberately
+  # D1 doubles as the SDIO card-interrupt line, so ESPHome 2026.11.0 (esp_hosted
+  # 3.x) requires d1_pin even on a 1-bit bus — it is no longer optional. Elecrow
+  # lists IO14/15/16/17 as D0-D3, so GPIO15 is D1 here.
+  d1_pin: GPIO15
+  # The SDIO link runs 1-bit wide here, so d2_pin/d3_pin are deliberately
   # absent. That is what the porter's V1.0 board came up on ("only 1 data
   # line to esp_hosted", issue #133), even though Elecrow's wiki lists
   # IO14/15/16/17 as D0-D3 for this revision — so a 4-bit link may be wired
