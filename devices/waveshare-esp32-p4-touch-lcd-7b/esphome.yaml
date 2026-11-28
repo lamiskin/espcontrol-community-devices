@@ -29,7 +29,7 @@ wifi:
 # ---------------------------------------------------------------------------
 packages:
   setup:
-    url: https://github.com/bassrock/espcontrol-community-devices/
+    url: https://github.com/lamiskin/espcontrol-community-devices/
     file: devices/waveshare-esp32-p4-touch-lcd-7b/packages.yaml
     refresh: 1s
 

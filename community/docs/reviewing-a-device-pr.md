@@ -43,6 +43,13 @@ If any one of these four is missing, CI's `policy` check can still pass
 (it validates the files that *are* present, not that all four exist) — this
 has to be checked by hand.
 
+Also check `devices/<slug>/esphome.yaml`: its `packages.setup.url` must point
+at this repository (`https://github.com/lamiskin/espcontrol-community-devices/`),
+not the contributor's fork. CI's `check_canonical_urls.py` rejects fork URLs
+for this repo in configs, build profiles, STATUS.md and docs, but it is worth
+knowing why: a fork URL still compiles and installs, while silently pinning
+users to a copy that stops receiving updates.
+
 ## 3. Chip-family policy
 
 Per `DEVICES_POLICY.md`: ESP32-S3/P4 submissions are assessed on the config
