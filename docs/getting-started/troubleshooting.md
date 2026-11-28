@@ -61,6 +61,44 @@ community firmware — if your panel is on the
 [upstream installer](https://jtenniswood.github.io/espcontrol/getting-started/install)
 instead.
 
+## ESP32-P4 chip revision
+
+ESP32-P4 boards ship with two incompatible silicon families, and firmware
+built for one will not boot the other:
+
+- **pre-v3** — `chip revision: v1.x`
+- **rev3** — `chip revision: v3.0` or newer
+
+The community 7B now has a separate build for each:
+[pre-v3](/screens/waveshare-esp32-p4-touch-lcd-7b) and
+[rev3](/screens/waveshare-esp32-p4-touch-lcd-7b-rev3). Other community ESP32-P4
+devices currently publish pre-v3 builds only; a rev3 board needs a separate
+variant that may not exist yet.
+
+### Check before flashing
+
+- The first serial line at 115200: `I (xx) boot: chip revision: vX.Y`
+- `python -m esptool --chip esp32p4 -p <port> chip-id`
+- Waveshare's Flash Download Tool → chipInfoDump
+
+### A mismatched image resets in a loop
+
+A pre-v3 image on rev3 hardware (or the reverse) is rejected at boot and the
+panel resets repeatedly. The app log may show:
+
+```
+Image requires chip rev <= v1.99, but chip is v3.x
+```
+
+`esptool` can also refuse the write with a range matching the image, e.g.
+`requires chip revision in range [v3.0 - v3.99]` when a rev3 image is flashed
+to pre-v3 hardware.
+
+Flash the image that matches the chip. Do not use `--force` to bypass the
+revision check: it writes, but the bootloader keeps rejecting the application.
+If no matching community variant exists, use the vendor's matching firmware
+until one is published.
+
 ## A device won't build, or its status shows "Broken"
 
 Device pages show a status: **Working** (hardware-verified), **Untested**

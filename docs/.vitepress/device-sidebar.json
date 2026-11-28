@@ -40,8 +40,12 @@
     "link": "/screens/waveshare-esp32-p4-touch-lcd-10"
   },
   {
-    "text": "Waveshare ESP32-P4-WIFI6-Touch-LCD-7B",
+    "text": "Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (pre-v3)",
     "link": "/screens/waveshare-esp32-p4-touch-lcd-7b"
+  },
+  {
+    "text": "Waveshare ESP32-P4-WIFI6-Touch-LCD-7B (rev3)",
+    "link": "/screens/waveshare-esp32-p4-touch-lcd-7b-rev3"
   },
   {
     "text": "Waveshare ESP32-S3-Touch-LCD-4",

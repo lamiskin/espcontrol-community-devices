@@ -293,5 +293,17 @@ waveshare-esp32-p4-touch-lcd-7b:
     - components/**
     - src/**
 
+waveshare-esp32-p4-touch-lcd-7b-rev3:
+  allowed:
+    - devices/waveshare-esp32-p4-touch-lcd-7b-rev3/**
+    - builds/waveshare-esp32-p4-touch-lcd-7b-rev3*.yaml
+  required:
+    - devices/waveshare-esp32-p4-touch-lcd-7b-rev3/esphome.yaml
+    - devices/waveshare-esp32-p4-touch-lcd-7b-rev3/packages.yaml
+    - devices/waveshare-esp32-p4-touch-lcd-7b-rev3/device/device.yaml
+  forbidden:
+    - components/**
+    - src/**
+
 # --- end policy ---
 ```
